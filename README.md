@@ -3,7 +3,7 @@ This in an R package that provides helper functions to query data in LabKey/DISC
 
 ### <a name="installation">Installation</a>
 
-```{r }
+```{r}
 # Install requirements.  Other dependencies will be downloaded automatically
 install.packages(c('devtools', 'BiocManager', 'remotes'), dependencies = TRUE, ask = FALSE)
 
@@ -13,4 +13,13 @@ local({options(repos = BiocManager::repositories())})
 # Install latest version:
 devtools::install_github(repo = 'bimberlabinternal/Rdiscvr', dependencies = TRUE, upgrade = 'always')
 ```
+
+### <a name="usage">Usage</a>
+
+Once installed, you will need to set the default baseUrl and defaultFolder:
+
+```{r}
+library(Rdiscvr)
     
+Rdiscvr::SetLabKeyDefaults(baseUrl = 'https://myserver.com', defaultFolder = 'Labs/Bimber')
+```

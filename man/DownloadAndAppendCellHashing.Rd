@@ -8,6 +8,8 @@ DownloadAndAppendCellHashing(seuratObject, outPath = ".")
 }
 \arguments{
 \item{seuratObject, }{A Seurat object.}
+
+\item{outPath}{The filepath where downloaded count data will be written}
 }
 \value{
 A modified Seurat object.

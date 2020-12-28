@@ -1,8 +1,9 @@
 #' @include LabKeySettings.R
 #' @include Utils.R
+#' @import utils
 
 utils::globalVariables(
-  names = c('sortOrder'),
+  names = c('sortOrder', 'SampleName', 'SubjectId', 'c_gene', 'cdna', 'count', 'd_gene', 'j_gene', 'population', 'raw_clonotype_id', 'raw_consensus_id', 'v_gene'),
   package = 'Rdiscvr',
   add = TRUE
 )
@@ -112,7 +113,7 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = '.', dropExis
 
 .FindMatchedVloupe <- function(loupeDataId) {
   rows <- labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="sequenceanalysis",
 		queryName="outputfiles",
@@ -134,7 +135,7 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = '.', dropExis
   }
 
   rows <- labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="sequenceanalysis",
 		queryName="outputfiles",
@@ -160,7 +161,7 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = '.', dropExis
 .DownloadCellRangerClonotypes <- function(vLoupeId, outFile, overwrite = T, fileName = 'all_contig_annotations.csv') {
   #The file will be in the same directory as the VLoupe file
   rows <- labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="sequenceanalysis",
 		queryName="outputfiles",
@@ -185,7 +186,7 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = '.', dropExis
   remotePath <- paste0(dirname(remotePath), '/', fileName)
 
   success <- labkey.webdav.get(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=paste0(.getLabKeyDefaultFolder(),wb),
 		remoteFilePath = remotePath,
 		overwrite = overwrite,
@@ -218,7 +219,7 @@ utils::globalVariables(
   #Download named clonotypes and merge:
   # Add clone names:
   labelDf <- labkey.selectRows(
-  baseUrl=lkBaseUrl,
+  baseUrl=.getBaseUrl(),
   folderPath=.getLabKeyDefaultFolder(),
   schemaName="tcrdb",
   queryName="clones",
@@ -364,7 +365,7 @@ Download10xRawDataForLoupeFile <- function(outputFileId, outFile, overwrite = T,
 CalculateTCRFreqForActivatedCells <- function(cDndIds, geneSetName = 'HighlyActivated', positivityThreshold = 0.5, outPrefix = './', invert = FALSE, doCleanup = FALSE, reduction = NULL) {
 	print(paste0('Total cDNA records: ', length(cDndIds)))
 	rows <- labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="tcrdb",
 		queryName="cdnas",
@@ -386,7 +387,7 @@ CalculateTCRFreqForActivatedCells <- function(cDndIds, geneSetName = 'HighlyActi
 
 	# Identify, download seuratObj, created from the appropriate readsetId:
 	seuratRows <- labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="sequenceanalysis",
 		queryName="outputfiles",
@@ -435,7 +436,9 @@ CalculateTCRFreqForActivatedCells <- function(cDndIds, geneSetName = 'HighlyActi
 
 		seuratObj <- DownloadAndAppendCellHashing(seuratObject = seuratObj)
 		seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
-		seuratObj <- ClassifySGSAndApply(seuratObj = seuratObj, geneSetName = 'Positive', geneList = OOSAP::Phenotyping_GeneList()[[geneSetName]], positivityThreshold = positivityThreshold, reduction = reduction)
+
+		# TODO: refactor this from OOSAP
+		seuratObj <- OOSAP::ClassifySGSAndApply(seuratObj = seuratObj, geneSetName = 'Positive', geneList = OOSAP::Phenotyping_GeneList()[[geneSetName]], positivityThreshold = positivityThreshold, reduction = reduction)
 		if (invert) {
 			print('Selecting cells without the provided signature')
 			barcodeWhitelist <- colnames(seuratObj)[!seuratObj$Positive.Call & !is.na(seuratObj$cDNA_ID)]
@@ -454,7 +457,7 @@ CalculateTCRFreqForActivatedCells <- function(cDndIds, geneSetName = 'HighlyActi
 
 			#TCR libraryId
 			tcrLibRows <- labkey.selectRows(
-				baseUrl=lkBaseUrl,
+				baseUrl=.getBaseUrl(),
 				folderPath=.getLabKeyDefaultFolder(),
 				schemaName="sequenceanalysis",
 				queryName="outputfiles",
@@ -625,7 +628,7 @@ CalculateTCRFreqForActivatedCellsAndImport <- function(cDndIds, workbook = NULL,
 	print(paste0('total runs: ', length(runList)))
 	if (length(runList) > 0) {
 		labkey.experiment.saveBatch(
-			baseUrl=lkBaseUrl,
+			baseUrl=.getBaseUrl(),
 			folderPath=folder,
 			assayConfig=list(assayName=assayName, providerName='TCRdb'),
 			runList = runList

@@ -2,7 +2,7 @@
 #' @include Utils.R
 
 utils::globalVariables(
-  names = c('SortOrder'),
+  names = c('SortOrder', 'BarcodePrefix', 'Total'),
   package = 'Rdiscvr',
   add = TRUE
 )
@@ -50,7 +50,7 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
 
   #Download info, based on BarcodePrefix:
   outputFiles <- labkey.selectRows(
-    baseUrl=lkBaseUrl,
+    baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="sequenceanalysis",
     queryName="outputfiles",
@@ -70,7 +70,7 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
   }
 
   rows <- labkey.selectRows(
-    baseUrl=lkBaseUrl,
+    baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="tcrdb",
     queryName="cdnas",
@@ -106,7 +106,7 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
     df <- data.frame(HTO = as.character(seuratObj$HTO), BarcodePrefix = as.character(seuratObj$BarcodePrefix), Barcode = origBarcodes, SortOrder = 1:length(origBarcodes))
 
     #Allow for libraries that have a non-null HTO, but have only a single per library (which is effectively the same as not being hashed):
-    rows2 <- rows %>% group_by(BarcodePrefix) %>% summarise(Total = dplyr::n_distinct(HTO)) %>% filter(Total == 1)
+    rows2 <- rows %>% dplyr::group_by(BarcodePrefix) %>% dplyr::summarise(Total = dplyr::n_distinct(HTO)) %>% dplyr::filter(Total == 1)
     if (nrow(rows2) > 0) {
       df$HTO <- as.character(df$HTO)
       for (bc in unique(rows2$BarcodePrefix)) {

@@ -6,6 +6,7 @@
 #'
 #' @description Downloads matching Cell Hashing data using barcodePrefix on the seurat object and appends it to metadata
 #' @param seuratObject, A Seurat object.
+#' @param outPath The filepath where downloaded count data will be written
 #' @return A modified Seurat object.
 #' @export
 DownloadAndAppendCellHashing <- function(seuratObject, outPath = '.'){
@@ -40,7 +41,7 @@ DownloadAndAppendCellHashing <- function(seuratObject, outPath = '.'){
 .FindMatchedCellHashing <- function(loupeDataId){
 	#Note: the seurat object gets associated with the GEX readset, so look based on this:
 	rows <- labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="sequenceanalysis",
 		queryName="outputfiles",
@@ -68,7 +69,7 @@ DownloadAndAppendCellHashing <- function(seuratObject, outPath = '.'){
 
 	#determine whether we expect cell hashing to be used:
 	cDNAs <- labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="tcrdb",
 		queryName="cdnas",
@@ -88,7 +89,7 @@ DownloadAndAppendCellHashing <- function(seuratObject, outPath = '.'){
 	}
 
 	rows <- suppressWarnings(labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="sequenceanalysis",
 		queryName="outputfiles",
@@ -111,7 +112,7 @@ DownloadAndAppendCellHashing <- function(seuratObject, outPath = '.'){
 	if (all(is.null(ret))){
 		print("Trying to find output of type: '10x GEX Cell Hashing Calls'")
 		rows <- suppressWarnings(labkey.selectRows(
-			baseUrl=lkBaseUrl,
+			baseUrl=.getBaseUrl(),
 			folderPath=.getLabKeyDefaultFolder(),
 			schemaName="sequenceanalysis",
 			queryName="outputfiles",
