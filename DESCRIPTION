@@ -1,0 +1,36 @@
+Package: Rdiscvr
+Type: Package
+Title: A Package that provides helper functions to query data in LabKey/DISCVR modules.
+Version: 0.0.1
+Author: Bimber Lab
+Maintainer: The package maintainer <bimber@ohsu.edu>
+Description: The goal of this package is to provide helper functions to aid in querying/accessing data stored in LabKey/DISCVR modules.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Depends:
+    R (>= 4.0.0)
+Imports:
+    Seurat,
+    dplyr,
+    tidyr,
+    naturalsort,
+    Rlabkey,
+    cellhashR,
+    Biostrings
+Suggests:
+    devtools,
+    testthat (>= 2.1.0)
+Remotes:
+    BimberLab/cellhashR
+RoxygenNote: 7.1.1
+URL: https://github.com/BimberLabInternal/Rdiscvr
+BugReports: https://github.com/BimberLabInternal/Rdiscvr/issues
+Collate: 
+    'LabKeySettings.R'
+    'BarcodeComparison.R'
+    'Utils.R'
+    'CellHashing.R'
+    'CiteSeq.R'
+    'SingleCell.R'
+    'TCR.R'

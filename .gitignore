@@ -13,6 +13,7 @@
 
 # Output files from R CMD build
 /*.tar.gz
+/*.zip
 
 # Output files from R CMD check
 /*.Rcheck/
@@ -37,3 +38,9 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# Intellij files
+.idea/*
+.shelf/*
+
+install.bat
