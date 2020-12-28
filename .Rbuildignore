@@ -1,0 +1,9 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.git*
+^\.idea*
+^Rdiscvr.iml$
+^Rdiscvr.*\.tar\.gz$
+^Rdiscvr.*\.zip$
+^\.github$
+.dockerignore

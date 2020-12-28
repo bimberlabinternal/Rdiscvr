@@ -1,3 +1,5 @@
+#' @import utils
+
 #' @title DownloadOutputFile
 #' @description Downloads an output file tracked in LabKey to the local filesystem.
 #' @param outputFileId The rowid of the sequence outputfiles on the webserver
@@ -40,7 +42,7 @@ DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwri
 	}
 
 	rows <- labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="sequenceanalysis",
 		queryName="outputfiles",
@@ -68,10 +70,10 @@ DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwri
 
 	if (asDirectory) {
 		success <- labkey.webdav.downloadFolder(
-			baseUrl=lkBaseUrl,
+			baseUrl=.getBaseUrl(),
 			folderPath=paste0(.getLabKeyDefaultFolder(),wb),
 			remoteFilePath = remotePath,
-			overwrite = overwrite,
+			overwriteFiles = overwrite,
 			localBaseDir = outFile
 		)
 
@@ -80,7 +82,7 @@ DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwri
 		}
 	} else {
 		success <- labkey.webdav.get(
-			baseUrl=lkBaseUrl,
+			baseUrl=.getBaseUrl(),
 			folderPath=paste0(.getLabKeyDefaultFolder(),wb),
 			remoteFilePath = remotePath,
 			overwrite = overwrite,

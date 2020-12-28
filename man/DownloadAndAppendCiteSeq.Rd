@@ -14,7 +14,9 @@ DownloadAndAppendCiteSeq(
 )
 }
 \arguments{
-\item{seuratObj, }{A Seurat object.}
+\item{seuratObj}{A Seurat object.}
+
+\item{outPath}{The filepath where downloaded count data will be written}
 
 \item{assayName}{The name of the assay to store the ADT data.}
 

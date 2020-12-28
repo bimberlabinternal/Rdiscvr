@@ -13,7 +13,6 @@ Depends:
 Imports:
     Seurat,
     dplyr,
-    tidyr,
     naturalsort,
     Rlabkey,
     cellhashR,

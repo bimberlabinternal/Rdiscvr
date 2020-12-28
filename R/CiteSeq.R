@@ -4,7 +4,8 @@
 #' @title DownloadAndAppendCiteSeq
 #'
 #' @description Downloads matching Cite-seq counts using barcodePrefix on the seurat object
-#' @param seuratObj, A Seurat object.
+#' @param seuratObj A Seurat object.
+#' @param outPath The filepath where downloaded count data will be written
 #' @param featureLabelTable An optional TSV file listing the markers and metadata.  It must contain a header row with at least the columns (lowercase): tagname, sequence. If it contains the column markername, this will be used to replace the rownames of the matrix.
 #' @param minRowSum  If provided, any ADTs with a rowSum less than this value will be dropped.
 #' @param adtWhitelist An optional character vector of tag names, which must exactly match the rownames of the ADT count matrix.  If provided, data will be limited to these tags.
@@ -37,7 +38,7 @@ DownloadAndAppendCiteSeq <- function(seuratObj, outPath = '.', assayName = 'ADT'
 			stop(paste0('Unable to download calls table for prefix: ', barcodePrefix, ', expected file: ', countDir))
 		}
 
-		seuratObj <- AppendCiteSeq(seuratObj = seuratObj, countMatrixDir = countDir, barcodePrefix = barcodePrefix, assayName = assayName, featureLabelTable = featureLabelTable, adtWhitelist = adtWhitelist, minRowSum = minRowSum, skipNormalize = T)
+		seuratObj <- celhashR::AppendCiteSeq(seuratObj = seuratObj, countMatrixDir = countDir, barcodePrefix = barcodePrefix, assayName = assayName, featureLabelTable = featureLabelTable, adtWhitelist = adtWhitelist, minRowSum = minRowSum, skipNormalize = T)
 
 		seuratObj <- NormalizeData(seuratObj, assay = assayName, normalization.method = "CLR")
 		seuratObj <- ScaleData(seuratObj, assay = assayName)
@@ -50,7 +51,7 @@ DownloadAndAppendCiteSeq <- function(seuratObj, outPath = '.', assayName = 'ADT'
 
 .DownloadCiteSeqDir <- function(outputFileId, localBaseDir = './', overwriteFiles = T, mergeFolders = F) {
 	rows <- labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="sequenceanalysis",
 		queryName="outputfiles",
@@ -76,7 +77,7 @@ DownloadAndAppendCiteSeq <- function(seuratObj, outPath = '.', assayName = 'ADT'
 	remotePath <- gsub(x = remotePath, pattern = 'matrix.mtx.gz', replacement = '')
 
 	success <- labkey.webdav.downloadFolder(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=paste0(.getLabKeyDefaultFolder(),wb),
 		remoteFilePath = remotePath,
 		overwriteFiles = overwriteFiles,
@@ -95,7 +96,7 @@ DownloadAndAppendCiteSeq <- function(seuratObj, outPath = '.', assayName = 'ADT'
 .FindMatchedCiteSeq <- function(loupeDataId){
 	#Note: the seurat object gets associated with the GEX readset, so look based on this:
 	rows <- labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="sequenceanalysis",
 		queryName="outputfiles",
@@ -123,7 +124,7 @@ DownloadAndAppendCiteSeq <- function(seuratObj, outPath = '.', assayName = 'ADT'
 
 	#determine whether we expect cell hashing to be used:
 	cDNAs <- labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="tcrdb",
 		queryName="cdnas",
@@ -143,7 +144,7 @@ DownloadAndAppendCiteSeq <- function(seuratObj, outPath = '.', assayName = 'ADT'
 	}
 
 	rows <- suppressWarnings(labkey.selectRows(
-		baseUrl=lkBaseUrl,
+		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="sequenceanalysis",
 		queryName="outputfiles",
@@ -167,7 +168,7 @@ DownloadAndAppendCiteSeq <- function(seuratObj, outPath = '.', assayName = 'ADT'
 		print("Trying to find output of type: 'CITE-Seq Count Matrix' using GEX readset")
 
 		rows <- suppressWarnings(labkey.selectRows(
-			baseUrl=lkBaseUrl,
+			baseUrl=.getBaseUrl(),
 			folderPath=.getLabKeyDefaultFolder(),
 			schemaName="sequenceanalysis",
 			queryName="outputfiles",
@@ -194,7 +195,7 @@ DownloadAndAppendCiteSeq <- function(seuratObj, outPath = '.', assayName = 'ADT'
 		citeseqReadset <- unique(cDNAs$citeseqreadsetid)
 
 		rows <- suppressWarnings(labkey.selectRows(
-			baseUrl=lkBaseUrl,
+			baseUrl=.getBaseUrl(),
 			folderPath=.getLabKeyDefaultFolder(),
 			schemaName="sequenceanalysis",
 			queryName="outputfiles",

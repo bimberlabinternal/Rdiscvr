@@ -1,10 +1,17 @@
 #' @include LabKeySettings.R
 #' @import Rlabkey
+#' @import utils
 
 utils::globalVariables(
-	names = c('dataset1', 'type1', 'type2', 'max_intersect', 'max_intersect_by_type'),
+	names = c('dataset1', 'type1', 'type2', 'max_intersect', 'max_intersect_by_type', 'HTO', 'readsetid', 'sortid_hto', 'TRAJ', 'TRBJ', 'TRDJ', 'TRGJ', 'TRAC', 'TRBC', 'TRDC', 'TRGC', 'TRBD', 'TRDD'),
 	package = 'Rdiscvr',
 	add = TRUE
+)
+
+utils::globalVariables(
+names = c('chain', 'cdr3', 'LabelCol', 'barcode', 'ChainCDR3s', 'TRA', 'TRB', 'TRD', 'TRG', 'TRAV', 'TRBV', 'TRDV', 'TRGV', 'CloneName'),
+package = 'Rdiscvr',
+add = TRUE
 )
 
 #' @title CompareCellBarcodeSets
@@ -128,7 +135,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
 
 .GenerateDataToCompareBarcodeSets <- function(workbooks, savePath = './') {
   metrics <- labkey.selectRows(
-    baseUrl=lkBaseUrl,
+    baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="sequenceanalysis",
     queryName="quality_metrics",
@@ -169,7 +176,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     }
 
     cDNAs <- labkey.selectRows(
-      baseUrl=lkBaseUrl,
+      baseUrl=.getBaseUrl(),
       folderPath=paste0(.getLabKeyDefaultFolder(), wb),
       schemaName="tcrdb",
       queryName="cdnas",
@@ -182,7 +189,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     print(paste0('total cDNA records: ', nrow(cDNAs)))
 
     callFiles <- labkey.selectRows(
-      baseUrl=lkBaseUrl,
+      baseUrl=.getBaseUrl(),
       folderPath=paste0(.getLabKeyDefaultFolder(), '/', wb),
       schemaName="sequenceanalysis",
       queryName="outputfiles",
@@ -337,7 +344,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
       print(paste0('file exists, reusing: ', lp))
     } else {
       success <- labkey.webdav.get(
-        baseUrl=lkBaseUrl,
+        baseUrl=.getBaseUrl(),
         folderPath=paste0(.getLabKeyDefaultFolder(), wb),
         remoteFilePath = remotePath,
         overwrite = T,
