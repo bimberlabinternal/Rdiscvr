@@ -3,7 +3,7 @@
 #' @import utils
 
 utils::globalVariables(
-  names = c('sortOrder', 'SampleName', 'SubjectId'),
+  names = c('sortOrder', 'SampleName', 'SubjectId', 'c_gene', 'cdna', 'count', 'd_gene', 'j_gene', 'population', 'raw_clonotype_id', 'raw_consensus_id', 'v_gene'),
   package = 'Rdiscvr',
   add = TRUE
 )
@@ -436,7 +436,9 @@ CalculateTCRFreqForActivatedCells <- function(cDndIds, geneSetName = 'HighlyActi
 
 		seuratObj <- DownloadAndAppendCellHashing(seuratObject = seuratObj)
 		seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
-		seuratObj <- ClassifySGSAndApply(seuratObj = seuratObj, geneSetName = 'Positive', geneList = OOSAP::Phenotyping_GeneList()[[geneSetName]], positivityThreshold = positivityThreshold, reduction = reduction)
+
+		# TODO: refactor this from OOSAP
+		seuratObj <- OOSAP::ClassifySGSAndApply(seuratObj = seuratObj, geneSetName = 'Positive', geneList = OOSAP::Phenotyping_GeneList()[[geneSetName]], positivityThreshold = positivityThreshold, reduction = reduction)
 		if (invert) {
 			print('Selecting cells without the provided signature')
 			barcodeWhitelist <- colnames(seuratObj)[!seuratObj$Positive.Call & !is.na(seuratObj$cDNA_ID)]

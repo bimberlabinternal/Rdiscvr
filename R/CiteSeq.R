@@ -38,7 +38,7 @@ DownloadAndAppendCiteSeq <- function(seuratObj, outPath = '.', assayName = 'ADT'
 			stop(paste0('Unable to download calls table for prefix: ', barcodePrefix, ', expected file: ', countDir))
 		}
 
-		seuratObj <- celhashR::AppendCiteSeq(seuratObj = seuratObj, countMatrixDir = countDir, barcodePrefix = barcodePrefix, assayName = assayName, featureLabelTable = featureLabelTable, adtWhitelist = adtWhitelist, minRowSum = minRowSum, skipNormalize = T)
+		seuratObj <- cellhashR::AppendCiteSeq(seuratObj = seuratObj, countMatrixDir = countDir, barcodePrefix = barcodePrefix, assayName = assayName, featureLabelTable = featureLabelTable, adtWhitelist = adtWhitelist, minRowSum = minRowSum, skipNormalize = T)
 
 		seuratObj <- NormalizeData(seuratObj, assay = assayName, normalization.method = "CLR")
 		seuratObj <- ScaleData(seuratObj, assay = assayName)
