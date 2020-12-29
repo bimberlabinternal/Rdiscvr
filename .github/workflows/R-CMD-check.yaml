@@ -37,7 +37,7 @@ jobs:
 
       # NOTE: this was added due to iGraph install issues
       - name: Install libglpk-dev
-      run: sudo apt-get install libglpk-dev
+        run: sudo apt-get install libglpk-dev
 
       - name: Query dependencies
         run: |
