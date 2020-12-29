@@ -126,9 +126,8 @@ DownloadAndAppendCiteSeq <- function(seuratObj, outPath = '.', assayName = 'ADT'
 	cDNAs <- labkey.selectRows(
 		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
-		schemaName="tcrdb",
-		queryName="cdnas",
-		viewName="",
+		schemaName="singlecell",
+		queryName="cdna_libraries",
 		colSort="-rowid",
 		colFilter = makeFilter(c("readsetId", "EQUALS", readset)),
 		colSelect="rowid,readsetid,citeseqreadsetid",

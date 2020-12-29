@@ -367,8 +367,8 @@ CalculateTCRFreqForActivatedCells <- function(cDndIds, geneSetName = 'HighlyActi
 	rows <- labkey.selectRows(
 		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
-		schemaName="tcrdb",
-		queryName="cdnas",
+		schemaName="singlecell",
+		queryName="cdna_libraries",
 		viewName="",
 		colSort="-rowid",
 		colFilter = makeFilter(c("rowid", "IN", paste0(cDndIds, collapse = ";"))),

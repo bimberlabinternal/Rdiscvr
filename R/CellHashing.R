@@ -71,8 +71,8 @@ DownloadAndAppendCellHashing <- function(seuratObject, outPath = '.'){
 	cDNAs <- labkey.selectRows(
 		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
-		schemaName="tcrdb",
-		queryName="cdnas",
+		schemaName="singlecell",
+		queryName="cdna_libraries",
 		viewName="",
 		colSort="-rowid",
 		colFilter = makeFilter(c("readsetId", "EQUALS", readset)),
