@@ -178,8 +178,8 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     cDNAs <- labkey.selectRows(
       baseUrl=.getBaseUrl(),
       folderPath=paste0(.getLabKeyDefaultFolder(), wb),
-      schemaName="tcrdb",
-      queryName="cdnas",
+      schemaName="singlecell",
+      queryName="cdna_libraries",
       viewName="",
       colSort="-rowid",
       colSelect = 'rowid,readsetid,readsetid/name,hashingreadsetid,enrichedreadsetid,hashingreadsetid/totalforwardReads,readsetid/totalforwardReads,sortId/hto',

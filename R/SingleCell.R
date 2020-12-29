@@ -17,7 +17,7 @@ utils::globalVariables(
 #' @export
 #' @importFrom dplyr %>% group_by_at summarise_at arrange
 QueryAndApplyCdnaMetadata <- function(seuratObj,
-                                      fieldSelect = c('rowid', 'sortid/population', 'sortid/stimid/animalId', 'sortid/stimid/date', 'sortid/stimid/stim', 'sortid/stimid/tissue'),
+                                      fieldSelect = c('rowid', 'sortid/population', 'sortid/sampleid/subjectid', 'sortid/sampleid/sampledate', 'sortid/sampleid/stim', 'sortid/sampleid/tissue'),
                                       fieldNames = c('cDNA_ID', 'Population', 'SubjectId', 'SampleDate', 'Stim', 'Tissue'), overwriteExisting = F) {
   if (length(fieldSelect) != length(fieldNames)) {
     stop('The length of fields must equal the length of fieldNames')
@@ -72,8 +72,8 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
   rows <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
-    schemaName="tcrdb",
-    queryName="cdnas",
+    schemaName="singlecell",
+    queryName="cdna_libraries",
     viewName="",
     colSort="-rowid",
     colFilter = makeFilter(c("readsetId", "IN", paste0(unique(outputFiles$Readset), collapse = ";"))),
