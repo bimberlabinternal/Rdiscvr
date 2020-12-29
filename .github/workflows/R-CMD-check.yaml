@@ -35,6 +35,10 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@v1
 
+      # NOTE: this was added due to iGraph install issues
+      - name: Install libglpk-dev
+      run: sudo apt-get install libglpk-dev
+
       - name: Query dependencies
         run: |
           if (!requireNamespace("BiocManager", quietly=TRUE))  install.packages("BiocManager");
@@ -54,7 +58,7 @@ jobs:
 
       - name: Setup Bioconductor
         run: |
-          install.packages(c('devtools', 'remotes', 'igraph'), dependencies=TRUE, ask = FALSE)
+          install.packages(c('devtools', 'remotes'), dependencies = TRUE, ask = FALSE)
           if (!requireNamespace("BiocManager", quietly=TRUE))  install.packages("BiocManager", dependencies=TRUE, ask = FALSE);
           BiocManager::install(version = "${{ matrix.config.bioc }}", ask = FALSE)
           cat(append = TRUE, file = "~/.Rprofile", "options(repos = BiocManager::repositories());")
