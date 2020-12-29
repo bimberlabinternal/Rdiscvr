@@ -39,7 +39,7 @@ jobs:
         run: |
           if (!requireNamespace("BiocManager", quietly=TRUE))  install.packages("BiocManager");
           BiocManager::install(version = "${{ matrix.config.bioc }}", ask = FALSE);cat(append = TRUE, file = "~/.Rprofile.site", "options(repos = BiocManager::repositories());")
-          install.packages('remotes')
+          install.packages('devtools', 'remotes')
           saveRDS(remotes::dev_package_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
           writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
         shell: Rscript {0}
@@ -54,7 +54,7 @@ jobs:
 
       - name: Setup Bioconductor
         run: |
-          install.packages(c('devtools', 'remotes'), dependencies=TRUE, ask = FALSE)
+          install.packages(c('devtools', 'remotes', 'igraph'), dependencies=TRUE, ask = FALSE)
           if (!requireNamespace("BiocManager", quietly=TRUE))  install.packages("BiocManager", dependencies=TRUE, ask = FALSE);
           BiocManager::install(version = "${{ matrix.config.bioc }}", ask = FALSE)
           cat(append = TRUE, file = "~/.Rprofile", "options(repos = BiocManager::repositories());")
