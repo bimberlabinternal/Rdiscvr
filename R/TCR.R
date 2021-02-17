@@ -119,7 +119,7 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = '.', dropExis
 		queryName="outputfiles",
 		viewName="",
 		colSort="-rowid",
-		colSelect="readset/cdna/enrichedReadsetId",
+		colSelect="readset/cdna/tcrReadsetId",
 		colFilter=makeFilter(c("rowid", "EQUAL", loupeDataId)),
 		containerFilter=NULL,
 		colNameOpt="rname"
@@ -129,7 +129,7 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = '.', dropExis
     return(NA)
   }
 
-  tcrReadsetId <- rows[['readset_cdna_enrichedreadsetid']]
+  tcrReadsetId <- rows[['readset_cdna_tcrreadsetid']]
   if (is.na(tcrReadsetId) || is.null(tcrReadsetId)) {
     return(NA)
   }
@@ -372,7 +372,7 @@ CalculateTCRFreqForActivatedCells <- function(cDndIds, geneSetName = 'HighlyActi
 		viewName="",
 		colSort="-rowid",
 		colFilter = makeFilter(c("rowid", "IN", paste0(cDndIds, collapse = ";"))),
-		colSelect="rowid,readsetid,enrichedreadsetid,hashingreadsetid",
+		colSelect="rowid,readsetid,tcrreadsetid,hashingreadsetid",
 		containerFilter=NULL,
 		colNameOpt="rname"
 	)

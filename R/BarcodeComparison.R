@@ -182,7 +182,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
       queryName="cdna_libraries",
       viewName="",
       colSort="-rowid",
-      colSelect = 'rowid,readsetid,readsetid/name,hashingreadsetid,enrichedreadsetid,hashingreadsetid/totalforwardReads,readsetid/totalforwardReads,sortId/hto',
+      colSelect = 'rowid,readsetid,readsetid/name,hashingreadsetid,tcrreadsetid,hashingreadsetid/totalforwardReads,readsetid/totalforwardReads,sortId/hto',
       containerFilter=NULL,
       colNameOpt="rname"
     )
@@ -227,15 +227,15 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
         toAdd$HTO_Singlet <- NA
       }
       toAdd <- .AppendMetrics(row, toAdd, metrics, 'GEX', 'readsetid')
-      toAdd <- .AppendMetrics(row, toAdd, metrics, 'TCR', 'enrichedreadsetid')
+      toAdd <- .AppendMetrics(row, toAdd, metrics, 'TCR', 'tcrreadsetid')
 
       #call files:
       toAdd <- .DownloadCallFile(wb, callFiles, row[['readsetid']], toAdd, 'GEX_WhitelistFile', savePath, T)
-      toAdd <- .DownloadCallFile(wb, callFiles, row[['enrichedreadsetid']], toAdd, 'TCR_WhitelistFile', savePath, T)
+      toAdd <- .DownloadCallFile(wb, callFiles, row[['tcrreadsetid']], toAdd, 'TCR_WhitelistFile', savePath, T)
       toAdd <- .DownloadCallFile(wb, callFiles, row[['hashingreadsetid']], toAdd, 'HTO_Top_BarcodesFile', savePath, F)
 
       toAdd <- .DownloadCallFile(wb, callFiles, row[['readsetid']], toAdd, 'GEX_CallsFile', savePath, F)
-      toAdd <- .DownloadCallFile(wb, callFiles, row[['enrichedreadsetid']], toAdd, 'TCR_CallsFile', savePath, F)
+      toAdd <- .DownloadCallFile(wb, callFiles, row[['tcrreadsetid']], toAdd, 'TCR_CallsFile', savePath, F)
 
       #now merge HTOs:
       toAdd <- merge(toAdd, htoSummary, by.x = c('GEX_ReadsetId'), by.y = c('readsetid'), all.x = T)
