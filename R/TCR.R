@@ -218,16 +218,16 @@ utils::globalVariables(
 
   #Download named clonotypes and merge:
   # Add clone names:
-  labelDf <- labkey.selectRows(
-  baseUrl=.getBaseUrl(),
-  folderPath=.getLabKeyDefaultFolder(),
-  schemaName="tcrdb",
-  queryName="clones",
-  showHidden=TRUE,
-  colSelect=c('clonename','chain','cdr3','displayname'),
-  containerFilter=NULL,
-  colNameOpt='rname'
-  )
+  labelDf <- suppressWarnings(labkey.selectRows(
+		baseUrl=.getBaseUrl(),
+		folderPath=.getLabKeyDefaultFolder(),
+		schemaName="tcrdb",
+		queryName="clones",
+		showHidden=TRUE,
+		colSelect=c('clonename','chain','cdr3','displayname'),
+		containerFilter=NULL,
+		colNameOpt='rname'
+  ))
 
   labelDf$LabelCol <- coalesce(as.character(labelDf$displayname), as.character(labelDf$clonename))
 
