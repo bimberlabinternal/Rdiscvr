@@ -17,8 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: ubuntu-20.04, osversion: '20.04', r: '4.1', bioc: 'devel', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest", cont: "bioconductor/bioconductor_docker:devel"}
-          - {os: ubuntu-20.04, osversion: '20.04', r: '4.0', bioc: '3.12', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest", cont: "bioconductor/bioconductor_docker:RELEASE_3_12"}
+          - { os: ubuntu-20.04, r: '4.1', bioc: 'devel', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest" }
+          - { os: ubuntu-20.04, r: 'release', bioc: '3.13', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest" }
+          - { os: ubuntu-20.04, r: '4.0', bioc: '3.12', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest", pkgdown: "true" }
 
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
@@ -39,6 +40,16 @@ jobs:
       - name: Install libglpk-dev
         run: sudo apt-get install libglpk-dev
 
+      # Note: the environment variable R_BIOC_VERSION is set to force remotes::install_bioc to follow the proper version
+      - name: Setup Bioconductor
+        run: |
+          install.packages('devtools')
+          if (!requireNamespace("BiocManager", quietly=TRUE))  install.packages("BiocManager");
+          BiocManager::install(version = "${{ matrix.config.bioc }}", ask = FALSE);
+          cat(append = TRUE, file = "~/.Rprofile", "options(repos = BiocManager::repositories());")
+          cat(append = TRUE, file = "~/.Rprofile", "Sys.setenv(R_BIOC_VERSION=as.character(BiocManager::version()));");
+        shell: Rscript {0}
+
       - name: Query dependencies
         run: |
           if (!requireNamespace("BiocManager", quietly=TRUE))  install.packages("BiocManager");
@@ -54,15 +65,7 @@ jobs:
         with:
           path: ${{ env.R_LIBS_USER }}
           key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-${{ matrix.config.bioc }}-1-${{ hashFiles('.github/depends.Rds') }}
-          restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-${{ matrix.config.bioc }}-1-
-
-      - name: Setup Bioconductor
-        run: |
-          install.packages(c('devtools', 'remotes'), dependencies = TRUE, ask = FALSE)
-          if (!requireNamespace("BiocManager", quietly=TRUE))  install.packages("BiocManager", dependencies=TRUE, ask = FALSE);
-          BiocManager::install(version = "${{ matrix.config.bioc }}", ask = FALSE)
-          cat(append = TRUE, file = "~/.Rprofile", "options(repos = BiocManager::repositories());")
-        shell: Rscript {0}
+          restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-${{ matrix.config.bioc }}-${{ secrets.CACHE_VERSION || 1 }}-
 
       - name: Install system dependencies
         if: runner.os == 'Linux'
@@ -70,7 +73,18 @@ jobs:
           while read -r cmd
           do
             eval sudo $cmd
-          done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "{{ matrix.config.osversion }}"))')
+          done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
+
+      # NOTE: this is a temporary fix to manually install a patched remotes to allow it to properly install bioconductor-devel packages
+      - name: Install Custom Remotes
+        if: matrix.config.bioc == 'devel'
+        run: |
+          git clone -b git_head https://github.com/bbimber/remotes.git
+          cd remotes
+          R CMD build --no-build-vignettes .
+          R CMD INSTALL --build remotes_2.3.0.9000.tar.gz
+          cd ../
+          rm -Rf remotes
 
       - name: Install dependencies
         run: |
