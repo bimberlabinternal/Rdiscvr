@@ -143,3 +143,118 @@ DownloadAndAppendCellHashing <- function(seuratObject, outPath = '.'){
 		return(ret$rowid[1])
 	}
 }
+
+#' @title DownloadRawHashingDataForLoupeFile
+#' @description Downloads the raw_feature_bc_matrix folder for cell hashing data associated with the provided Loupe file (based on the cdna_libraries table)
+#' @param loupeDataId The outputfile Id of the loupe file
+#' @param outFile The local path to write this file. The data will be written to a subfolder named raw_feature_bc_matrix (or filtered_feature_bc_matrix if countType=filtered_feature_bc_matrix)
+#' @param overwrite If true, any pre-existing local copy will be replaced.
+#' @param countType Either raw_feature_bc_matrix or filtered_feature_bc_matrix
+#' @export
+#'
+#' @import Rlabkey
+DownloadRawHashingDataForLoupeFile <- function(loupeDataId, outFile, overwrite = T, countType = 'raw_feature_bc_matrix') {
+	return(.DownloadRawHashingOrCiteSeqDataForLoupeFile(loupeDataId = loupeDataId, outFile = outFile, category = 'Cell Hashing Counts',
+		targetField = 'hashingreadsetid', overwrite = overwrite, countType = countType))
+}
+
+#' @title DownloadCiteSeqDataForLoupeFile
+#' @description Downloads the raw_feature_bc_matrix folder for cite-seq data associated with the provided Loupe file (based on the cdna_libraries table)
+#' @param loupeDataId The outputfile Id of the loupe file
+#' @param outFile The local path to write this file. The data will be written to a subfolder named raw_feature_bc_matrix (or filtered_feature_bc_matrix if countType=filtered_feature_bc_matrix)
+#' @param overwrite If true, any pre-existing local copy will be replaced.
+#' @param countType Either raw_feature_bc_matrix or filtered_feature_bc_matrix
+#' @export
+#'
+#' @import Rlabkey
+DownloadCiteSeqDataForLoupeFile <- function(loupeDataId, outFile, overwrite = T, countType = 'raw_feature_bc_matrix') {
+	return(.DownloadRawHashingOrCiteSeqDataForLoupeFile(loupeDataId = loupeDataId, outFile = outFile, category = 'CITE-seq Counts',
+														targetField = 'citeseqreadsetid', overwrite = overwrite, countType = countType))
+}
+
+
+.DownloadRawHashingOrCiteSeqDataForLoupeFile <- function(loupeDataId, outFile, category, targetField, overwrite = T, countType = 'raw_feature_bc_matrix') {
+	# Find readsetId of hashing data:
+	rows <- labkey.selectRows(
+		baseUrl=.getBaseUrl(),
+		folderPath=.getLabKeyDefaultFolder(),
+		schemaName="sequenceanalysis",
+		queryName="outputfiles",
+		viewName="",
+		colSort="-rowid",
+		colSelect="readset,library_id",
+		colFilter=makeFilter(c("rowid", "EQUAL", loupeDataId)),
+		containerFilter=NULL,
+		colNameOpt="rname"
+	)
+
+	if (nrow(rows) == 0) {
+		print(paste0("Loupe File ID: ", loupeDataId, " not found"))
+		return(NA)
+	}
+
+	readset <- unique(rows[['readset']])
+
+	if (is.na(readset) || is.null(readset)) {
+		stop("Readset is NA/NULL for loupe file")
+	}
+
+	cDNAs <- labkey.selectRows(
+		baseUrl=.getBaseUrl(),
+		folderPath=.getLabKeyDefaultFolder(),
+		schemaName="singlecell",
+		queryName="cdna_libraries",
+		viewName="",
+		colSort="-rowid",
+		colFilter = makeFilter(c("readsetId", "EQUALS", readset)),
+		colSelect=paste0("rowid,readsetid,", targetField),
+		containerFilter=NULL,
+		colNameOpt="rname"
+	)
+
+	if (nrow(cDNAs) == 0) {
+		stop(paste0('No cDNA records found for GEX readset: ', readset))
+	}
+
+	targetReadset <- unique(cDNAs[[targetField]])
+
+	rows <- suppressWarnings(labkey.selectRows(
+		baseUrl=.getBaseUrl(),
+		folderPath=.getLabKeyDefaultFolder(),
+		schemaName="sequenceanalysis",
+		queryName="outputfiles",
+		colSort="-rowid",
+		colSelect="rowid",
+		colFilter=makeFilter(c("readset", "EQUAL", targetReadset), c("category", "EQUAL", category)),
+		containerFilter=NULL,
+		colNameOpt="rname"
+	))
+
+	if (nrow(rows) == 0) {
+		stop(paste0('No outputs of type ', category, ' found for readset: ', targetReadset))
+	}
+
+	targetOutputId <- unique(rows$rowid)
+
+	if (!dir.exists(outFile)) {
+		print('Creating output folder')
+		dir.create(outFile)
+	}
+
+	if (substr(outFile, nchar(outFile), nchar(outFile)) != '/'){
+		outFile <- paste0(outFile, '/')
+	}
+
+	expectedDir <- paste0(outFile, '/', countType)
+	if (!overwrite && dir.exists(outFile)) {
+		print('File exists, will not overwrite')
+		return(outFile)
+	} else if (overwrite && dir.exists(outFile)) {
+		print('File exists, deleting')
+		unlink(expectedDir, recursive = T)
+	}
+
+	return(DownloadOutputDirectoryFromOutputFile(outputFileId = targetOutputId, outFile = outFile, overwrite = overwrite, pathTranslator = function(x){
+		return(paste0(dirname(dirname(x)), '/', countType))
+	}))
+}
