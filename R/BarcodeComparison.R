@@ -136,8 +136,8 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
 
 .GenerateDataToCompareBarcodeSets <- function(workbooks, savePath = './') {
   metrics <- labkey.selectRows(
-    baseUrl=Rdiscvr:::.getBaseUrl(),
-    folderPath=Rdiscvr:::.getLabKeyDefaultFolder(),
+    baseUrl=.getBaseUrl(),
+    folderPath=.getLabKeyDefaultFolder(),
     schemaName="sequenceanalysis",
     queryName="quality_metrics",
     viewName="",
@@ -177,8 +177,8 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     }
 
     cDNAs <- labkey.selectRows(
-      baseUrl=Rdiscvr:::.getBaseUrl(),
-      folderPath=paste0(Rdiscvr:::.getLabKeyDefaultFolder(), wb),
+      baseUrl=.getBaseUrl(),
+      folderPath=paste0(.getLabKeyDefaultFolder(), wb),
       schemaName="singlecell",
       queryName="cdna_libraries",
       viewName="",
@@ -190,8 +190,8 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     print(paste0('total cDNA records: ', nrow(cDNAs)))
 
     callFiles <- labkey.selectRows(
-      baseUrl=Rdiscvr:::.getBaseUrl(),
-      folderPath=paste0(Rdiscvr:::.getLabKeyDefaultFolder(), '/', wb),
+      baseUrl=.getBaseUrl(),
+      folderPath=paste0(.getLabKeyDefaultFolder(), '/', wb),
       schemaName="sequenceanalysis",
       queryName="outputfiles",
       viewName="",
@@ -227,15 +227,15 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
       } else {
         toAdd$HTO_Singlet <- NA
       }
-      toAdd <- Rdiscvr:::.AppendMetrics(row, toAdd, metrics, 'GEX', 'readsetid')
-      toAdd <- Rdiscvr:::.AppendMetrics(row, toAdd, metrics, 'TCR', 'tcrreadsetid')
+      toAdd <- .AppendMetrics(row, toAdd, metrics, 'GEX', 'readsetid')
+      toAdd <- .AppendMetrics(row, toAdd, metrics, 'TCR', 'tcrreadsetid')
 
       htos <- unique(htoSummary$ExpectedHTOs[htoSummary$readsetid == row[['readsetid']]])
       toAdd <- .DownloadRawCountFile(wb, callFiles, row[['hashingreadsetid']], toAdd, 'HTO_Top_BarcodesFile', savePath, category = 'Cell Hashing Counts', barcodeWhitelist = unlist(strsplit(htos, split = ',')))
       toAdd <- .DownloadRawCountFile(wb, callFiles, row[['citeseqreadsetid']], toAdd, 'CITESEQ_Top_BarcodesFile', savePath, category = 'CITE-seq Counts')
 
-      toAdd <- Rdiscvr:::.DownloadCallFile(wb, callFiles, row[['readsetid']], toAdd, 'GEX_CallsFile', savePath, category = 'Cell Hashing Calls')
-      toAdd <- Rdiscvr:::.DownloadCallFile(wb, callFiles, row[['tcrreadsetid']], toAdd, 'TCR_CallsFile', savePath, category = 'Cell Hashing Calls (VDJ)')
+      toAdd <- .DownloadCallFile(wb, callFiles, row[['readsetid']], toAdd, 'GEX_CallsFile', savePath, category = 'Cell Hashing Calls')
+      toAdd <- .DownloadCallFile(wb, callFiles, row[['tcrreadsetid']], toAdd, 'TCR_CallsFile', savePath, category = 'Cell Hashing Calls (VDJ)')
 
       #now merge HTOs:
       toAdd <- merge(toAdd, htoSummary, by.x = c('GEX_ReadsetId'), by.y = c('readsetid'), all.x = T)
@@ -356,7 +356,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     })
     sortedMat <- sort(sortedMat, decreasing = T)
     
-    write.table(data.frame(cellbarcode = names(sortedMat), count = unname(sortedMat)), file = outFile, sep = '\t', row.names = F)
+    write.table(data.frame(cellbarcode = names(sortedMat), count = unname(sortedMat)), file = outFile, sep = '\t', row.names = F, quote = F)
     
     toAdd[fieldName] <- outFile
   } else {
@@ -393,8 +393,8 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
       print(paste0('file exists, reusing: ', lp))
     } else {
       success <- labkey.webdav.get(
-        baseUrl=Rdiscvr:::.getBaseUrl(),
-        folderPath=paste0(Rdiscvr:::.getLabKeyDefaultFolder(), wb),
+        baseUrl=.getBaseUrl(),
+        folderPath=paste0(.getLabKeyDefaultFolder(), wb),
         remoteFilePath = remotePath,
         overwrite = T,
         localFilePath = lp
