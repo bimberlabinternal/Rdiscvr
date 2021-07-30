@@ -183,7 +183,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
       queryName="cdna_libraries",
       viewName="",
       colSort="-rowid",
-      colSelect = 'rowid,readsetid,readsetid/name,hashingreadsetid,tcrreadsetid,citeseqreadsetid,hashingreadsetid/totalforwardReads,readsetid/totalforwardReads,sortId/hto,citeseqreadsetid/totalforwardReads',
+      colSelect = 'rowid,plateid,readsetid,readsetid/name,hashingreadsetid,tcrreadsetid,citeseqreadsetid,hashingreadsetid/totalforwardReads,readsetid/totalforwardReads,sortId/hto,citeseqreadsetid/totalforwardReads',
       containerFilter=NULL,
       colNameOpt="rname"
     )
@@ -206,6 +206,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     uniqueRs <- c()
     for (i in 1:nrow(cDNAs)) {
       row <- cDNAs[i,]
+      print(paste0('processing: ', row$plateid))
       if (row$readsetid %in% uniqueRs) {
         next
       }
@@ -347,7 +348,11 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     }
     
     # Read dir, find top barcodes, save to file:
-    mat <- as.matrix(cellhashR::ProcessCountMatrix(rawCountData = expectedDir, barcodeWhitelist = barcodeWhitelist))
+    mat <- Seurat::Read10X(rawCountData, gene.column=1, strip.suffix = TRUE)
+    mat <- as.matrix(mat)
+    if (!is.null(barcodeWhitelist)) {
+      mat <- mat[barcodeWhitelist,]
+    }
 
     sortedMat <- colSums(mat)
     names(sortedMat) <- sapply(colnames(mat), function(x){
