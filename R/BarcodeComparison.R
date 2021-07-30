@@ -204,6 +204,11 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
 
     htoSummary <- cDNAs %>% group_by(readsetid) %>% summarise(ExpectedHTOs = paste0(sort(unique(sortid_hto)), collapse = ","))
     uniqueRs <- c()
+
+    cDNAs <- cDNAs[names(cDNAs) != 'sortid_hto']
+    cDNAs <- unique(cDNAs)
+    print(paste0('unique cDNAs after collapse: ', nrow(cDNAs)))
+
     for (i in 1:nrow(cDNAs)) {
       row <- cDNAs[i,]
       print(paste0('processing: ', row$plateid))
@@ -348,17 +353,14 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     }
     
     # Read dir, find top barcodes, save to file:
-    mat <- Seurat::Read10X(rawCountData, gene.column=1, strip.suffix = TRUE)
+    mat <- Seurat::Read10X(expectedDir, gene.column=1, strip.suffix = TRUE)
     mat <- as.matrix(mat)
     if (!is.null(barcodeWhitelist)) {
       mat <- mat[barcodeWhitelist,]
     }
 
     sortedMat <- colSums(mat)
-    names(sortedMat) <- sapply(colnames(mat), function(x){
-      x <- unlist(strsplit(x, split = '-'))[1]
-      return(x)
-    })
+    names(sortedMat) <- colnames(mat)
     sortedMat <- sort(sortedMat, decreasing = T)
     
     write.table(data.frame(cellbarcode = names(sortedMat), count = unname(sortedMat)), file = outFile, sep = '\t', row.names = F, quote = F)
