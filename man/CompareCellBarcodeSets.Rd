@@ -4,7 +4,7 @@
 \alias{CompareCellBarcodeSets}
 \title{CompareCellBarcodeSets}
 \usage{
-CompareCellBarcodeSets(workbooks, savePath = "./")
+CompareCellBarcodeSets(workbooks, savePath = ".")
 }
 \arguments{
 \item{workbooks}{A vector of workbook IDs}

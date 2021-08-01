@@ -21,10 +21,11 @@ add = TRUE
 #' @param savePath The folder path to use for saving output files
 #' @export
 #' @importFrom dplyr %>% mutate group_by
-CompareCellBarcodeSets <- function(workbooks, savePath = './') {
+CompareCellBarcodeSets <- function(workbooks, savePath = '.') {
   summary <- .GenerateDataToCompareBarcodeSets(workbooks, savePath)
 
   htoBC <- list()
+  htoBC_All <- list()
   gexBC <- list()
   tcrBC <- list()
   citeBC <- list()
@@ -36,6 +37,9 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     if (!is.na(row$HTO_Top_BarcodesFile) & !is.na(row$GEX_CallsFile) & !is.na(row$TCR_CallsFile)){
       bc <- read.table(row$HTO_Top_BarcodesFile, header = T, sep = '\t')
       htoBC[[name]] <- bc$cellbarcode
+
+      bc <- read.table(row$HTO_Top_BarcodesFile_All, header = T, sep = '\t')
+      htoBC_All[[name]] <- bc$cellbarcode
 
       bc <- read.table(row$GEX_CallsFile, header = T, sep = '\t')$cellbarcode
       gexBC[[name]] <- bc
@@ -57,18 +61,30 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
         print('TCR missing')
       }
     }
+
+    if (!is.na(row$CITE_Top_BarcodesFile)) {
+      print('processing CITE-seq')
+      bc <- read.table(row$CITE_Top_BarcodesFile, header = T, sep = '\t')
+      citeBC[[name]] <- bc$cellbarcode
+    }
   }
 
   df <- data.frame(dataset1 = character(), type1 = character(), dataset2 = character(), type2 = character(), intersect = integer(), length1 = integer(), length2 = integer())
 
-  df <- .ProcessSet(df, htoBC[1:length(gexBC)], gexBC, 'HTO', 'GEX')
-  df <- .ProcessSet(df, htoBC[1:length(tcrBC)], tcrBC, 'HTO', 'TCR')
+  df <- .ProcessSet(df, htoBC, gexBC, 'HTO', 'GEX')
+  df <- .ProcessSet(df, htoBC, tcrBC, 'HTO', 'TCR')
+  df <- .ProcessSet(df, htoBC, tcrBC, 'HTO', 'CITE')
 
-  df <- .ProcessSet(df, gexBC, htoBC[1:length(gexBC)], 'GEX', 'HTO')
+  df <- .ProcessSet(df, htoBC_All, gexBC, 'HTO-All', 'GEX')
+  df <- .ProcessSet(df, htoBC_All, tcrBC, 'HTO-All', 'TCR')
+
+  df <- .ProcessSet(df, gexBC, htoBC, 'GEX', 'HTO')
   df <- .ProcessSet(df, gexBC, tcrBC, 'GEX', 'TCR')
+  df <- .ProcessSet(df, gexBC, tcrBC, 'GEX', 'CITE')
 
-  df <- .ProcessSet(df, tcrBC, htoBC[1:length(tcrBC)], 'TCR', 'HTO')
+  df <- .ProcessSet(df, tcrBC, htoBC, 'TCR', 'HTO')
   df <- .ProcessSet(df, tcrBC, gexBC, 'TCR', 'GEX')
+  df <- .ProcessSet(df, tcrBC, gexBC, 'TCR', 'CITE')
 
   df$fraction <- df$intersect / df$length1
   df <- df[order(df$dataset1, df$type1, df$type2, -df$intersect),]
@@ -89,52 +105,52 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
   df3 <- df3[df3$intersect != df3$self_intersect,]
   write.table(df3, file = file.path(savePath, 'conflicting_intersect.txt'), sep = '\t', row.names = F, quote = F)
 
-  #Now look for instances where the raw HTO calls find more HTOs than either TCR or GEX
-  dfSummary <- NA
-  for (i in 1:nrow(summary)) {
-    row <- summary[i,]
-    name <- as.character(row$Name)
-
-    if (is.na(row$HTO_Top_BarcodesFile)){
-      print(paste0('No HTO call file for: ', name))
-      next
-    }
-
-    df <- data.frame(HTO = character(), Type = character(), Count.HTO = integer(), Fraction.HTO = numeric(), Count.Compare = integer(), Fraction.Compare = numeric(), Difference = numeric())
-    #GEX:
-    dfG <- .CompareHtosByCall(name, row$HTO_Top_BarcodesFile, row$GEX_CallsFile, 'GEX')
-    if (!all(is.na(dfG))){
-      df <- rbind(df, dfG)
-    }
-
-    #TCR
-    dfT <- .CompareHtosByCall(name, row$HTO_Top_BarcodesFile, row$TCR_CallsFile, 'TCR')
-    if (!all(is.na(dfT))){
-      df <- rbind(df, dfT)
-    }
-
-    if (all(is.na(dfSummary))) {
-      dfSummary <- df
-    } else {
-      dfSummary <- rbind(dfSummary, df)
-    }
-  }
-
-  dfSummary <- merge(dfSummary, summary[c('Name', 'ExpectedHTOs')], all.x = T, by.x = c('Dataset'), by.y = c('Name'))
-  dfSummary$Unexpected <- apply(dfSummary, 1, function(r){
-    htos <- unlist(strsplit(r['ExpectedHTOs'], ','))
-
-    return(!(r['HTO'] %in% htos))
-  })
-
-
-  write.table(dfSummary, file = file.path(savePath, paste0('htoCompare.txt')), sep = '\t', row.names = F, quote = F)
-  write.table(dfSummary[dfSummary$Unexpected & dfSummary$Fraction.HTO > 0.025,], file = file.path(savePath, paste0('UnexpectedHTOs.txt')), sep = '\t', row.names = F, quote = F)
-
-  return(dfSummary)
+  # #Now look for instances where the raw HTO calls find more HTOs than either TCR or GEX
+  # dfSummary <- NA
+  # for (i in 1:nrow(summary)) {
+  #   row <- summary[i,]
+  #   name <- as.character(row$Name)
+  #
+  #   if (is.na(row$HTO_Top_BarcodesFile)){
+  #     print(paste0('No HTO call file for: ', name))
+  #     next
+  #   }
+  #
+  #   df <- data.frame(HTO = character(), Type = character(), Count.HTO = integer(), Fraction.HTO = numeric(), Count.Compare = integer(), Fraction.Compare = numeric(), Difference = numeric())
+  #   #GEX:
+  #   dfG <- .CompareHtosByCall(name, row$HTO_Top_BarcodesFile, row$GEX_CallsFile, 'GEX')
+  #   if (!all(is.na(dfG))){
+  #     df <- rbind(df, dfG)
+  #   }
+  #
+  #   #TCR
+  #   dfT <- .CompareHtosByCall(name, row$HTO_Top_BarcodesFile, row$TCR_CallsFile, 'TCR')
+  #   if (!all(is.na(dfT))){
+  #     df <- rbind(df, dfT)
+  #   }
+  #
+  #   if (all(is.na(dfSummary))) {
+  #     dfSummary <- df
+  #   } else {
+  #     dfSummary <- rbind(dfSummary, df)
+  #   }
+  # }
+  #
+  # dfSummary <- merge(dfSummary, summary[c('Name', 'ExpectedHTOs')], all.x = T, by.x = c('Dataset'), by.y = c('Name'))
+  # dfSummary$Unexpected <- apply(dfSummary, 1, function(r){
+  #   htos <- unlist(strsplit(r['ExpectedHTOs'], ','))
+  #
+  #   return(!(r['HTO'] %in% htos))
+  # })
+  #
+  #
+  # write.table(dfSummary, file = file.path(savePath, paste0('htoCompare.txt')), sep = '\t', row.names = F, quote = F)
+  # write.table(dfSummary[dfSummary$Unexpected & dfSummary$Fraction.HTO > 0.025,], file = file.path(savePath, paste0('UnexpectedHTOs.txt')), sep = '\t', row.names = F, quote = F)
+  #
+  # return(dfSummary)
 }
 
-.GenerateDataToCompareBarcodeSets <- function(workbooks, savePath = './') {
+.GenerateDataToCompareBarcodeSets <- function(workbooks, savePath = '.') {
   metrics <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
@@ -163,6 +179,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     TCR_InputBarcodes = numeric(),
     TCR_TotalCalledNotInInput = numeric(),
     HTO_Top_BarcodesFile = character(),
+    HTO_Top_BarcodesFile_All = character(),
     CITE_Top_BarcodesFile = character(),
     GEX_CallsFile = character(),
     TCR_CallsFile = character(),
@@ -183,7 +200,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
       queryName="cdna_libraries",
       viewName="",
       colSort="-rowid",
-      colSelect = 'rowid,plateid,readsetid,readsetid/name,hashingreadsetid,tcrreadsetid,citeseqreadsetid,hashingreadsetid/totalforwardReads,readsetid/totalforwardReads,sortId/hto,citeseqreadsetid/totalforwardReads',
+      colSelect = 'plateid,readsetid,readsetid/name,hashingreadsetid,tcrreadsetid,citeseqreadsetid,hashingreadsetid/totalforwardReads,readsetid/totalforwardReads,sortId/hto,citeseqreadsetid/totalforwardReads',
       containerFilter=NULL,
       colNameOpt="rname"
     )
@@ -197,7 +214,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
       viewName="",
       colSort="-rowid",
       colSelect="rowid,name,description,readset,readset/name,category,dataid/RowId,workbook,dataid/WebDavUrlRelative,dataid/WebDavUrlRelative,created",
-      colFilter=makeFilter(c("category", "IN", "Cell Hashing Calls (VDJ);Seurat Cell Hashing Calls;Cell Hashing Counts;CITE-seq Counts")),
+      colFilter=makeFilter(c("category", "IN", "Cell Hashing Calls (VDJ);Seurat Cell Hashing Calls;Cell Hashing Counts;CITE-seq Counts;Seurat Data")),
       containerFilter=NULL,
       colNameOpt="rname"
     )
@@ -238,9 +255,15 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
 
       htos <- unique(htoSummary$ExpectedHTOs[htoSummary$readsetid == row[['readsetid']]])
       toAdd <- .DownloadRawCountFile(wb, callFiles, row[['hashingreadsetid']], toAdd, 'HTO_Top_BarcodesFile', savePath, category = 'Cell Hashing Counts', barcodeWhitelist = unlist(strsplit(htos, split = ',')))
-      toAdd <- .DownloadRawCountFile(wb, callFiles, row[['citeseqreadsetid']], toAdd, 'CITESEQ_Top_BarcodesFile', savePath, category = 'CITE-seq Counts')
+      toAdd <- .DownloadRawCountFile(wb, callFiles, row[['hashingreadsetid']], toAdd, 'HTO_Top_BarcodesFile_All', savePath, category = 'Cell Hashing Counts')
+      toAdd <- .DownloadRawCountFile(wb, callFiles, row[['citeseqreadsetid']], toAdd, 'CITE_Top_BarcodesFile', savePath, category = 'CITE-seq Counts')
 
-      toAdd <- .DownloadCallFile(wb, callFiles, row[['readsetid']], toAdd, 'GEX_CallsFile', savePath, category = 'Cell Hashing Calls')
+      toAdd <- .DownloadCallFile(wb, callFiles, row[['readsetid']], toAdd, 'GEX_CallsFile', savePath, category = 'Seurat Cell Hashing Calls')
+      if (is.na(toAdd$GEX_CallsFile)) {
+        print('Downloading GEX barcodes from seurat object')
+        .DownloadBarcodesForSeurat(wb, callFiles, row[['readsetid']], toAdd, 'GEX_CallsFile', savePath, category = 'Seurat Data')
+      }
+
       toAdd <- .DownloadCallFile(wb, callFiles, row[['tcrreadsetid']], toAdd, 'TCR_CallsFile', savePath, category = 'Cell Hashing Calls (VDJ)')
 
       #now merge HTOs:
@@ -273,9 +296,22 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
 .ProcessSet <- function(df, set1, set2, type1, type2) {
   for (name1 in names(set1)) {
     h <- set1[[name1]]
+    if (is.na(h)) {
+      next
+    }
 
     for (name2 in names(set2)) {
       g <- set2[[name2]]
+      if (is.na(g)) {
+        next
+      }
+
+      if ('HTO' == type1) {
+        h <- h[1:length(g)]
+      } else if ('HTO' == type2) {
+        g <- g[1:length(h)]
+      }
+
       i <- length(intersect(h, g))
 
       df <- rbind(df, data.frame(dataset1 = name1, type1 = type1, dataset2 = name2, type2 = type2, intersect = i, length1 = length(h), length2 = length(g)))
@@ -292,6 +328,8 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
   }
 
   t1 <- read.table(htoCallFile, header = T, sep = '\t')
+  t1$HTO <- t1$consensuscall
+
   t1 <- t1 %>% group_by(HTO) %>% summarise(Count = dplyr::n())
   t1 <- t1[!(t1$HTO %in% c('Doublet', 'Negative', 'Discordant')),]
   t1$Fraction <- t1$Count / sum(t1$Count)
@@ -328,7 +366,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
   #use the most recent (highest rowId)
   if (nrow(cf) > 0) {
     row <- cf[cf$rowid == max(cf$rowid),]
-    
+
     suffix <- '.rawCountDir'
 
     fn <- paste0(row['readset_name'], '.', row['readset'], '.', row['rowid'], '.', row$category, suffix)
@@ -343,7 +381,13 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     }
     
     expectedDir <- paste0(lp, '/raw_feature_bc_matrix')
-    outFile <- paste0(lp, '/countsPerCell.txt')
+
+    if (all(is.null(barcodeWhitelist))) {
+      outFile <- paste0(lp, '/countsPerCell.all.txt')
+    } else {
+      outFile <- paste0(lp, '/countsPerCell.subset.txt')
+    }
+
     if (file.exists(outFile)) {
       print(paste0('file exists, reusing: ', outFile))
     } else {
@@ -356,10 +400,17 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     mat <- Seurat::Read10X(expectedDir, gene.column=1, strip.suffix = TRUE)
     mat <- as.matrix(mat)
     if (!is.null(barcodeWhitelist)) {
-      mat <- mat[barcodeWhitelist,]
+      mat <- mat[barcodeWhitelist,,drop=FALSE]
     }
 
-    sortedMat <- colSums(mat)
+    if (!is.matrix(mat)) {
+      print('not a matrix after subset.')
+      print(typeof(mat))
+      sortedMat <- mat
+    } else {
+      sortedMat <- colSums(mat)
+    }
+
     names(sortedMat) <- colnames(mat)
     sortedMat <- sort(sortedMat, decreasing = T)
     
@@ -413,6 +464,54 @@ CompareCellBarcodeSets <- function(workbooks, savePath = './') {
     }
 
     toAdd[fieldName] <- lp
+  } else {
+    print(paste0('No file of type: ', category))
+  }
+
+  return(toAdd)
+}
+
+.DownloadBarcodesForSeurat <- function(wb, callFiles, readsetId, toAdd, fieldName, localPath, category) {
+  toAdd[fieldName] <- NA
+
+  cf <- callFiles[callFiles$readset == readsetId & callFiles$category == category,]
+  if (nrow(cf) > 1) {
+    print(paste0('Multiple call files, using latest: ', toAdd$Name, ' ', fieldName))
+  }
+
+  if (nrow(cf) > 0) {
+    row <- cf[cf$rowid == max(cf$rowid),]
+
+    suffix <- '.seuratBarcodes'
+    fn <- paste0(row['readset_name'], '.', row['readset'], '.', row['rowid'], '.', row$category, suffix, '.txt')
+    fn <- gsub('\\(', '_', fn)
+    fn <- gsub('\\)', '_', fn)
+    fn <- gsub(' ', '_', fn)
+    fn <- gsub('__', '_', fn)
+    lp <- paste0(localPath, '/', wb, '/', fn)
+    if (file.exists(lp)) {
+      print(paste0('file exists, reusing: ', lp))
+    } else {
+
+      barcodeOut <- paste0(row['readset_name'], '.', row['readset'], '.', row['rowid'], '.', row$category, 'cellBarcodes.csv')
+      DownloadOutputFile(rowid, overwrite = T, outFile = barcodeOut, pathTranslator = function(x){
+        x <- gsub(x, pattern = 'seurat.rds', replacement = 'cellBarcodes.csv')
+        return(x)
+      })
+
+      data <- read.table(barcodeOut, sep = ',', header = F)
+      names(data) <- c('cellbarcode')
+      data$cellbarcode <- sapply(data$cellbarcode, function(x){
+        x <- unlist(str_split(x, split = '_'))[2]
+        return(x)
+      })
+
+      write.table(data, file = lp, sep = '\t', row.names = F, quote = F)
+    }
+
+    toAdd[fieldName] <- lp
+  } else {
+    print(paste0('No file of type: ', category))
   }
 
   return(toAdd)
