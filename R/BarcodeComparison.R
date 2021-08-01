@@ -19,9 +19,10 @@ add = TRUE
 #' @description This iterates the provided workbooks, identifying every 10x cDNA library and the GEX/TCR/HTO libraries.  It generates summaries of the cell barcode intersect between them, which can help debug sample swaps.
 #' @param workbooks A vector of workbook IDs
 #' @param savePath The folder path to use for saving output files
+#' @param filePrefix A prefix appended to the name of all summary output files
 #' @export
 #' @importFrom dplyr %>% mutate group_by
-CompareCellBarcodeSets <- function(workbooks, savePath = '.') {
+CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
   summary <- .GenerateDataToCompareBarcodeSets(workbooks, savePath)
 
   htoBC <- list()
@@ -91,19 +92,19 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.') {
   df <- df %>% group_by(dataset1, type1, type2) %>% mutate(max_intersect_by_type = max(intersect))
   df <- df %>% group_by(dataset1, type1) %>% mutate(max_intersect = max(intersect))
 
-  write.table(df, file = file.path(savePath, 'cell_barcode_comparisons.txt'), sep = '\t', row.names = F, quote = F)
+  write.table(df, file = file.path(savePath, paste0(filePrefix, 'cell_barcode_comparisons.txt')), sep = '\t', row.names = F, quote = F)
 
   self <- df[df$dataset1 == df$dataset2, c('dataset1', 'type1', 'type2', 'intersect', 'fraction')]
   names(self) <- c('dataset1', 'type1', 'type2', 'self_intersect', 'self_intersect_fraction')
 
   df2 <- df[df$intersect == df$max_intersect_by_type,]
-  write.table(df2, file = 'top_intersect_by_type.txt', sep = '\t', row.names = F, quote = F)
+  write.table(df2, file = file.path(savePath, paste0(filePrefix, 'top_intersect_by_type.txt')), sep = '\t', row.names = F, quote = F)
 
   df3 <- df2[df2$dataset1 != df2$dataset2,]
   df3 <- merge(df3, self, by = c('dataset1', 'type1', 'type2'), all.x = T, all.y = F)
   #filter ties:
   df3 <- df3[df3$intersect != df3$self_intersect,]
-  write.table(df3, file = file.path(savePath, 'conflicting_intersect.txt'), sep = '\t', row.names = F, quote = F)
+  write.table(df3, file = file.path(savePath, paste0(filePrefix, 'conflicting_intersect.txt')), sep = '\t', row.names = F, quote = F)
 
   # #Now look for instances where the raw HTO calls find more HTOs than either TCR or GEX
   # dfSummary <- NA
@@ -264,7 +265,14 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.') {
         .DownloadBarcodesForSeurat(wb, callFiles, row[['readsetid']], toAdd, 'GEX_CallsFile', savePath, category = 'Seurat Data')
       }
 
+      if (is.na(toAdd$GEX_CallsFile)) {
+        print('Missing GEX Calls')
+      }
+
       toAdd <- .DownloadCallFile(wb, callFiles, row[['tcrreadsetid']], toAdd, 'TCR_CallsFile', savePath, category = 'Cell Hashing Calls (VDJ)')
+      if (is.na(toAdd$TCR_CallsFile)) {
+        print('Missing TCR Calls')
+      }
 
       #now merge HTOs:
       toAdd <- merge(toAdd, htoSummary, by.x = c('GEX_ReadsetId'), by.y = c('readsetid'), all.x = T)
@@ -296,19 +304,21 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.') {
 .ProcessSet <- function(df, set1, set2, type1, type2) {
   for (name1 in names(set1)) {
     h <- set1[[name1]]
-    if (is.na(h)) {
+    if (all(is.na(h))) {
+      print(paste0('skipping: ', name1))
       next
     }
 
     for (name2 in names(set2)) {
       g <- set2[[name2]]
-      if (is.na(g)) {
+      if (all(is.na(g))) {
+        print(paste0('skipping: ', name2))
         next
       }
 
-      if ('HTO' == type1) {
+      if ('HTO' == type1 || 'HTO-All' == type1) {
         h <- h[1:length(g)]
-      } else if ('HTO' == type2) {
+      } else if ('HTO' == type2 || 'HTO-All' == type2) {
         g <- g[1:length(h)]
       }
 
@@ -493,8 +503,8 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.') {
       print(paste0('file exists, reusing: ', lp))
     } else {
 
-      barcodeOut <- paste0(row['readset_name'], '.', row['readset'], '.', row['rowid'], '.', row$category, 'cellBarcodes.csv')
-      DownloadOutputFile(rowid, overwrite = T, outFile = barcodeOut, pathTranslator = function(x){
+      barcodeOut <- paste0(row['readset_name'], '.', row['readset'], '.', row['rowid'], '.', row$category, '.cellBarcodes.csv')
+      DownloadOutputFile(row[['rowid']], overwrite = T, outFile = barcodeOut, pathTranslator = function(x){
         x <- gsub(x, pattern = 'seurat.rds', replacement = 'cellBarcodes.csv')
         return(x)
       })
@@ -502,7 +512,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.') {
       data <- read.table(barcodeOut, sep = ',', header = F)
       names(data) <- c('cellbarcode')
       data$cellbarcode <- sapply(data$cellbarcode, function(x){
-        x <- unlist(str_split(x, split = '_'))[2]
+        x <- unlist(strsplit(x, split = '_'))[2]
         return(x)
       })
 
