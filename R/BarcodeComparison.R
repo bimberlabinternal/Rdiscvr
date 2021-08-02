@@ -407,6 +407,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
     }
     
     # Read dir, find top barcodes, save to file:
+    print('reading matrix')
     mat <- Seurat::Read10X(expectedDir, gene.column=1, strip.suffix = TRUE)
     mat <- as.matrix(mat)
     if (!is.null(barcodeWhitelist)) {

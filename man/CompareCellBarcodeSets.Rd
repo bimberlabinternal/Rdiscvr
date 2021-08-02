@@ -4,12 +4,14 @@
 \alias{CompareCellBarcodeSets}
 \title{CompareCellBarcodeSets}
 \usage{
-CompareCellBarcodeSets(workbooks, savePath = ".")
+CompareCellBarcodeSets(workbooks, savePath = ".", filePrefix = "")
 }
 \arguments{
 \item{workbooks}{A vector of workbook IDs}
 
 \item{savePath}{The folder path to use for saving output files}
+
+\item{filePrefix}{A prefix appended to the name of all summary output files}
 }
 \description{
 This iterates the provided workbooks, identifying every 10x cDNA library and the GEX/TCR/HTO libraries.  It generates summaries of the cell barcode intersect between them, which can help debug sample swaps.
