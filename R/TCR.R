@@ -347,220 +347,221 @@ Download10xRawDataForLoupeFile <- function(outputFileId, outFile, overwrite = T,
 }
 
 
-#' @title CalculateTCRFreqForActivatedCells
-#' @description For the supplied cDNA Rows, this will query their gene expression and TCR readsets, identifying a) existing seurat objects, b) vloupe files. If both are found,
-#  it will download them, build a whitelist of highly activated cells (using SGS), calculate TCR frequencies, and return a dataframe
-#' @return A dataframe of results
-#' @param cDndIds A vector of cDNA rowIDs
-#' @param geneSetName The gene set name to use for SGS
-#' @param positivityThreshold The threshold to use for calling cells as positive
-#' @param outPrefix A string that will be prepended to all saved files
-#' @param invert If TRUE, those cells NOT positive for the gene set will be summarized, instead of positive cells
-#' @param doCleanup If TRUE, any downloaded files will be deleted on completion
-#' @param reduction The reduction (i.e. tsne or umap) that will be used when plotting
-#' @export
-#' @import Seurat
-#' @importFrom Biostrings readDNAStringSet
-#' @importFrom dplyr %>% group_by select n summarize
-CalculateTCRFreqForActivatedCells <- function(cDndIds, geneSetName = 'HighlyActivated', positivityThreshold = 0.5, outPrefix = './', invert = FALSE, doCleanup = FALSE, reduction = NULL) {
-	print(paste0('Total cDNA records: ', length(cDndIds)))
-	rows <- labkey.selectRows(
-		baseUrl=.getBaseUrl(),
-		folderPath=.getLabKeyDefaultFolder(),
-		schemaName="singlecell",
-		queryName="cdna_libraries",
-		viewName="",
-		colSort="-rowid",
-		colFilter = makeFilter(c("rowid", "IN", paste0(cDndIds, collapse = ";"))),
-		colSelect="rowid,readsetid,tcrreadsetid,hashingreadsetid",
-		containerFilter=NULL,
-		colNameOpt="rname"
-	)
-
-	if (nrow(rows) != length(cDndIds)) {
-		print(paste0('Not all requested cDNAs found.  Row IDs found: ', paste0(unique(rows$rowid), collapse = ',')))
-		return(NA)
-	}
-
-	gexReadsets <- unique(rows$readsetid)
-	print(paste0('total GEX readsets: ', length(gexReadsets)))
-
-	# Identify, download seuratObj, created from the appropriate readsetId:
-	seuratRows <- labkey.selectRows(
-		baseUrl=.getBaseUrl(),
-		folderPath=.getLabKeyDefaultFolder(),
-		schemaName="sequenceanalysis",
-		queryName="outputfiles",
-		colSort="-rowid",
-		colSelect="rowid,readset",
-		colFilter=makeFilter(
-			c("readset", "IN", paste0(gexReadsets, collapse = ';')),
-			c("category", "EQUAL", "Seurat Data")
-		),
-		containerFilter=NULL,
-		colNameOpt="rname"
-	)
-
-	# Possible to have a duplicate:
-	seuratRows <- unique(seuratRows)
-
-	if (length(unique(seuratRows$readset)) != length(gexReadsets)) {
-		missing <- gexReadsets[!(gexReadsets %in% unique(seuratRows$readset))]
-		print(paste0('Not all requested cDNAs have seurat objects.  Readsets missing: ', paste0(unique(missing), collapse = ',')))
-
-		return(NA)
-	}
-
-	downloadedFiles <- c()
-	ret <- NA
-	for (gexReadset in gexReadsets) {
-		print(paste0('processing readset: ', gexReadset))
-		row <- seuratRows[seuratRows$readset == gexReadset,,drop = F]
-		if (nrow(row) > 1) {
-			print('More than one seurat row found, using the most recent')
-			row <- row[1,,drop = F]
-		}
-
-		if (is.na(row[['rowid']])) {
-			warning(paste0('Error: RowID was NA, skipping'))
-			print(row)
-			next
-		}
-
-		f <- paste0(outPrefix, row[['rowid']], '.seurat.rds')
-		DownloadOutputFile(row[['rowid']], f, overwrite = F)
-		downloadedFiles <- c(downloadedFiles, f)
-
-		# For each, apply metadata, TCR clones
-		seuratObj <- readRDS(f)
-
-		seuratObj <- DownloadAndAppendCellHashing(seuratObject = seuratObj)
-		seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
-
-		# TODO: refactor this from OOSAP
-		seuratObj <- OOSAP::ClassifySGSAndApply(seuratObj = seuratObj, geneSetName = 'Positive', geneList = OOSAP::Phenotyping_GeneList()[[geneSetName]], positivityThreshold = positivityThreshold, reduction = reduction)
-		if (invert) {
-			print('Selecting cells without the provided signature')
-			barcodeWhitelist <- colnames(seuratObj)[!seuratObj$Positive.Call & !is.na(seuratObj$cDNA_ID)]
-		} else {
-			barcodeWhitelist <- colnames(seuratObj)[seuratObj$Positive.Call & !is.na(seuratObj$cDNA_ID)]
-		}
-
-		i <- 0
-		for (barcodePrefix in unique(unlist(seuratObj[['BarcodePrefix']]))) {
-			i <- i + 1
-
-			vloupeId <- .FindMatchedVloupe(barcodePrefix)
-			if (is.na(vloupeId)){
-				stop(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
-			}
-
-			#TCR libraryId
-			tcrLibRows <- labkey.selectRows(
-				baseUrl=.getBaseUrl(),
-				folderPath=.getLabKeyDefaultFolder(),
-				schemaName="sequenceanalysis",
-				queryName="outputfiles",
-				colSort="-rowid",
-				colSelect="library_id,analysis_id,readset",
-				colFilter=makeFilter(c("rowid", "EQUALS", vloupeId)),
-				containerFilter=NULL,
-				colNameOpt="rname"
-			)
-			libraryId <- tcrLibRows$library_id[1]
-			analysisId <- tcrLibRows$analysis_id[1]
-			tcrReadset <- tcrLibRows$readset[1]
-			print(paste0('TCR library ID: ', libraryId))
-			print(paste0('TCR readset: ', tcrReadset))
-
-			#All clonotypes
-			clonotypeFile <- file.path(outPrefix, paste0(barcodePrefix, '_all_contig_annotations.csv'))
-			.DownloadCellRangerClonotypes(vLoupeId = vloupeId, outFile = clonotypeFile, overwrite = T)
-			if (!file.exists(clonotypeFile)){
-				stop(paste0('Unable to download clonotype file for prefix: ', barcodePrefix))
-			}
-			downloadedFiles <- c(downloadedFiles, clonotypeFile)
-
-			#FASTA:
-			fastaFile <- file.path(outPrefix, paste0(barcodePrefix, '_consensus.fasta'))
-			.DownloadCellRangerClonotypes(vLoupeId = vloupeId, outFile = fastaFile, overwrite = T, fileName = 'consensus.fasta')
-			if (!file.exists(fastaFile)){
-				stop(paste0('Unable to download clonotype FASTA for prefix: ', barcodePrefix))
-			}
-			downloadedFiles <- c(downloadedFiles, fastaFile)
-
-			tcrData <- .ProcessTcrClonotypes(clonotypeFile)
-			if (!is.null(barcodePrefix)){
-				tcrData$barcode <- as.character(tcrData$barcode)
-				tcrData$barcode <- paste0(barcodePrefix, '_', tcrData$barcode)
-				tcrData$barcode <- as.factor(tcrData$barcode)
-			}
-
-			retain <- intersect(barcodeWhitelist, tcrData$barcode)
-
-			print(paste0('initial barcodes with TCR call: ', nrow(tcrData)))
-			pct1 <- round(length(retain) / length(unique(tcrData$barcode)), 2)
-			pct2 <- round(length(retain) / length(barcodeWhitelist), 2)
-
-			print(paste0('overlapping with activated cells: ', length(retain), ' (', pct1, ' of TCR calls, ',pct2,' of positive cells)'))
-			tcrData <- tcrData[tcrData$barcode %in% retain,]
-			if (nrow(tcrData) == 0) {
-				print(paste0('no rows for prefix: ', barcodePrefix))
-				next
-			}
-
-			#summarize metadata
-			meta <- data.frame(
-				barcode = colnames(seuratObj)[seuratObj$BarcodePrefix == barcodePrefix],
-				SubjectId = as.character(seuratObj$SubjectId[seuratObj$BarcodePrefix == barcodePrefix]),
-				Stim = as.character(seuratObj$Stim[seuratObj$BarcodePrefix == barcodePrefix]),
-				population = as.character(seuratObj$Population[seuratObj$BarcodePrefix == barcodePrefix]),
-				date = as.character(seuratObj$SampleDate[seuratObj$BarcodePrefix == barcodePrefix]),
-				cdna = as.character(seuratObj$cDNA_ID[seuratObj$BarcodePrefix == barcodePrefix]),
-				libraryId = c(libraryId),
-				analysisId = c(analysisId)
-			)
-			meta$SampleName <- paste0(meta$SubjectId, '_', meta$Stim)
-			tcrData <- merge(tcrData, meta, by = c('barcode'), all.x = T)
-
-			if (sum(is.na(tcrData$SubjectId)) > 0) {
-				f <- paste0(outPrefix, 'temp.txt')
-				write.table(tcrData, file = f, sep = '\t', quote = F, row.names = F)
-				stop(paste0('Missing subject IDs!  See ', f, ' for table of results'))
-			}
-
-			# Group
-			tcrData <- tcrData %>% group_by(SampleName, SubjectId, population, date, cdna, libraryId, analysisId, chain, cdr3, v_gene, d_gene, j_gene, c_gene, raw_clonotype_id, raw_consensus_id) %>% summarize(count = dplyr::n())
-			names(tcrData) <- c('SampleName', 'SubjectId', 'population', 'date', 'cdna', 'libraryId', 'analysisId', 'locus', 'cdr3', 'vHit', 'dHit', 'jHit', 'cHit', 'cloneId', 'consensus_id', 'count')
-
-			tcrData <- tcrData %>% group_by(cdna) %>% mutate(totalCells = dplyr::n())
-			tcrData$fraction = tcrData$count / tcrData$totalCells
-
-			# Merge sequence:
-			fastaData <- Biostrings::readDNAStringSet(fastaFile)
-			seqDf <- data.frame(consensus_id = names(fastaData), sequence = paste(fastaData))
-
-			tcrData <- merge(tcrData, seqDf, by = c('consensus_id'), all.x = T)
-			tcrData <- tcrData[!(names(tcrData) %in% c('consensus_id', 'totalCells', 'Stim'))]
-			tcrData[tcrData == 'None'] <- NA
-
-			if (all(is.na(ret))) {
-				ret <- tcrData
-			} else {
-				ret <- rbind(ret, tcrData)
-			}
-		}
-	}
-
-	if (doCleanup) {
-		print('Cleaning up downloaded files')
-		for (f in downloadedFiles) {
-			unlink(f)
-		}
-	}
-
-	return(ret)
-}
+# #' @title CalculateTCRFreqForActivatedCells
+# #' @description For the supplied cDNA Rows, this will query their gene expression and TCR readsets, identifying a) existing seurat objects, b) vloupe files. If both are found,
+# #  it will download them, build a whitelist of highly activated cells (using SGS), calculate TCR frequencies, and return a dataframe
+# #' @return A dataframe of results
+# #' @param cDndIds A vector of cDNA rowIDs
+# #' @param geneSetName The gene set name to use for SGS
+# #' @param positivityThreshold The threshold to use for calling cells as positive
+# #' @param outPrefix A string that will be prepended to all saved files
+# #' @param invert If TRUE, those cells NOT positive for the gene set will be summarized, instead of positive cells
+# #' @param doCleanup If TRUE, any downloaded files will be deleted on completion
+# #' @param reduction The reduction (i.e. tsne or umap) that will be used when plotting
+# #' @export
+# #' @import Seurat
+# #' @importFrom Biostrings readDNAStringSet
+# #' @importFrom dplyr %>% group_by select n summarize
+# CalculateTCRFreqForActivatedCells <- function(cDndIds, geneSetName = 'HighlyActivated', positivityThreshold = 0.5, outPrefix = './', invert = FALSE, doCleanup = FALSE, reduction = NULL) {
+# 	print(paste0('Total cDNA records: ', length(cDndIds)))
+# 	rows <- labkey.selectRows(
+# 		baseUrl=.getBaseUrl(),
+# 		folderPath=.getLabKeyDefaultFolder(),
+# 		schemaName="singlecell",
+# 		queryName="cdna_libraries",
+# 		viewName="",
+# 		colSort="-rowid",
+# 		colFilter = makeFilter(c("rowid", "IN", paste0(cDndIds, collapse = ";"))),
+# 		colSelect="rowid,readsetid,tcrreadsetid,hashingreadsetid",
+# 		containerFilter=NULL,
+# 		colNameOpt="rname"
+# 	)
+#
+# 	if (nrow(rows) != length(cDndIds)) {
+# 		print(paste0('Not all requested cDNAs found.  Row IDs found: ', paste0(unique(rows$rowid), collapse = ',')))
+# 		return(NA)
+# 	}
+#
+# 	gexReadsets <- unique(rows$readsetid)
+# 	print(paste0('total GEX readsets: ', length(gexReadsets)))
+#
+# 	# Identify, download seuratObj, created from the appropriate readsetId:
+# 	seuratRows <- labkey.selectRows(
+# 		baseUrl=.getBaseUrl(),
+# 		folderPath=.getLabKeyDefaultFolder(),
+# 		schemaName="sequenceanalysis",
+# 		queryName="outputfiles",
+# 		colSort="-rowid",
+# 		colSelect="rowid,readset",
+# 		colFilter=makeFilter(
+# 			c("readset", "IN", paste0(gexReadsets, collapse = ';')),
+# 			c("category", "EQUAL", "Seurat Data")
+# 		),
+# 		containerFilter=NULL,
+# 		colNameOpt="rname"
+# 	)
+#
+# 	# Possible to have a duplicate:
+# 	seuratRows <- unique(seuratRows)
+#
+# 	if (length(unique(seuratRows$readset)) != length(gexReadsets)) {
+# 		missing <- gexReadsets[!(gexReadsets %in% unique(seuratRows$readset))]
+# 		print(paste0('Not all requested cDNAs have seurat objects.  Readsets missing: ', paste0(unique(missing), collapse = ',')))
+#
+# 		return(NA)
+# 	}
+#
+# 	downloadedFiles <- c()
+# 	ret <- NA
+# 	for (gexReadset in gexReadsets) {
+# 		print(paste0('processing readset: ', gexReadset))
+# 		row <- seuratRows[seuratRows$readset == gexReadset,,drop = F]
+# 		if (nrow(row) > 1) {
+# 			print('More than one seurat row found, using the most recent')
+# 			row <- row[1,,drop = F]
+# 		}
+#
+# 		if (is.na(row[['rowid']])) {
+# 			warning(paste0('Error: RowID was NA, skipping'))
+# 			print(row)
+# 			next
+# 		}
+#
+# 		f <- paste0(outPrefix, row[['rowid']], '.seurat.rds')
+# 		DownloadOutputFile(row[['rowid']], f, overwrite = F)
+# 		downloadedFiles <- c(downloadedFiles, f)
+#
+# 		# For each, apply metadata, TCR clones
+# 		seuratObj <- readRDS(f)
+#
+# 		seuratObj <- DownloadAndAppendCellHashing(seuratObject = seuratObj)
+# 		seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
+#
+#
+# 		# TODO: refactor this from OOSAP
+# 		seuratObj <- OOSAP::ClassifySGSAndApply(seuratObj = seuratObj, geneSetName = 'Positive', geneList = OOSAP::Phenotyping_GeneList()[[geneSetName]], positivityThreshold = positivityThreshold, reduction = reduction)
+# 		if (invert) {
+# 			print('Selecting cells without the provided signature')
+# 			barcodeWhitelist <- colnames(seuratObj)[!seuratObj$Positive.Call & !is.na(seuratObj$cDNA_ID)]
+# 		} else {
+# 			barcodeWhitelist <- colnames(seuratObj)[seuratObj$Positive.Call & !is.na(seuratObj$cDNA_ID)]
+# 		}
+#
+# 		i <- 0
+# 		for (barcodePrefix in unique(unlist(seuratObj[['BarcodePrefix']]))) {
+# 			i <- i + 1
+#
+# 			vloupeId <- .FindMatchedVloupe(barcodePrefix)
+# 			if (is.na(vloupeId)){
+# 				stop(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
+# 			}
+#
+# 			#TCR libraryId
+# 			tcrLibRows <- labkey.selectRows(
+# 				baseUrl=.getBaseUrl(),
+# 				folderPath=.getLabKeyDefaultFolder(),
+# 				schemaName="sequenceanalysis",
+# 				queryName="outputfiles",
+# 				colSort="-rowid",
+# 				colSelect="library_id,analysis_id,readset",
+# 				colFilter=makeFilter(c("rowid", "EQUALS", vloupeId)),
+# 				containerFilter=NULL,
+# 				colNameOpt="rname"
+# 			)
+# 			libraryId <- tcrLibRows$library_id[1]
+# 			analysisId <- tcrLibRows$analysis_id[1]
+# 			tcrReadset <- tcrLibRows$readset[1]
+# 			print(paste0('TCR library ID: ', libraryId))
+# 			print(paste0('TCR readset: ', tcrReadset))
+#
+# 			#All clonotypes
+# 			clonotypeFile <- file.path(outPrefix, paste0(barcodePrefix, '_all_contig_annotations.csv'))
+# 			.DownloadCellRangerClonotypes(vLoupeId = vloupeId, outFile = clonotypeFile, overwrite = T)
+# 			if (!file.exists(clonotypeFile)){
+# 				stop(paste0('Unable to download clonotype file for prefix: ', barcodePrefix))
+# 			}
+# 			downloadedFiles <- c(downloadedFiles, clonotypeFile)
+#
+# 			#FASTA:
+# 			fastaFile <- file.path(outPrefix, paste0(barcodePrefix, '_consensus.fasta'))
+# 			.DownloadCellRangerClonotypes(vLoupeId = vloupeId, outFile = fastaFile, overwrite = T, fileName = 'consensus.fasta')
+# 			if (!file.exists(fastaFile)){
+# 				stop(paste0('Unable to download clonotype FASTA for prefix: ', barcodePrefix))
+# 			}
+# 			downloadedFiles <- c(downloadedFiles, fastaFile)
+#
+# 			tcrData <- .ProcessTcrClonotypes(clonotypeFile)
+# 			if (!is.null(barcodePrefix)){
+# 				tcrData$barcode <- as.character(tcrData$barcode)
+# 				tcrData$barcode <- paste0(barcodePrefix, '_', tcrData$barcode)
+# 				tcrData$barcode <- as.factor(tcrData$barcode)
+# 			}
+#
+# 			retain <- intersect(barcodeWhitelist, tcrData$barcode)
+#
+# 			print(paste0('initial barcodes with TCR call: ', nrow(tcrData)))
+# 			pct1 <- round(length(retain) / length(unique(tcrData$barcode)), 2)
+# 			pct2 <- round(length(retain) / length(barcodeWhitelist), 2)
+#
+# 			print(paste0('overlapping with activated cells: ', length(retain), ' (', pct1, ' of TCR calls, ',pct2,' of positive cells)'))
+# 			tcrData <- tcrData[tcrData$barcode %in% retain,]
+# 			if (nrow(tcrData) == 0) {
+# 				print(paste0('no rows for prefix: ', barcodePrefix))
+# 				next
+# 			}
+#
+# 			#summarize metadata
+# 			meta <- data.frame(
+# 				barcode = colnames(seuratObj)[seuratObj$BarcodePrefix == barcodePrefix],
+# 				SubjectId = as.character(seuratObj$SubjectId[seuratObj$BarcodePrefix == barcodePrefix]),
+# 				Stim = as.character(seuratObj$Stim[seuratObj$BarcodePrefix == barcodePrefix]),
+# 				population = as.character(seuratObj$Population[seuratObj$BarcodePrefix == barcodePrefix]),
+# 				date = as.character(seuratObj$SampleDate[seuratObj$BarcodePrefix == barcodePrefix]),
+# 				cdna = as.character(seuratObj$cDNA_ID[seuratObj$BarcodePrefix == barcodePrefix]),
+# 				libraryId = c(libraryId),
+# 				analysisId = c(analysisId)
+# 			)
+# 			meta$SampleName <- paste0(meta$SubjectId, '_', meta$Stim)
+# 			tcrData <- merge(tcrData, meta, by = c('barcode'), all.x = T)
+#
+# 			if (sum(is.na(tcrData$SubjectId)) > 0) {
+# 				f <- paste0(outPrefix, 'temp.txt')
+# 				write.table(tcrData, file = f, sep = '\t', quote = F, row.names = F)
+# 				stop(paste0('Missing subject IDs!  See ', f, ' for table of results'))
+# 			}
+#
+# 			# Group
+# 			tcrData <- tcrData %>% group_by(SampleName, SubjectId, population, date, cdna, libraryId, analysisId, chain, cdr3, v_gene, d_gene, j_gene, c_gene, raw_clonotype_id, raw_consensus_id) %>% summarize(count = dplyr::n())
+# 			names(tcrData) <- c('SampleName', 'SubjectId', 'population', 'date', 'cdna', 'libraryId', 'analysisId', 'locus', 'cdr3', 'vHit', 'dHit', 'jHit', 'cHit', 'cloneId', 'consensus_id', 'count')
+#
+# 			tcrData <- tcrData %>% group_by(cdna) %>% mutate(totalCells = dplyr::n())
+# 			tcrData$fraction = tcrData$count / tcrData$totalCells
+#
+# 			# Merge sequence:
+# 			fastaData <- Biostrings::readDNAStringSet(fastaFile)
+# 			seqDf <- data.frame(consensus_id = names(fastaData), sequence = paste(fastaData))
+#
+# 			tcrData <- merge(tcrData, seqDf, by = c('consensus_id'), all.x = T)
+# 			tcrData <- tcrData[!(names(tcrData) %in% c('consensus_id', 'totalCells', 'Stim'))]
+# 			tcrData[tcrData == 'None'] <- NA
+#
+# 			if (all(is.na(ret))) {
+# 				ret <- tcrData
+# 			} else {
+# 				ret <- rbind(ret, tcrData)
+# 			}
+# 		}
+# 	}
+#
+# 	if (doCleanup) {
+# 		print('Cleaning up downloaded files')
+# 		for (f in downloadedFiles) {
+# 			unlink(f)
+# 		}
+# 	}
+#
+# 	return(ret)
+# }
 
 #' @title CalculateTCRFreqForActivatedCellsAndImport
 #' @description For the supplied cDNA Rows, this will call CalculateTCRFreqForActivatedCells(), and also import the results into the provided assay
