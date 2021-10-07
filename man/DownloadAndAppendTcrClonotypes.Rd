@@ -8,7 +8,8 @@ DownloadAndAppendTcrClonotypes(
   seuratObject,
   outPath = ".",
   dropExisting = T,
-  overwriteTcrTable = F
+  overwriteTcrTable = F,
+  allowMissing = FALSE
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ DownloadAndAppendTcrClonotypes(
 \item{dropExisting}{If true, any existing clonotype data will be replaced}
 
 \item{overwriteTcrTable}{If true, any existing table(s) of TCR clones will be overwritten and re-downloaded}
+
+\item{allowMissing}{If true, samples missing data will be skipped. Otherwise, the function will fail.}
 }
 \value{
 A modified Seurat object.

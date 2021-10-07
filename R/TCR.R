@@ -14,9 +14,10 @@ utils::globalVariables(
 #' @param outPath The output filepath
 #' @param dropExisting If true, any existing clonotype data will be replaced
 #' @param overwriteTcrTable If true, any existing table(s) of TCR clones will be overwritten and re-downloaded
+#' @param allowMissing If true, samples missing data will be skipped. Otherwise, the function will fail.
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = '.', dropExisting = T, overwriteTcrTable = F){
+DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = '.', dropExisting = T, overwriteTcrTable = F, allowMissing = FALSE){
   if (all(is.null(seuratObject[['BarcodePrefix']]))){
     stop('Seurat object lacks BarcodePrefix column')
   }
@@ -28,7 +29,12 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = '.', dropExis
 
     vloupeId <- .FindMatchedVloupe(barcodePrefix)
     if (is.na(vloupeId)){
-      stop(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
+      if (allowMissing) {
+        warning(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
+        next
+      } else {
+        stop(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
+      }
     }
 
     clonotypeFile <- file.path(outPath, paste0(barcodePrefix, '.', vloupeId, '.clonotypes.csv'))
