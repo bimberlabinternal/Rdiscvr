@@ -78,20 +78,20 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
   print('starting summary')
   df <- data.frame(dataset1 = character(), type1 = character(), dataset2 = character(), type2 = character(), intersect = integer(), length1 = integer(), length2 = integer())
 
-  df <- .ProcessSet(df, htoBC, gexBC, 'HTO', 'GEX')
-  df <- .ProcessSet(df, htoBC, tcrBC, 'HTO', 'TCR')
-  df <- .ProcessSet(df, htoBC, tcrBC, 'HTO', 'CITE')
-
-  df <- .ProcessSet(df, htoBC_All, gexBC, 'HTO-All', 'GEX')
-  df <- .ProcessSet(df, htoBC_All, tcrBC, 'HTO-All', 'TCR')
-
   df <- .ProcessSet(df, gexBC, htoBC, 'GEX', 'HTO')
+  df <- .ProcessSet(df, gexBC, htoBC, 'GEX', 'HTO-All')
   df <- .ProcessSet(df, gexBC, tcrBC, 'GEX', 'TCR')
-  df <- .ProcessSet(df, gexBC, tcrBC, 'GEX', 'CITE')
+  if (length(citeBC) > 0) {
+    df <- .ProcessSet(df, gexBC, citeBC, 'GEX', 'CITE')
+  }
 
   df <- .ProcessSet(df, tcrBC, htoBC, 'TCR', 'HTO')
+  df <- .ProcessSet(df, tcrBC, htoBC, 'TCR', 'HTO-All')
   df <- .ProcessSet(df, tcrBC, gexBC, 'TCR', 'GEX')
-  df <- .ProcessSet(df, tcrBC, gexBC, 'TCR', 'CITE')
+
+  if (length(citeBC) > 0) {
+    df <- .ProcessSet(df, tcrBC, citeBC, 'TCR', 'CITE')
+  }
 
   df$fraction <- df$intersect / df$length1
   df <- df[order(df$dataset1, df$type1, df$type2, -df$intersect),]
@@ -326,15 +326,23 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
         next
       }
 
-      if ('HTO' == type1 || 'HTO-All' == type1) {
+      if ('CITE' == type1 || 'HTO' == type1 || 'HTO-All' == type1) {
         h <- h[1:length(g)]
-      } else if ('HTO' == type2 || 'HTO-All' == type2) {
+      } else if ('CITE' == type2 || 'HTO' == type2 || 'HTO-All' == type2) {
         g <- g[1:length(h)]
       }
 
       i <- length(intersect(h, g))
 
-      df <- rbind(df, data.frame(dataset1 = name1, type1 = type1, dataset2 = name2, type2 = type2, intersect = i, length1 = length(h), length2 = length(g)))
+      toAdd <- data.frame(dataset1 = name1, type1 = type1, dataset2 = name2, type2 = type2, intersect = i, length1 = length(h), length2 = length(g))
+      if (any(is.na(toAdd$dataset1))) {
+        print('NA Value')
+        print(name1)
+        print(name2)
+        print(toAdd)
+      }
+
+      df <- rbind(df, toAdd)
     }
   }
 
