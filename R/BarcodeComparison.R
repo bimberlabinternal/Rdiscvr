@@ -40,7 +40,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
       next
     }
 
-    if (!is.na(row$HTO_Top_BarcodesFile) & !is.na(row$GEX_CallsFile) & !is.na(row$TCR_CallsFile)){
+    if (!is.na(row$HTO_Top_BarcodesFile) && !is.na(row$GEX_CallsFile)){
       bc <- read.table(row$HTO_Top_BarcodesFile, header = T, sep = '\t')
       htoBC[[name]] <- bc$cellbarcode
 
@@ -49,12 +49,8 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
 
       bc <- read.table(row$GEX_CallsFile, header = T, sep = '\t')$cellbarcode
       gexBC[[name]] <- bc
-
-      bc <- read.table(row$TCR_CallsFile, header = T, sep = '\t')$cellbarcode
-      tcrBC[[name]] <- bc
-
     } else {
-      print(paste0('missing one or more files: ', name, ':'))
+      print(paste0('Missing one or more required files, skipping: ', name, ':'))
       if (is.na(row$HTO_Top_BarcodesFile)){
         print(paste0('HTO missing: ', name))
       }
@@ -63,9 +59,13 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
         print(paste0('GEX missing: ', name))
       }
 
-      if (is.na(row$TCR_CallsFile)){
-        print(paste0('TCR missing: ', name))
-      }
+      next
+    }
+
+    if (!is.na(row$TCR_CallsFile)) {
+      print(paste0('processing TCR:', name))
+      bc <- read.table(row$TCR_CallsFile, header = T, sep = '\t')$cellbarcode
+      tcrBC[[name]] <- bc
     }
 
     if (!is.na(row$CITE_Top_BarcodesFile)) {
@@ -76,20 +76,29 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
   }
 
   print('starting summary')
+  print(paste0('Total GEX: ', length(gexBC)))
+  print(paste0('Total VDJ: ', length(tcrBC)))
+  print(paste0('Total HTO: ', length(htoBC)))
+  print(paste0('Total CITE: ', length(citeBC)))
+
   df <- data.frame(dataset1 = character(), type1 = character(), dataset2 = character(), type2 = character(), intersect = integer(), length1 = integer(), length2 = integer())
 
   df <- .ProcessSet(df, gexBC, htoBC, 'GEX', 'HTO')
   df <- .ProcessSet(df, gexBC, htoBC, 'GEX', 'HTO-All')
-  df <- .ProcessSet(df, gexBC, tcrBC, 'GEX', 'TCR')
+  if (length(tcrBC) > 0) {
+    df <- .ProcessSet(df, gexBC, tcrBC, 'GEX', 'TCR')
+  }
   if (length(citeBC) > 0) {
     df <- .ProcessSet(df, gexBC, citeBC, 'GEX', 'CITE')
   }
 
-  df <- .ProcessSet(df, tcrBC, htoBC, 'TCR', 'HTO')
-  df <- .ProcessSet(df, tcrBC, htoBC, 'TCR', 'HTO-All')
-  df <- .ProcessSet(df, tcrBC, gexBC, 'TCR', 'GEX')
+  if (length(tcrBC) > 0) {
+    df <- .ProcessSet(df, tcrBC, htoBC, 'TCR', 'HTO')
+    df <- .ProcessSet(df, tcrBC, htoBC, 'TCR', 'HTO-All')
+    df <- .ProcessSet(df, tcrBC, gexBC, 'TCR', 'GEX')
+  }
 
-  if (length(citeBC) > 0) {
+  if (length(citeBC) > 0 && length(tcrBC) > 0) {
     df <- .ProcessSet(df, tcrBC, citeBC, 'TCR', 'CITE')
   }
 
