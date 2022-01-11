@@ -37,8 +37,10 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v1
 
       # NOTE: this was added due to iGraph install issues
+      # libpoppler-cpp-dev added for pdftools, which is part of cellhashR
       - name: Install libglpk-dev
-        run: sudo apt-get install libglpk-dev
+        run: |
+          sudo apt-get update && sudo apt-get install -yq libglpk-dev libpoppler-cpp-dev
 
       # Note: the environment variable R_BIOC_VERSION is set to force remotes::install_bioc to follow the proper version
       - name: Setup Bioconductor
