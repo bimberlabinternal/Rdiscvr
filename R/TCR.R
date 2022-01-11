@@ -67,7 +67,7 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = '.', dropExis
   pct <- round(nrow(tcrIntersect) / origRows * 100, 2)
   pct2 <- round(nrow(tcrIntersect) / length(gexBarcodes) * 100, 2)
 
-  print(paste0('Barcodes with clonotypes: ', origRows, ', intersecting with GEX data (total ', length(gexBarcodes),'): ', nrow(tcrIntersect), " (", pct, "% / ", pct2, "%)"))
+  print(paste0('Barcodes with clonotypes: ', origRows, ', intersecting with GEX data (total ', length(gexBarcodes),'): ', nrow(tcrIntersect), " (", pct, "% of TCR / ", pct2, "% of GEX)"))
   if (nrow(tcrIntersect) == 0) {
     print('no barcodes shared')
     print(paste0('first GEX barcodes:'))
@@ -213,7 +213,7 @@ utils::globalVariables(
 )
 
 .ProcessTcrClonotypes <- function(clonotypeFile){
-  tcr <- utils::read.table(clonotypeFile, header=T, sep = ',')
+  tcr <- utils::read.table(clonotypeFile, header=T, sep = ',', fill = TRUE)
   tcr <- tcr[tcr$cdr3 != 'None',]
 
   # drop cellranger '-1' suffix
