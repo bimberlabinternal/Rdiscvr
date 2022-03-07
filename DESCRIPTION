@@ -1,6 +1,6 @@
 Package: Rdiscvr
 Type: Package
-Title: A Package that provides helper functions to query data in LabKey/DISCVR modules.
+Title: A Package that provides helper functions to query data in LabKey/DISCVR modules
 Version: 0.0.1
 Author: Bimber Lab
 Maintainer: The package maintainer <bimber@ohsu.edu>
