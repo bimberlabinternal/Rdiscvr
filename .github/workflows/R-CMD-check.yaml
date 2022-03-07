@@ -35,9 +35,10 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@v1
 
-      # NOTE: this was added due to iGraph install issues
+      # NOTE: libglpk-dev was added due to iGraph install issues
       # libpoppler-cpp-dev added for pdftools, which is part of cellhashR
       # libmagick++-dev added for magick
+      # libhdf5-dev added for cellmembrane/SeuratDisk
       - name: Install libglpk-dev
         run: |
           sudo apt-get update && sudo apt-get install -yq libglpk-dev libpoppler-cpp-dev libmagick++-dev libhdf5-dev
