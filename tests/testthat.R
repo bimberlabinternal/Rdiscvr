@@ -1,4 +1,5 @@
 library(testthat)
 library(Rdiscvr)
 
-test_check("Rdiscvr", reporter = "progress")
+#TODO: uncomment once we create tests
+#test_check("Rdiscvr", reporter = "progress")
