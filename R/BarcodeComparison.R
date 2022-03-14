@@ -203,7 +203,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
       colSort="-rowid",
       colSelect="rowid,name,description,readset,readset/name,category,dataid/RowId,workbook,dataid/WebDavUrlRelative,dataid/WebDavUrlRelative,created",
       colFilter=makeFilter(
-        c("category", "IN", "Cell Hashing Calls (VDJ);Seurat Cell Hashing Calls;Cell Hashing Counts;CITE-seq Counts;Seurat Data;10x Loupe File")
+        c("category", "IN", "Cell Hashing Calls (VDJ);Seurat Cell Hashing Calls;Cell Hashing Counts;CITE-seq Counts;Seurat Object Prototype;10x Loupe File")
       ),
       containerFilter=NULL,
       colNameOpt="rname"
@@ -261,8 +261,8 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
 
       toAdd <- .DownloadCallFile(wb, callFiles, row[['readsetid']], toAdd, 'GEX_CallsFile', savePath, category = 'Seurat Cell Hashing Calls')
       if (is.na(toAdd$GEX_CallsFile)) {
-        print('Downloading GEX barcodes from seurat object')
-        .DownloadBarcodesForSeurat(wb, callFiles, row[['readsetid']], toAdd, 'GEX_CallsFile', savePath, category = 'Seurat Data')
+        print('Downloading GEX barcodes from seurat prototype')
+        .DownloadBarcodesForSeurat(wb, callFiles, row[['readsetid']], toAdd, 'GEX_CallsFile', savePath, category = 'Seurat Object Prototype')
       }
 
       if (is.na(toAdd$GEX_CallsFile)) {
