@@ -96,3 +96,86 @@ DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwri
 
 	return(outFile)
 }
+
+#' @title UploadOutputFile
+#' @description Uploads a local file and saves as an output file tracked in LabKey.
+#' @param localPath The local filepath to the file
+#' @param workbook The numeric ID of the target workbook
+#' @param name The name for this output
+#' @param category The category for this output
+#' @param description A description for this output
+#' @param genomeId The integer genome ID associated with this output
+#' @param readsetId The integer readsetId associated with this output
+#' @param remoteFilename If null, the local name will be used
+
+#' @export
+#'
+#' @import Rlabkey
+UploadOutputFile <- function(localPath, workbook, name, category, description, readsetId = NULL, genomeId, remoteFilename = NULL) {
+	if (!file.exists(localPath)) {
+		stop(paste0('Unable to find file: ', localPath))
+	}
+
+	if (is.null(remoteFilename)) {
+		remoteFilename <- basename(localPath)
+	}
+
+	remotePath <- paste0('outputFiles/', remoteFilename)
+
+	remoteExists <- labkey.webdav.pathExists(
+		baseUrl=.getBaseUrl(),
+		folderPath=paste0(.getLabKeyDefaultFolder(), workbook),
+		remoteFilePath = remotePath
+	)
+
+	if (remoteExists) {
+		stop(paste0('Remote path already exists: ', remotePath))
+	}
+
+	print('Uploading file')
+	success <- labkey.webdav.put(
+		baseUrl=.getBaseUrl(),
+		folderPath=paste0(.getLabKeyDefaultFolder(), workbook),
+		remoteFilePath = remotePath,
+		localFile = localPath
+	)
+	print('Done')
+
+	if (!success) {
+		stop('Failed to upload file')
+	}
+
+	toInsert <- data.frame(
+		fileid = expDataId,
+		category = category,
+		description = description,
+		name = name,
+		readset = readsetId,
+		library_id = genomeId
+	)
+
+	inserted <- labkey.insertRows(
+		baseUrl=.getBaseUrl(),
+		folderPath=paste0(.getLabKeyDefaultFolder(), workbook),
+		toInsert = toInsert
+	)
+
+	return(inserted$rows[[1]]$rowid)
+}
+
+#' @title UploadOutputFile
+#' @description Uploads a local file and saves as an output file tracked in LabKey.
+#' @param localPath The local filepath to the file
+#' @param workbook The numeric ID of the target workbook
+#' @param name The name for this output
+#' @param description A description for this output
+#' @param readsetId The integer readsetId associated with this output
+#' @param genomeId The integer genome ID associated with this output
+#' @param remoteFilename If null, the local name will be used
+
+#' @export
+#'
+#' @import Rlabkey
+UploadSeuratObject <- function(localPath, workbook, name, category, description, readsetId = NULL, genomeId, remoteFilename = NULL) {
+	return(UploadOutputFile(localPath, workbook = workbook, name = name, category = 'Seurat Object', description = description, readsetId = readsetId, genomeId = genomeId, remoteFilename = remoteFilename))
+}
