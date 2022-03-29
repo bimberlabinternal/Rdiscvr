@@ -120,7 +120,24 @@ UploadOutputFile <- function(localPath, workbook, name, category, description, r
 		remoteFilename <- basename(localPath)
 	}
 
-	remotePath <- paste0('outputFiles/', remoteFilename)
+	remotePath <- paste0('sequenceOutputs/', remoteFilename)
+	folderExists <- labkey.webdav.pathExists(
+		baseUrl=.getBaseUrl(),
+		folderPath=paste0(.getLabKeyDefaultFolder(), workbook),
+		remoteFilePath = 'sequenceOutputs'
+	)
+
+	if (!folderExists) {
+		success <- labkey.webdav.mkDirs(
+			baseUrl=.getBaseUrl(),
+			folderPath=paste0(.getLabKeyDefaultFolder(), workbook),
+			remoteFilePath = 'sequenceOutputs'
+		)
+
+		if (!success) {
+			stop('Unable to create folder: sequenceOutputs')
+		}
+	}
 
 	remoteExists <- labkey.webdav.pathExists(
 		baseUrl=.getBaseUrl(),
