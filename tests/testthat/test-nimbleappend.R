@@ -1,6 +1,5 @@
 context("Nimble")
 
-
 test_that("Nimble Append detects missing input file", {
   seuratObj <- readRDS("../testdata/nimbleTest.rds")
   expect_error(AppendNimbleCounts(seuratObj, "../testdata/nonexistent.tsv"), "Nimble file not found.", fixed=TRUE)
@@ -9,22 +8,22 @@ test_that("Nimble Append detects missing input file", {
 test_that("Nimble Append deletes blank feature names when appending", {
   seuratObj <- readRDS("../testdata/nimbleTest.rds")
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", appendToCounts=FALSE)
-  expect_equal('' %in% rownames(seuratObj@assays$RNA@counts), FALSE)
+  expect_false('' %in% rownames(seuratObj@assays$RNA@counts))
 })
 
 test_that("Nimble Append deletes all barcodes not in Seurat when appending", {
   seuratObj <- readRDS("../testdata/nimbleTest.rds")
-  nimbleExclusiveBarcodes = c("12345_CCAGCGAAGTCCGTAT", "12345_CCAGCGAAGTCCGTAC")
+  nimbleExclusiveBarcodes <- c("12345_CCAGCGAAGTCCGTAT", "12345_CCAGCGAAGTCCGTAC")
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", appendToCounts=TRUE)
   expect_equal(nimbleExclusiveBarcodes %in% colnames(seuratObj@assays$RNA@counts), c(FALSE, FALSE))
 })
 
 test_that("Nimble Append fills all barcodes in Seurat but not in Nimble when appending", {
   seuratObj <- readRDS("../testdata/nimbleTest.rds")
-  seuratExclusiveBarcode = "12345_TAAAAAAAAAAAAAAA"
+  seuratExclusiveBarcode <- "12345_TAAAAAAAAAAAAAAA"
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", appendToCounts=TRUE)
   nimbleFeatureCounts <- seuratObj@assays$RNA@counts[, seuratExclusiveBarcode][c('E', 'F', 'G', 'H')]
-  expect_equal(FALSE %in% (nimbleFeatureCounts == c(0, 0, 0, 0)), FALSE)
+  expect_false(FALSE %in% (nimbleFeatureCounts == c(0, 0, 0, 0)))
 })
 
 test_that("Nimble Append output Seurat object is valid when appending", {
@@ -35,28 +34,28 @@ test_that("Nimble Append output Seurat object is valid when appending", {
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", appendToCounts=TRUE)
   expect_equal(colnames(seuratObj@assays$RNA@counts), expectedBarcodes)
   expect_equal(rownames(seuratObj@assays$RNA@counts), expectedFeatures)
-  expect_equal(FALSE %in% (seuratObj@assays$RNA@counts[, expectedBarcodes[1]] == expectedValues[[1]]), FALSE)
-  expect_equal(FALSE %in% (seuratObj@assays$RNA@counts[, expectedBarcodes[2]] == expectedValues[[2]]), FALSE)
-  expect_equal(FALSE %in% (seuratObj@assays$RNA@counts[, expectedBarcodes[3]] == expectedValues[[3]]), FALSE)
-  expect_equal(FALSE %in% (seuratObj@assays$RNA@counts[, expectedBarcodes[4]] == expectedValues[[4]]), FALSE)
+  expect_false(FALSE %in% (seuratObj@assays$RNA@counts[, expectedBarcodes[1]] == expectedValues[[1]]))
+  expect_false(FALSE %in% (seuratObj@assays$RNA@counts[, expectedBarcodes[2]] == expectedValues[[2]]))
+  expect_false(FALSE %in% (seuratObj@assays$RNA@counts[, expectedBarcodes[3]] == expectedValues[[3]]))
+  expect_false(FALSE %in% (seuratObj@assays$RNA@counts[, expectedBarcodes[4]] == expectedValues[[4]]))
 })
 
 test_that("Nimble Append deletes blank feature names when creating new assay", {
   seuratObj <- readRDS("../testdata/nimbleTest.rds")
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", appendToCounts=FALSE)
-  expect_equal('' %in% rownames(seuratObj@assays$Nimble@counts), FALSE)
+  expect_false('' %in% rownames(seuratObj@assays$Nimble@counts))
 })
 
 test_that("Nimble Append deletes all barcodes not in Seurat when creating new assay", {
   seuratObj <- readRDS("../testdata/nimbleTest.rds")
-  nimbleExclusiveBarcodes = c("12345_CCAGCGAAGTCCGTAT", "12345_CCAGCGAAGTCCGTAC")
+  nimbleExclusiveBarcodes <- c("12345_CCAGCGAAGTCCGTAT", "12345_CCAGCGAAGTCCGTAC")
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", appendToCounts=FALSE)
   expect_equal(nimbleExclusiveBarcodes %in% colnames(seuratObj@assays$Nimble@counts), c(FALSE, FALSE))
 })
 
 test_that("Nimble Append fills all barcodes in Seurat but not in Nimble when creating new assay", {
   seuratObj <- readRDS("../testdata/nimbleTest.rds")
-  seuratExclusiveBarcode = "12345_TAAAAAAAAAAAAAAA"
+  seuratExclusiveBarcode <- "12345_TAAAAAAAAAAAAAAA"
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", appendToCounts=FALSE)
   nimbleFeatureCounts <- seuratObj@assays$Nimble@counts[, seuratExclusiveBarcode]
   expect_equal(FALSE %in% (nimbleFeatureCounts == c(0, 0, 0, 0)), FALSE)
@@ -70,8 +69,8 @@ test_that("Nimble Append output Seurat object is valid when creating new assay",
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", appendToCounts=FALSE)
   expect_equal(colnames(seuratObj@assays$Nimble@counts), expectedBarcodes)
   expect_equal(rownames(seuratObj@assays$Nimble@counts), expectedFeatures)
-  expect_equal(FALSE %in% (seuratObj@assays$Nimble@counts[, expectedBarcodes[1]] == expectedValues[[1]]), FALSE)
-  expect_equal(FALSE %in% (seuratObj@assays$Nimble@counts[, expectedBarcodes[2]] == expectedValues[[2]]), FALSE)
-  expect_equal(FALSE %in% (seuratObj@assays$Nimble@counts[, expectedBarcodes[3]] == expectedValues[[3]]), FALSE)
-  expect_equal(FALSE %in% (seuratObj@assays$Nimble@counts[, expectedBarcodes[4]] == expectedValues[[4]]), FALSE)
+  expect_false(FALSE %in% (seuratObj@assays$Nimble@counts[, expectedBarcodes[1]] == expectedValues[[1]]))
+  expect_false(FALSE %in% (seuratObj@assays$Nimble@counts[, expectedBarcodes[2]] == expectedValues[[2]]))
+  expect_false(FALSE %in% (seuratObj@assays$Nimble@counts[, expectedBarcodes[3]] == expectedValues[[3]]))
+  expect_false(FALSE %in% (seuratObj@assays$Nimble@counts[, expectedBarcodes[4]] == expectedValues[[4]]))
 })

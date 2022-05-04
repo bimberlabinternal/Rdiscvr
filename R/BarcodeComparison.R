@@ -22,7 +22,7 @@ utils::globalVariables(
 #' @param filePrefix A prefix appended to the name of all summary output files
 #' @export
 #' @importFrom dplyr %>% mutate group_by
-CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
+CompareCellBarcodeSets <- function(workbooks, savePath = tempdir(), filePrefix = '') {
   summary <- .GenerateDataToCompareBarcodeSets(workbooks, savePath)
   write.table(summary, file = file.path(savePath, paste0(filePrefix, 'rawComparisonData.txt')), sep = '\t', row.names = F, quote = F)
 
@@ -122,7 +122,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = '.', filePrefix = '') {
   write.table(df3, file = file.path(savePath, paste0(filePrefix, 'conflicting_intersect.txt')), sep = '\t', row.names = F, quote = F)
 }
 
-.GenerateDataToCompareBarcodeSets <- function(workbooks, savePath = '.') {
+.GenerateDataToCompareBarcodeSets <- function(workbooks, savePath = tempdir()) {
   metrics <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),

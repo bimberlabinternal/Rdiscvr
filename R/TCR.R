@@ -17,7 +17,7 @@ utils::globalVariables(
 #' @param allowMissing If true, samples missing data will be skipped. Otherwise, the function will fail.
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = '.', dropExisting = T, overwriteTcrTable = F, allowMissing = FALSE){
+DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dropExisting = T, overwriteTcrTable = F, allowMissing = FALSE){
   if (all(is.null(seuratObject[['BarcodePrefix']]))){
     stop('Seurat object lacks BarcodePrefix column')
   }
