@@ -8,13 +8,16 @@ DownloadAndAppendNimble(
   seuratObject,
   outPath = tempdir(),
   enforceUniqueFeatureNames = TRUE,
-  allowableGenomes = NULL
+  allowableGenomes = NULL,
+  ensureSamplesShareAllGenomes = TRUE
 )
 }
 \arguments{
 \item{outPath}{The path to which nimble files will be downloaded and saved}
 
 \item{enforceUniqueFeatureNames}{Whether or not to fail if we discover multiple nimble files with the same feature name}
+
+\item{ensureSamplesShareAllGenomes}{If true, the function will fail unless all samples have data from the same set of genomes}
 
 \item{seuratObj}{A Seurat object.}
 }

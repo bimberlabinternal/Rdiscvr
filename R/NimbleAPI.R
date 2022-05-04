@@ -26,10 +26,13 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniq
     
     nimbleToGenome <- .queryNimble(loupeDataId=datasetID, allowableGenomes=allowableGenomes)
 
-    # TODO Make this configurable whether or not we skip or return
     if (is.null(nimbleIds)) {
-      print(paste0('Nimble file(s) not found for dataset: ', datasetID, ', skipping'))
-      genomeToDataset[[datasetID]] <- integer()
+      if (ensureSamplesShareAllGenomes) {
+        stop(paste0('Nimble file(s) not found for dataset: ', datasetID))
+      } else {
+        print(paste0('Nimble file(s) not found for dataset: ', datasetID, ', skipping'))
+        genomeToDataset[[datasetID]] <- integer()
+      }
 
       next
     }
@@ -127,8 +130,6 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniq
     return(NULL)
   } else {
     df <- data.frame(rowid = rows$rowid, library_id = rows$library_id)
-
-    # TODO: consider failing if expected library_ids are not present
 
     # Always take the most recent output by genome:
     groups <- df %>% group_by(library_id) %>% summarise(rowid = max(rowid))
