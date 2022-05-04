@@ -3,7 +3,15 @@
 
 library(dplyr)
 
-DownloadAndAppendNimble <- function(seuratObject, outPath=".") {#, genomes=NULL) {
+#' @title DownloadAndAppendNimble
+#' @description This read a given seurat object and download/append all associated files to the object
+#'
+#' @param seuratObj A Seurat object.
+#' @param outPath The path to download nimble files to
+#' @param enforceUniqueFeatureNames Whether or not to fail if we discover multiple nimble files with the same feature name
+#' @return A modified Seurat object.
+#' @export
+DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniqueFeatureNames=TRUE) {#, genomes=NULL) {
   
   # Ensure we have a DatasetId column
   if (is.null(seuratObject@meta.data[['DatasetId']])) {
@@ -37,7 +45,7 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=".") {#, genomes=NULL)
   }
   
   print(nimbleFileComponents)
-  df <- .mergeNimbleFiles(fileComponents=nimbleFileComponents)
+  df <- .mergeNimbleFiles(fileComponents=nimbleFileComponents, enforceUniqueFeatureNames)
   
   outFile <- file.path(outPath, paste0("mergedNimbleCounts.tsv"))
   
@@ -48,7 +56,10 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=".") {#, genomes=NULL)
   return(seuratObject)
 }
 
-
+#' @title queryNimble
+#' @description Given a loupe data Id, get the associated nimble files
+#'
+#' @param loupeDataId A Loupe data id
 .queryNimble <- function(loupeDataId) {
   rows <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
@@ -100,8 +111,11 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=".") {#, genomes=NULL)
   return(ret)
 }
 
-
-.mergeNimbleFiles <- function(fileComponents=c()) {
+#' @title .mergeNimbleFiles
+#' @description Takes a set of nimble file/dataID tuples and appends them into one file
+#' @param enforceUniqueFeatureNames Whether or not to fail if we discover multiple nimble files with the same feature name
+#' @param fileComponents A vector of nimble file/dataID tuples
+.mergeNimbleFiles <- function(fileComponents=c(), enforceUniqueFeatureNames=TRUE) {
   df <- NULL
   
   for(component in fileComponents) {
@@ -122,7 +136,7 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=".") {#, genomes=NULL)
       tableFeatures <- unique(nimbleTable$'V1')
       sharedFeatures <- tableFeatures %in% dfFeatures
       
-      if(any(sharedFeatures)) {
+      if(any(sharedFeatures) && enforceUniqueFeatureNames) {
         stop(paste0("Cannot merge nimble files: features shared between libraries: ", dfFeatures$V1[sharedFeatures]))  
       }
       

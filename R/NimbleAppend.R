@@ -1,5 +1,13 @@
 #' @import Seurat tidyr Matrix
-
+#' 
+#' @title AppendNimbleCounts
+#' @description Reads a given seurat object and a nimble file, and appends the nimble data to the object
+#'
+#' @param seuratObject A Seurat object.
+#' @param file A nimble file
+#' @param appendToCounts If true, append the nimble data to the count matrix. If false, make a new Nimble assay
+#' @return A modified Seurat object.
+#' @export
 AppendNimbleCounts <- function(seuratObject, file, appendToCounts=FALSE) {
   if (!file.exists(file)) {
     stop("Nimble file not found.")
@@ -8,11 +16,16 @@ AppendNimbleCounts <- function(seuratObject, file, appendToCounts=FALSE) {
   # Read file and construct df
   df <- read.table(file, sep="\t", header=FALSE)
   
-  # Remove blank feature names, just in case
-  df <- df[!(df$V1==""), ]
+  if(length(df[!(df$V1==""), ]) != 0) {
+    # Remove blank feature names, just in case
+    df <- df[!(df$V1==""), ]
+    
+    warning("Nimble data contains blank feature names")
+  }
   
   #Remove ambiguous features
   df <- df[!grepl(",", df$V1), ]
+
   
   df <- tidyr::pivot_wider(df, names_from=V3, values_from=V2, values_fill=0)
   
