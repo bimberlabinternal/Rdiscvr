@@ -214,7 +214,7 @@ utils::globalVariables(
 
 .ProcessTcrClonotypes <- function(clonotypeFile){
   tcr <- utils::read.table(clonotypeFile, header=T, sep = ',', fill = TRUE)
-  tcr <- tcr[tcr$cdr3 != 'None',]
+  tcr <- tcr[tcr$cdr3 != 'None' & tcr$cdr3 != '',]
 
   # drop cellranger '-1' suffix
   tcr$barcode <- gsub("-1", "", tcr$barcode)
@@ -279,27 +279,27 @@ utils::globalVariables(
 
   # Summarise, grouping by barcode
   tcr <- tcr %>% group_by(barcode) %>% summarise(
-		ChainCDR3s = paste0(sort(unique(ChainCDR3s)), collapse = ","),
-		CDR3s = paste0(sort(unique(cdr3)), collapse = ","),
-		TRA = paste0(sort(unique(as.character(TRA))), collapse = ","),
-		TRB = paste0(sort(unique(as.character(TRB))), collapse = ","),
-		TRD = paste0(sort(unique(as.character(TRD))), collapse = ","),
-		TRG = paste0(sort(unique(as.character(TRG))), collapse = ","),
-		TRAV = paste0(sort(unique(as.character(TRAV))), collapse = ","),
-		TRBV = paste0(sort(unique(as.character(TRBV))), collapse = ","),
-		TRDV = paste0(sort(unique(as.character(TRDV))), collapse = ","),
-		TRGV = paste0(sort(unique(as.character(TRGV))), collapse = ","),
-    TRAJ = paste0(sort(unique(as.character(TRAJ))), collapse = ","),
-    TRBJ = paste0(sort(unique(as.character(TRBJ))), collapse = ","),
-    TRDJ = paste0(sort(unique(as.character(TRDJ))), collapse = ","),
-    TRGJ = paste0(sort(unique(as.character(TRGJ))), collapse = ","),
-    TRAC = paste0(sort(unique(as.character(TRAC))), collapse = ","),
-    TRBC = paste0(sort(unique(as.character(TRBC))), collapse = ","),
-    TRDC = paste0(sort(unique(as.character(TRDC))), collapse = ","),
-    TRGC = paste0(sort(unique(as.character(TRGC))), collapse = ","),
-    TRBD = paste0(sort(unique(as.character(TRBD))), collapse = ","),
-    TRDD = paste0(sort(unique(as.character(TRDD))), collapse = ","),
-		CloneNames = paste0(sort(unique(CloneName)), collapse = ",")  #this is imprecise b/c we count a hit if we match any chain, but this is probably what we often want
+    ChainCDR3s = paste0(sort(unique(ChainCDR3s[ChainCDR3s != ''])), collapse = ","),
+    CDR3s = paste0(sort(unique(cdr3[cdr3 != ''])), collapse = ","),
+    TRA = paste0(sort(unique(as.character(TRA[TRA != '']))), collapse = ","),
+    TRB = paste0(sort(unique(as.character(TRB[TRB != '']))), collapse = ","),
+    TRD = paste0(sort(unique(as.character(TRD[TRD != '']))), collapse = ","),
+    TRG = paste0(sort(unique(as.character(TRG[TRG != '']))), collapse = ","),
+    TRAV = paste0(sort(unique(as.character(TRAV[TRAV != '']))), collapse = ","),
+    TRBV = paste0(sort(unique(as.character(TRBV[TRBV != '']))), collapse = ","),
+    TRDV = paste0(sort(unique(as.character(TRDV[TRDV != '']))), collapse = ","),
+    TRGV = paste0(sort(unique(as.character(TRGV[TRGV != '']))), collapse = ","),
+    TRAJ = paste0(sort(unique(as.character(TRAJ[TRAJ != '']))), collapse = ","),
+    TRBJ = paste0(sort(unique(as.character(TRBJ[TRBJ != '']))), collapse = ","),
+    TRDJ = paste0(sort(unique(as.character(TRDJ[TRDJ != '']))), collapse = ","),
+    TRGJ = paste0(sort(unique(as.character(TRGJ[TRGJ != '']))), collapse = ","),
+    TRAC = paste0(sort(unique(as.character(TRAC[TRAC != '']))), collapse = ","),
+    TRBC = paste0(sort(unique(as.character(TRBC[TRBC != '']))), collapse = ","),
+    TRDC = paste0(sort(unique(as.character(TRDC[TRDC != '']))), collapse = ","),
+    TRGC = paste0(sort(unique(as.character(TRGC[TRGC != '']))), collapse = ","),
+    TRBD = paste0(sort(unique(as.character(TRBD[TRBD != '']))), collapse = ","),
+    TRDD = paste0(sort(unique(as.character(TRDD[TRDD != '']))), collapse = ","),
+    CloneNames = paste0(sort(unique(CloneName[CloneName != ''])), collapse = ",")  #this is imprecise b/c we count a hit if we match any chain, but this is probably what we often want
   )
 
   # Note: we should attempt to produce a more specfic call, assuming we have data from multiple chains

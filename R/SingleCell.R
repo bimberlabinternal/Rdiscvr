@@ -98,9 +98,13 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
   hasHTO <- !all(is.na(rows[htoLabel]))
   if (hasHTO) {
     if (!('HTO' %in% names(seuratObj@meta.data))) {
-      print('Adding HTO columns to seurat object')
-      seuratObj$HTO <- c(NA)
-      seuratObj$HTO_Classification <- c(NA)
+      print('Adding HTO column to seurat object')
+      seuratObj$HTO <- NA
+    }
+
+    if (!('HTO.Classification' %in% names(seuratObj@meta.data))) {
+      print('Adding HTO.Classification column to seurat object')
+      seuratObj$HTO.Classification <- NA
     }
 
     df <- data.frame(HTO = as.character(seuratObj$HTO), BarcodePrefix = as.character(seuratObj$BarcodePrefix), Barcode = origBarcodes, SortOrder = 1:length(origBarcodes))
@@ -159,6 +163,9 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
 
     #print(paste0('Adding column: ', fieldName, ' (', fieldKey, ')'))
     v <- df[[fieldName]]
+
+    # Dont allow empty strings:
+    v[v == ''] <- NA
     names(v) <- names(df)
     seuratObj[[fieldName]] <- v
   }

@@ -1,3 +1,5 @@
+![R Build and Checks](https://github.com/BimberLabInternal/rdiscvr/workflows/R%20Build%20and%20Checks/badge.svg)
+
 # R DISCVR
 This in an R package that provides helper functions to query data in LabKey/DISCVR modules. This is mainly for internal use by the Bimber Lab.
 
