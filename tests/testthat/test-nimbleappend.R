@@ -2,7 +2,7 @@ context("Nimble")
 
 test_that("Nimble Append detects missing input file", {
   seuratObj <- readRDS("../testdata/nimbleTest.rds")
-  expect_error(AppendNimbleCounts(seuratObj, "../testdata/nonexistent.tsv"), "Nimble file not found.", fixed=TRUE)
+  expect_error(AppendNimbleCounts(seuratObj, "../testdata/nonexistent.tsv"), "Nimble file not found: ../testdata/nonexistent.tsv", fixed=TRUE)
 })
 
 test_that("Nimble Append deletes blank feature names when appending", {
