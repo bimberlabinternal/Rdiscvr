@@ -18,7 +18,7 @@ utils::globalVariables(
 #' @param ensureSamplesShareAllGenomes If true, the function will fail unless all samples have data from the same set of genomes
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE) {
+DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE, targetAssayName = 'RNA', newAssayName = 'Nimble') {
   # Ensure we have a DatasetId column
   if (is.null(seuratObject@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
@@ -27,29 +27,29 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniq
   # Produce a nimble file id/DatasetId vector for each DatasetId
   nimbleFileComponents <- list()
   genomeToDataset <- list()
-  for (datasetID in unique(seuratObject@meta.data[['DatasetId']])) {
-    print(paste0('Possibly adding nimble data for dataset: ', datasetID))
+  for (datasetId in unique(seuratObject@meta.data[['DatasetId']])) {
+    print(paste0('Possibly adding nimble data for dataset: ', datasetId))
     
-    nimbleToGenome <- .queryNimble(loupeDataId=datasetID, allowableGenomes=allowableGenomes)
+    nimbleToGenome <- .queryNimble(loupeDataId=datasetId, allowableGenomes=allowableGenomes)
 
     if (is.null(nimbleToGenome)) {
       if (ensureSamplesShareAllGenomes) {
-        stop(paste0('Nimble file(s) not found for dataset: ', datasetID))
+        stop(paste0('Nimble file(s) not found for dataset: ', datasetId))
       } else {
-        print(paste0('Nimble file(s) not found for dataset: ', datasetID, ', skipping'))
-        genomeToDataset[[datasetID]] <- integer()
+        print(paste0('Nimble file(s) not found for dataset: ', datasetId, ', skipping'))
+        genomeToDataset[[datasetId]] <- integer()
       }
 
       next
     }
 
-    genomeToDataset[[datasetID]] <- names(nimbleToGenome)
+    genomeToDataset[[datasetId]] <- names(nimbleToGenome)
 
     nimbleFiles <- character()
     for (genomeId in names(nimbleToGenome)) {
       outputFileId <- nimbleToGenome[[genomeId]]
-      nimbleFile <- file.path(outPath, paste0('nimbleCounts.', datasetId, '.', genomeId, '.', id, '.tsv'))
-      DownloadOutputFile(outputFileId = id, outFile = nimbleFile, overwrite = T)
+      nimbleFile <- file.path(outPath, paste0('nimbleCounts.', datasetId, '.', genomeId, '.tsv'))
+      DownloadOutputFile(outputFileId = outputFileId, outFile = nimbleFile, overwrite = T)
       if (!file.exists(nimbleFile)) {
         stop(paste0('Unable to download calls table for genome: ', genomeId, ' datasetId: ', datasetId))
       }
@@ -57,7 +57,7 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniq
       nimbleFiles <- c(nimbleFiles, nimbleFile)
     }
 
-    nimbleFileComponents[[datasetID]] <- nimbleFiles
+    nimbleFileComponents[[datasetId]] <- nimbleFiles
   }
 
   # Ensure genomes identical across samples:
@@ -79,7 +79,7 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniq
   outFile <- file.path(outPath, paste0("mergedNimbleCounts.tsv"))
   write.table(df, outFile, sep="\t", col.names=F, row.names=F, quote=F)
   
-  seuratObject <- CellMembrane::AppendNimbleCounts(seuratObject=seuratObject, file=outFile)
+  seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, nimbleFile=outFile, dropAmbiguousFeatures = dropAmbiguousFeatures, targetAssayName = targetAssayName, newAssayName = newAssayName)
   unlink(outFile)
 
   return(seuratObject)
