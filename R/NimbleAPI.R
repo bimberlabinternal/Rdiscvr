@@ -1,6 +1,12 @@
 #' @include LabKeySettings.R
 #' @include Utils.R
 
+utils::globalVariables(
+  names = c('V1','V2','V3','library_id','rowid'),
+  package = 'Rdiscvr',
+  add = TRUE
+)
+
 #' @import dplyr
 
 #' @title DownloadAndAppendNimble
@@ -26,7 +32,7 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniq
     
     nimbleToGenome <- .queryNimble(loupeDataId=datasetID, allowableGenomes=allowableGenomes)
 
-    if (is.null(nimbleIds)) {
+    if (is.null(nimbleToGenome)) {
       if (ensureSamplesShareAllGenomes) {
         stop(paste0('Nimble file(s) not found for dataset: ', datasetID))
       } else {
@@ -45,7 +51,7 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniq
       nimbleFile <- file.path(outPath, paste0('nimbleCounts.', datasetId, '.', genomeId, '.', id, '.tsv'))
       DownloadOutputFile(outputFileId = id, outFile = nimbleFile, overwrite = T)
       if (!file.exists(nimbleFile)) {
-        stop(paste0('Unable to download calls table for nimbleId: ', nimbleId, ' datasetId: ', datasetId))
+        stop(paste0('Unable to download calls table for genome: ', genomeId, ' datasetId: ', datasetId))
       }
 
       nimbleFiles <- c(nimbleFiles, nimbleFile)
