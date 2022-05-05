@@ -19,7 +19,8 @@ Imports:
     CellMembrane,
     Biostrings,
     Matrix,
-    cFIT
+    cFIT,
+    tidyr
 Suggests:
     devtools,
     testthat (>= 2.1.0)
