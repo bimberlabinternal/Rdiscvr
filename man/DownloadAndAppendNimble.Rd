@@ -9,7 +9,10 @@ DownloadAndAppendNimble(
   outPath = tempdir(),
   enforceUniqueFeatureNames = TRUE,
   allowableGenomes = NULL,
-  ensureSamplesShareAllGenomes = TRUE
+  ensureSamplesShareAllGenomes = TRUE,
+  dropAmbiguousFeatures = TRUE,
+  targetAssayName = "RNA",
+  newAssayName = "Nimble"
 )
 }
 \arguments{

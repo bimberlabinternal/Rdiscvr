@@ -1,4 +1,5 @@
-#' @import Seurat tidyr Matrix
+#' @import Seurat
+#' @importFrom tidyr pivot_wider
 
 #' @title AppendNimbleCounts
 #' @description Reads a given seurat object and a nimble file, and appends the nimble data to the object.
@@ -31,7 +32,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, appendToExistingAssay=F
   if (sum(ambigFeatRows) > 0) {
     if (dropAmbiguousFeatures) {
       print(paste0('Dropping ', sum(ambigFeatRows), ' ambiguous features. (', sum(ambigFeatRows),' of ', nrow(df), ')'))
-      print(sort(table(df$V1[ambigFeatRows]), decreasing = T))
+      print(data.frame(sort(table(df$V1[ambigFeatRows]), decreasing = T)))
       df <- df[!ambigFeatRows, ]
     }
   }
@@ -50,6 +51,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, appendToExistingAssay=F
   
   # Fill zeroed barcodes that are in seurat but not in nimble
   zeroedBarcodes <- setdiff(seuratBarcodes, colnames(df)[-1])
+  print(paste0('Total cells lacking nimble data: ', length(zeroedBarcodes), ' of ', length(seuratBarcodes), ' cells'))
   for (barcode in zeroedBarcodes) {
     df[barcode] <- 0
   }
@@ -59,7 +61,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, appendToExistingAssay=F
   barcodes <- colnames(df)[-1]
   df <- subset(df, select=-(V1))
   df <- df[seuratBarcodes] # Ensure column order matches
-  m <- Reduce(cbind2, lapply(df, Matrix, sparse = TRUE))
+  m <- Reduce(cbind2, lapply(df, Matrix::Matrix, sparse = TRUE))
   dimnames(m) <- list(featureNames, barcodes)
   
   if (appendToExistingAssay) {
