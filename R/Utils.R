@@ -162,6 +162,9 @@ UploadOutputFile <- function(localPath, workbook, name, category, description, r
 		stop('Failed to upload file')
 	}
 
+	#TODO: need to create ExpData object from this file
+	expDataId <- NA
+
 	toInsert <- data.frame(
 		fileid = expDataId,
 		category = category,
@@ -174,6 +177,8 @@ UploadOutputFile <- function(localPath, workbook, name, category, description, r
 	inserted <- labkey.insertRows(
 		baseUrl=.getBaseUrl(),
 		folderPath=paste0(.getLabKeyDefaultFolder(), workbook),
+		schemaName = 'sequenceanalysis',
+		queryName = 'outputfiles',
 		toInsert = toInsert
 	)
 

@@ -6,7 +6,7 @@
 \usage{
 DownloadAndAppendTcrClonotypes(
   seuratObject,
-  outPath = ".",
+  outPath = tempdir(),
   dropExisting = T,
   overwriteTcrTable = F,
   allowMissing = FALSE

@@ -18,7 +18,9 @@ Imports:
     cellhashR,
     CellMembrane,
     Biostrings,
-    cFIT
+    Matrix,
+    cFIT,
+    tidyr
 Suggests:
     devtools,
     testthat (>= 2.1.0)
@@ -34,5 +36,7 @@ Collate:
     'BarcodeComparison.R'
     'Utils.R'
     'CellHashing.R'
+    'NimbleAPI.R'
+    'NimbleAppend.R'
     'SingleCell.R'
     'TCR.R'
