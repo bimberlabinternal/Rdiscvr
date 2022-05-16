@@ -6,13 +6,11 @@
 #'
 #' @param seuratObject A Seurat object.
 #' @param nimbleFile A nimble file, which is a TSV of feature counts created by nimble
-#' @param appendToExistingAssay If true, append the nimble data to the count matrix. If false, make a new Nimble assay
 #' @param dropAmbiguousFeatures If true, any ambiguous features (defined as containing a comma) will be discarded
-#' @param targetAssayName If appendToExistingAssay=TRUE, nimble data will be appended to this assay
-#' @param newAssayName If appendToExistingAssay=FALSE, nimble data will be stored in a new assay with this name
+#' @param targetAssayName The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.
 #' @return A modified Seurat object.
 #' @export
-AppendNimbleCounts <- function(seuratObject, nimbleFile, appendToExistingAssay=FALSE, dropAmbiguousFeatures = TRUE, targetAssayName = 'RNA', newAssayName = 'Nimble') {
+AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE) {
   if (!file.exists(nimbleFile)) {
     stop(paste0("Nimble file not found: ", nimbleFile))
   }
@@ -63,7 +61,8 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, appendToExistingAssay=F
   df <- df[seuratBarcodes] # Ensure column order matches
   m <- Reduce(cbind2, lapply(df, Matrix::Matrix, sparse = TRUE))
   dimnames(m) <- list(featureNames, barcodes)
-  
+
+  appendToExistingAssay <- targetAssayName %in% names(seuratObject@assays)
   if (appendToExistingAssay) {
     if (any(rownames(m)) %in% rownames(seuratObject@assays[[targetAssayName]])) {
       conflicting <- rownames(m)[rownames(m) %in% rownames(seuratObject@assays[[targetAssayName]])]

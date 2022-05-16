@@ -13,12 +13,13 @@ utils::globalVariables(
 #' @description This read a given seurat object and download/append all associated files to the object
 #'
 #' @param seuratObj A Seurat object.
+#' @param targetAssayName The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.
 #' @param outPath The path to which nimble files will be downloaded and saved
 #' @param enforceUniqueFeatureNames Whether or not to fail if we discover multiple nimble files with the same feature name
 #' @param ensureSamplesShareAllGenomes If true, the function will fail unless all samples have data from the same set of genomes
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE, targetAssayName = 'RNA', newAssayName = 'Nimble') {
+DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE) {
   # Ensure we have a DatasetId column
   if (is.null(seuratObject@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
@@ -79,7 +80,7 @@ DownloadAndAppendNimble <- function(seuratObject, outPath=tempdir(), enforceUniq
   outFile <- file.path(outPath, paste0("mergedNimbleCounts.tsv"))
   write.table(df, outFile, sep="\t", col.names=F, row.names=F, quote=F)
   
-  seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, nimbleFile=outFile, dropAmbiguousFeatures = dropAmbiguousFeatures, targetAssayName = targetAssayName, newAssayName = newAssayName)
+  seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, targetAssayName = targetAssayName, nimbleFile=outFile, dropAmbiguousFeatures = dropAmbiguousFeatures)
   unlink(outFile)
 
   return(seuratObject)

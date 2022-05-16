@@ -6,16 +6,17 @@
 \usage{
 DownloadAndAppendNimble(
   seuratObject,
+  targetAssayName,
   outPath = tempdir(),
   enforceUniqueFeatureNames = TRUE,
   allowableGenomes = NULL,
   ensureSamplesShareAllGenomes = TRUE,
-  dropAmbiguousFeatures = TRUE,
-  targetAssayName = "RNA",
-  newAssayName = "Nimble"
+  dropAmbiguousFeatures = TRUE
 )
 }
 \arguments{
+\item{targetAssayName}{The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.}
+
 \item{outPath}{The path to which nimble files will be downloaded and saved}
 
 \item{enforceUniqueFeatureNames}{Whether or not to fail if we discover multiple nimble files with the same feature name}

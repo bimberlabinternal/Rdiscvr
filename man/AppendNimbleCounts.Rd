@@ -7,10 +7,8 @@
 AppendNimbleCounts(
   seuratObject,
   nimbleFile,
-  appendToExistingAssay = FALSE,
-  dropAmbiguousFeatures = TRUE,
-  targetAssayName = "RNA",
-  newAssayName = "Nimble"
+  targetAssayName,
+  dropAmbiguousFeatures = TRUE
 )
 }
 \arguments{
@@ -18,13 +16,9 @@ AppendNimbleCounts(
 
 \item{nimbleFile}{A nimble file, which is a TSV of feature counts created by nimble}
 
-\item{appendToExistingAssay}{If true, append the nimble data to the count matrix. If false, make a new Nimble assay}
+\item{targetAssayName}{The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.}
 
 \item{dropAmbiguousFeatures}{If true, any ambiguous features (defined as containing a comma) will be discarded}
-
-\item{targetAssayName}{If appendToExistingAssay=TRUE, nimble data will be appended to this assay}
-
-\item{newAssayName}{If appendToExistingAssay=FALSE, nimble data will be stored in a new assay with this name}
 }
 \value{
 A modified Seurat object.
