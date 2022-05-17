@@ -18,20 +18,27 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   # Read file and construct df
   df <- read.table(nimbleFile, sep="\t", header=FALSE)
   
-  if (length(df[!(df$V1==""), ]) != 0) {
-    # Remove blank feature names, just in case
-    df <- df[!(df$V1==""), ]
-    
-    warning("The nimble data contains blank feature names. This should not occur.")
+  if (sum(df$V1 == "") > 0) {
+    stop("The nimble data contains blank feature names. This should not occur.")
   }
-  
+
+  if (sum(grepl(df$V1 == "^,")) > 0) {
+    stop("The nimble data contains features with leading commas. This should not occur.")
+  }
+
+  if (sum(grepl(df$V1 == ",$")) > 0) {
+    stop("The nimble data contains features with trailing commas. This should not occur.")
+  }
+
   #Remove ambiguous features
   ambigFeatRows <- grepl(",", df$V1)
   if (sum(ambigFeatRows) > 0) {
     if (dropAmbiguousFeatures) {
       print(paste0('Dropping ', sum(ambigFeatRows), ' ambiguous features. (', sum(ambigFeatRows),' of ', nrow(df), ')'))
-      print(data.frame(sort(table(df$V1[ambigFeatRows]), decreasing = T)))
-      df <- df[!ambigFeatRows, ]
+      x <- sort(table(df$V1[ambigFeatRows]), decreasing = T)
+      x <- data.frame(Feature = names(x), Total = as.numeric(unname(x)))
+      print(x)
+      df <- df[!ambigFeatRows, , drop = F]
     }
   }
   
