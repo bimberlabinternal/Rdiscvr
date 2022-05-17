@@ -6,23 +6,28 @@
 \usage{
 DownloadAndAppendNimble(
   seuratObject,
+  targetAssayName,
   outPath = tempdir(),
   enforceUniqueFeatureNames = TRUE,
   allowableGenomes = NULL,
   ensureSamplesShareAllGenomes = TRUE,
-  dropAmbiguousFeatures = TRUE,
-  targetAssayName = "RNA",
-  newAssayName = "Nimble"
+  dropAmbiguousFeatures = TRUE
 )
 }
 \arguments{
+\item{seuratObject}{A Seurat object.}
+
+\item{targetAssayName}{The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.}
+
 \item{outPath}{The path to which nimble files will be downloaded and saved}
 
 \item{enforceUniqueFeatureNames}{Whether or not to fail if we discover multiple nimble files with the same feature name}
 
+\item{allowableGenomes}{An optional vector of genomeIds. If provided, nimble results from these genomes will be appended. If any dataset lacks a nimble file for a genome, it will fail}
+
 \item{ensureSamplesShareAllGenomes}{If true, the function will fail unless all samples have data from the same set of genomes}
 
-\item{seuratObj}{A Seurat object.}
+\item{dropAmbiguousFeatures}{If true, any ambiguous feature (identified as containing a comma)}
 }
 \value{
 A modified Seurat object.

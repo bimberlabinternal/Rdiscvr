@@ -159,8 +159,8 @@ CompareCellBarcodeSets <- function(workbooks, savePath = tempdir(), filePrefix =
   )
 
   allWorkbooks <- labkey.selectRows(
-    baseUrl=Rdiscvr:::.getBaseUrl(),
-    folderPath=paste0(Rdiscvr:::.getLabKeyDefaultFolder()),
+    baseUrl=.getBaseUrl(),
+    folderPath=paste0(.getLabKeyDefaultFolder()),
     schemaName="core",
     queryName="containers",
     colFilter = makeFilter(c('type', 'EQUALS', 'workbook')),

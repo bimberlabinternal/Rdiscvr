@@ -6,13 +6,11 @@
 #'
 #' @param seuratObject A Seurat object.
 #' @param nimbleFile A nimble file, which is a TSV of feature counts created by nimble
-#' @param appendToExistingAssay If true, append the nimble data to the count matrix. If false, make a new Nimble assay
 #' @param dropAmbiguousFeatures If true, any ambiguous features (defined as containing a comma) will be discarded
-#' @param targetAssayName If appendToExistingAssay=TRUE, nimble data will be appended to this assay
-#' @param newAssayName If appendToExistingAssay=FALSE, nimble data will be stored in a new assay with this name
+#' @param targetAssayName The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.
 #' @return A modified Seurat object.
 #' @export
-AppendNimbleCounts <- function(seuratObject, nimbleFile, appendToExistingAssay=FALSE, dropAmbiguousFeatures = TRUE, targetAssayName = 'RNA', newAssayName = 'Nimble') {
+AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE) {
   if (!file.exists(nimbleFile)) {
     stop(paste0("Nimble file not found: ", nimbleFile))
   }
@@ -40,7 +38,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, appendToExistingAssay=F
   df <- tidyr::pivot_wider(df, names_from=V3, values_from=V2, values_fill=0)
 
   # Remove barcodes from nimble that aren't in seurat
-  seuratBarcodes <- colnames(seuratObject@assays[[targetAssayName]])
+  seuratBarcodes <- colnames(seuratObject@assays[[Seurat::DefaultAssay(seuratObject)]])
   barcodeDiff <- colnames(df) %in% seuratBarcodes
   barcodeDiff[1] <- TRUE # retain feature name
   numColsToDrop <- length(barcodeDiff) - sum(barcodeDiff)
@@ -61,11 +59,12 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, appendToExistingAssay=F
   barcodes <- colnames(df)[-1]
   df <- subset(df, select=-(V1))
   df <- df[seuratBarcodes] # Ensure column order matches
-  m <- Reduce(cbind2, lapply(df, Matrix::Matrix, sparse = TRUE))
+  m <- Reduce(methods::cbind2, lapply(df, Matrix::Matrix, sparse = TRUE))
   dimnames(m) <- list(featureNames, barcodes)
-  
+
+  appendToExistingAssay <- targetAssayName %in% names(seuratObject@assays)
   if (appendToExistingAssay) {
-    if (any(rownames(m)) %in% rownames(seuratObject@assays[[targetAssayName]])) {
+    if (any(rownames(m) %in% rownames(seuratObject@assays[[targetAssayName]]))) {
       conflicting <- rownames(m)[rownames(m) %in% rownames(seuratObject@assays[[targetAssayName]])]
       stop(paste0('The following nimble features conflict with features in the seuratObj: ', paste0(conflicting, collapse = ',')))
     }
@@ -77,7 +76,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, appendToExistingAssay=F
     seuratObject[[targetAssayName]] <- CreateAssayObject(counts = Seurat::as.sparse(rbind(seuratObject@assays[[targetAssayName]]@counts, m)))
   } else {
     # Add nimble as separate assay
-    seuratObject[[newAssayName]] <- CreateAssayObject(counts = m)
+    seuratObject[[targetAssayName]] <- CreateAssayObject(counts = m)
   }
   
   return(seuratObject)

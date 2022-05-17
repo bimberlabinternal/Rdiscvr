@@ -190,6 +190,7 @@ UploadOutputFile <- function(localPath, workbook, name, category, description, r
 #' @param localPath The local filepath to the file
 #' @param workbook The numeric ID of the target workbook
 #' @param name The name for this output
+#' @param category The category for this output
 #' @param description A description for this output
 #' @param readsetId The integer readsetId associated with this output
 #' @param genomeId The integer genome ID associated with this output

@@ -22,6 +22,8 @@ UploadSeuratObject(
 
 \item{name}{The name for this output}
 
+\item{category}{The category for this output}
+
 \item{description}{A description for this output}
 
 \item{readsetId}{The integer readsetId associated with this output}
