@@ -22,11 +22,11 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
     stop("The nimble data contains blank feature names. This should not occur.")
   }
 
-  if (sum(grepl(df$V1 == "^,")) > 0) {
+  if (sum(grepl(df$V1, pattern = "^,")) > 0) {
     stop("The nimble data contains features with leading commas. This should not occur.")
   }
 
-  if (sum(grepl(df$V1 == ",$")) > 0) {
+  if (sum(grepl(df$V1, pattern = ",$")) > 0) {
     stop("The nimble data contains features with trailing commas. This should not occur.")
   }
 
