@@ -12,11 +12,13 @@ utils::globalVariables(
 #' @title DownloadAndAppendNimble
 #' @description This read a given seurat object and download/append all associated files to the object
 #'
-#' @param seuratObj A Seurat object.
+#' @param seuratObject A Seurat object.
 #' @param targetAssayName The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.
 #' @param outPath The path to which nimble files will be downloaded and saved
 #' @param enforceUniqueFeatureNames Whether or not to fail if we discover multiple nimble files with the same feature name
+#' @param allowableGenomes An optional vector of genomeIds. If provided, nimble results from these genomes will be appended. If any dataset lacks a nimble file for a genome, it will fail
 #' @param ensureSamplesShareAllGenomes If true, the function will fail unless all samples have data from the same set of genomes
+#' @param dropAmbiguousFeatures If true, any ambiguous feature (identified as containing a comma)
 #' @return A modified Seurat object.
 #' @export
 DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE) {
