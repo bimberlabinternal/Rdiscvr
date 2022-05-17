@@ -20,7 +20,8 @@ Imports:
     Biostrings,
     Matrix,
     cFIT,
-    tidyr
+    tidyr,
+    methods
 Suggests:
     devtools,
     testthat (>= 2.1.0)
