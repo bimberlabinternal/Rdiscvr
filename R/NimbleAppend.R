@@ -59,7 +59,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   barcodes <- colnames(df)[-1]
   df <- subset(df, select=-(V1))
   df <- df[seuratBarcodes] # Ensure column order matches
-  m <- Reduce(cbind2, lapply(df, Matrix::Matrix, sparse = TRUE))
+  m <- Reduce(methods::cbind2, lapply(df, Matrix::Matrix, sparse = TRUE))
   dimnames(m) <- list(featureNames, barcodes)
 
   appendToExistingAssay <- targetAssayName %in% names(seuratObject@assays)
