@@ -172,8 +172,8 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
         tableFeatures <- unique(nimbleTable$V1)
         sharedFeatures <- tableFeatures %in% dfFeatures
 
-        if (length(sharedFeatures) > 0 && enforceUniqueFeatureNames) {
-            stop(paste0("Cannot merge nimble files: features shared between libraries: ", paste0(sharedFeatures, collapse = ',')))
+        if (sum(sharedFeatures) > 0 && enforceUniqueFeatureNames) {
+            stop(paste0("Cannot merge nimble files: features shared between libraries: ", paste0(tableFeatures[sharedFeatures], collapse = ',')))
         }
 
         df <- rbind(df, nimbleTable)
