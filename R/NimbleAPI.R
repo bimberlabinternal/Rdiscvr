@@ -19,9 +19,10 @@ utils::globalVariables(
 #' @param allowableGenomes An optional vector of genomeIds. If provided, nimble results from these genomes will be appended. If any dataset lacks a nimble file for a genome, it will fail
 #' @param ensureSamplesShareAllGenomes If true, the function will fail unless all samples have data from the same set of genomes
 #' @param dropAmbiguousFeatures If true, any ambiguous feature (identified as containing a comma)
+#' @param reuseExistingDownloads If true, any pre-existing downloaded nimble TSVs will be re-used
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE) {
+DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE, reuseExistingDownloads = FALSE) {
   # Ensure we have a DatasetId column
   if (is.null(seuratObject@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
@@ -53,7 +54,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
     for (genomeId in names(nimbleToGenome)) {
       outputFileId <- nimbleToGenome[[genomeId]]
       nimbleFile <- file.path(outPath, paste0('nimbleCounts.', datasetId, '.', genomeId, '.tsv'))
-      DownloadOutputFile(outputFileId = outputFileId, outFile = nimbleFile, overwrite = T)
+      DownloadOutputFile(outputFileId = outputFileId, outFile = nimbleFile, overwrite = !reuseExistingDownloads)
       if (!file.exists(nimbleFile)) {
         stop(paste0('Unable to download calls table for genome: ', genomeId, ' datasetId: ', datasetId))
       }
