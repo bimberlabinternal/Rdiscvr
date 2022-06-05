@@ -30,6 +30,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   # Produce a nimble file id/DatasetId vector for each DatasetId
   nimbleFileComponents <- list()
   genomeToDataset <- list()
+  print(paste0('Total datasets: ', length(unique(seuratObject@meta.data[['DatasetId']]))))
   for (datasetId in unique(seuratObject@meta.data[['DatasetId']])) {
     print(paste0('Possibly adding nimble data for dataset: ', datasetId))
     
@@ -77,11 +78,13 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
     }
   }
 
+  print('Merging into single matrix')
   df <- .mergeNimbleFiles(fileComponents=nimbleFileComponents, enforceUniqueFeatureNames)
   
   outFile <- file.path(outPath, paste0("mergedNimbleCounts.tsv"))
   write.table(df, outFile, sep="\t", col.names=F, row.names=F, quote=F)
-  
+
+  print(paste0('Appending counts to ', targetAssayName))
   seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, targetAssayName = targetAssayName, nimbleFile=outFile, dropAmbiguousFeatures = dropAmbiguousFeatures)
   unlink(outFile)
 
@@ -162,15 +165,15 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
       nimbleTable <- read.table(fn, sep="\t", header=FALSE)
       nimbleTable$V3 <- paste0(datasetId, "_", nimbleTable$V3)
 
-      if(is.null(df)) {
+      if (is.null(df)) {
         df <- nimbleTable
       } else {
-        dfFeatures <- unique(df$'V1')
-        tableFeatures <- unique(nimbleTable$'V1')
+        dfFeatures <- unique(df$V1)
+        tableFeatures <- unique(nimbleTable$V1)
         sharedFeatures <- tableFeatures %in% dfFeatures
 
-        if(any(sharedFeatures) && enforceUniqueFeatureNames) {
-          stop(paste0("Cannot merge nimble files: features shared between libraries: ", dfFeatures$V1[sharedFeatures]))
+        if (length(sharedFeatures) > 0 && enforceUniqueFeatureNames) {
+            stop(paste0("Cannot merge nimble files: features shared between libraries: ", paste0(sharedFeatures, collapse = ',')))
         }
 
         df <- rbind(df, nimbleTable)
