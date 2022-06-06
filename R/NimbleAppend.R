@@ -41,8 +41,17 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
       df <- df[!ambigFeatRows, , drop = F]
     }
   }
-  
-  df <- tidyr::pivot_wider(df, names_from=V3, values_from=V2, values_fill=0)
+
+  tryCatch({
+    df <- tidyr::pivot_wider(df, names_from=V3, values_from=V2, values_fill=0)
+  }, error = function(e){
+    write.table(df, file = 'debug.nimble.txt', sep = '\t', quote = F, row.names = F)
+
+    print('Error pivoting input data, results saved to: debug.nimble.txt')
+    print(conditionMessage(e))
+    traceback()
+    stop('Error preparing nimble data')
+  })
 
   # Remove barcodes from nimble that aren't in seurat
   seuratBarcodes <- colnames(seuratObject@assays[[Seurat::DefaultAssay(seuratObject)]])

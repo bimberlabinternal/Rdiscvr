@@ -168,6 +168,11 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
 
       nimbleTable <- read.table(fn, sep="\t", header=FALSE)
       nimbleTable$V3 <- paste0(datasetId, "_", nimbleTable$V3)
+      nimbleTable <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2), InputRows = n())
+      if (sum(nimbleTable$InputRows > 1) > 0) {
+        warning(paste0('There were duplicate rows from the same cell-barcode/feature in the input for dataset: ', datasetId))
+      }
+      nimbleTable <- nimbleTable[c('V1', 'V2', 'V3')]
 
       if (is.null(df)) {
         df <- nimbleTable
