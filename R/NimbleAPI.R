@@ -158,6 +158,9 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   
   for (datasetId in names(fileComponents)) {
     files <- fileComponents[[datasetId]]
+
+    # Features shared across datasets is fine. The problem arises if two genomes from the same dataset do.
+    featuresForDataset <- NULL
     for (fn in files) {
       if (!file.exists(fn)) {
         stop(paste0('Unable to open local file for nimbleId: ', fn, ' datasetId: ', datasetId))
@@ -168,14 +171,16 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
 
       if (is.null(df)) {
         df <- nimbleTable
+        featuresForDataset <- sort(unique(nimbleTable$V1))
       } else {
-        dfFeatures <- unique(df$V1)
-        tableFeatures <- unique(nimbleTable$V1)
-        sharedFeatures <- tableFeatures %in% dfFeatures
+        incomingFeatures <- sort(unique(nimbleTable$V1))
+        sharedFeatures <- incomingFeatures %in% featuresForDataset
 
         if (sum(sharedFeatures) > 0 && enforceUniqueFeatureNames) {
-            stop(paste0("Cannot merge nimble files: features shared between libraries: ", paste0(tableFeatures[sharedFeatures], collapse = ',')))
+            stop(paste0("Cannot merge nimble files: features shared between libraries: ", paste0(incomingFeatures[sharedFeatures], collapse = '; ')))
         }
+
+        featuresForDataset <- sort(c(featuresForDataset, incomingFeatures))
 
         df <- rbind(df, nimbleTable)
       }
