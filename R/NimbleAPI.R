@@ -19,9 +19,10 @@ utils::globalVariables(
 #' @param allowableGenomes An optional vector of genomeIds. If provided, nimble results from these genomes will be appended. If any dataset lacks a nimble file for a genome, it will fail
 #' @param ensureSamplesShareAllGenomes If true, the function will fail unless all samples have data from the same set of genomes
 #' @param dropAmbiguousFeatures If true, any ambiguous feature (identified as containing a comma)
+#' @param reuseExistingDownloads If true, any pre-existing downloaded nimble TSVs will be re-used
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE) {
+DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE, reuseExistingDownloads = FALSE) {
   # Ensure we have a DatasetId column
   if (is.null(seuratObject@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
@@ -30,6 +31,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   # Produce a nimble file id/DatasetId vector for each DatasetId
   nimbleFileComponents <- list()
   genomeToDataset <- list()
+  print(paste0('Total datasets: ', length(unique(seuratObject@meta.data[['DatasetId']]))))
   for (datasetId in unique(seuratObject@meta.data[['DatasetId']])) {
     print(paste0('Possibly adding nimble data for dataset: ', datasetId))
     
@@ -52,7 +54,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
     for (genomeId in names(nimbleToGenome)) {
       outputFileId <- nimbleToGenome[[genomeId]]
       nimbleFile <- file.path(outPath, paste0('nimbleCounts.', datasetId, '.', genomeId, '.tsv'))
-      DownloadOutputFile(outputFileId = outputFileId, outFile = nimbleFile, overwrite = T)
+      DownloadOutputFile(outputFileId = outputFileId, outFile = nimbleFile, overwrite = !reuseExistingDownloads)
       if (!file.exists(nimbleFile)) {
         stop(paste0('Unable to download calls table for genome: ', genomeId, ' datasetId: ', datasetId))
       }
@@ -77,11 +79,13 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
     }
   }
 
+  print('Merging into single matrix')
   df <- .mergeNimbleFiles(fileComponents=nimbleFileComponents, enforceUniqueFeatureNames)
   
   outFile <- file.path(outPath, paste0("mergedNimbleCounts.tsv"))
   write.table(df, outFile, sep="\t", col.names=F, row.names=F, quote=F)
-  
+
+  print(paste0('Appending counts to ', targetAssayName))
   seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, targetAssayName = targetAssayName, nimbleFile=outFile, dropAmbiguousFeatures = dropAmbiguousFeatures)
   unlink(outFile)
 
@@ -154,6 +158,9 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   
   for (datasetId in names(fileComponents)) {
     files <- fileComponents[[datasetId]]
+
+    # Features shared across datasets is fine. The problem arises if two genomes from the same dataset do.
+    featuresForDataset <- NULL
     for (fn in files) {
       if (!file.exists(fn)) {
         stop(paste0('Unable to open local file for nimbleId: ', fn, ' datasetId: ', datasetId))
@@ -162,16 +169,18 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
       nimbleTable <- read.table(fn, sep="\t", header=FALSE)
       nimbleTable$V3 <- paste0(datasetId, "_", nimbleTable$V3)
 
-      if(is.null(df)) {
+      if (is.null(df)) {
         df <- nimbleTable
+        featuresForDataset <- sort(unique(nimbleTable$V1))
       } else {
-        dfFeatures <- unique(df$'V1')
-        tableFeatures <- unique(nimbleTable$'V1')
-        sharedFeatures <- tableFeatures %in% dfFeatures
+        incomingFeatures <- sort(unique(nimbleTable$V1))
+        sharedFeatures <- incomingFeatures %in% featuresForDataset
 
-        if(any(sharedFeatures) && enforceUniqueFeatureNames) {
-          stop(paste0("Cannot merge nimble files: features shared between libraries: ", dfFeatures$V1[sharedFeatures]))
+        if (sum(sharedFeatures) > 0 && enforceUniqueFeatureNames) {
+            stop(paste0("Cannot merge nimble files: features shared between libraries: ", paste0(incomingFeatures[sharedFeatures], collapse = '; ')))
         }
+
+        featuresForDataset <- sort(c(featuresForDataset, incomingFeatures))
 
         df <- rbind(df, nimbleTable)
       }

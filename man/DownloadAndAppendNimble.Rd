@@ -11,7 +11,8 @@ DownloadAndAppendNimble(
   enforceUniqueFeatureNames = TRUE,
   allowableGenomes = NULL,
   ensureSamplesShareAllGenomes = TRUE,
-  dropAmbiguousFeatures = TRUE
+  dropAmbiguousFeatures = TRUE,
+  reuseExistingDownloads = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ DownloadAndAppendNimble(
 \item{ensureSamplesShareAllGenomes}{If true, the function will fail unless all samples have data from the same set of genomes}
 
 \item{dropAmbiguousFeatures}{If true, any ambiguous feature (identified as containing a comma)}
+
+\item{reuseExistingDownloads}{If true, any pre-existing downloaded nimble TSVs will be re-used}
 }
 \value{
 A modified Seurat object.
