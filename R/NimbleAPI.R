@@ -81,6 +81,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
 
   print('Merging into single matrix')
   df <- .mergeNimbleFiles(fileComponents=nimbleFileComponents, enforceUniqueFeatureNames)
+  print(paste0('Total features: ', length(unique(df$V1))))
   
   outFile <- file.path(outPath, paste0("mergedNimbleCounts.tsv"))
   write.table(df, outFile, sep="\t", col.names=F, row.names=F, quote=F)
@@ -162,12 +163,35 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
     # Features shared across datasets is fine. The problem arises if two genomes from the same dataset do.
     featuresForDataset <- NULL
     for (fn in files) {
+      print(paste0('Reading nimble TSV for: ', datasetId, ': ', fn))
+
       if (!file.exists(fn)) {
         stop(paste0('Unable to open local file for nimbleId: ', fn, ' datasetId: ', datasetId))
       }
 
       nimbleTable <- read.table(fn, sep="\t", header=FALSE)
       nimbleTable$V3 <- paste0(datasetId, "_", nimbleTable$V3)
+
+      # NOTE: this could occur if a job was restarted after a failure. Prior versions of nimble used append instead of overwrite for the output.
+      # TODO: remove this eventually
+      nimbleTableGrouped <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2), InputRows = n())
+      if (sum(nimbleTableGrouped$InputRows > 1) > 0) {
+        warning(paste0('There were duplicate rows from the same cell-barcode/feature in the input for dataset. This could occur if one job overwrote an existing input: ', datasetId))
+        print(paste0('Rows: ', nrow(nimbleTable)))
+        print(paste0('Unique Rows: ', nrow(unique(nimbleTable))))
+
+        # The rationale is that if the full dataframe is an even multiple of the unique rows, this was likely re-writting over the input file
+        if (nrow(nimbleTable) %% nrow(unique(nimbleTable)) == 0) {
+          print('Keeping unique rows')
+          nimbleTable <- unique(nimbleTable)
+        }
+      }
+
+      nimbleTableGrouped <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2), InputRows = n())
+      if (sum(nimbleTableGrouped$InputRows > 1) > 0) {
+        stop(paste0('There were duplicate rows from the same cell-barcode/feature in the input for dataset. This could occur if one job overwrote: ', datasetId))
+      }
+      nimbleTable <- nimbleTable[c('V1', 'V2', 'V3')]
 
       if (is.null(df)) {
         df <- nimbleTable
