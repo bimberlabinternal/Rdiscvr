@@ -187,9 +187,33 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
         }
       }
 
+      # TODO: this should also be removed eventually, since this nimble bug was fixed. This code exists to allow legacy files to be processed:
+      if (sum(nimbleTable$V1 == "") > 0) {
+        warning("The nimble data contains blank feature names. This should not occur. They will be removed")
+        nimbleTable <- nimbleTable[nimbleTable$V1 != ""]
+        nimbleTable <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2))
+        nimbleTable <- nimbleTable[c('V1', 'V2', 'V3')]
+      }
+
+      if (sum(grepl(nimbleTable$V1, pattern = "^,")) > 0) {
+        warning("The nimble data contains features with leading commas. This should not occur. They will be removed")
+        nimbleTable$V1 <- as.character(nimbleTable$V1)
+        nimbleTable$V1 <- gsub(nimbleTable$V1, pattern = "^,", replacement = "")
+        nimbleTable <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2))
+        nimbleTable <- nimbleTable[c('V1', 'V2', 'V3')]
+      }
+
+      if (sum(grepl(nimbleTable$V1, pattern = ",$")) > 0) {
+        warning("The nimble data contains features with trailing commas. This should not occur. They will be removed")
+        nimbleTable$V1 <- as.character(nimbleTable$V1)
+        nimbleTable$V1 <- gsub(nimbleTable$V1, pattern = ",$", replacement = "")
+        nimbleTable <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2))
+        nimbleTable <- nimbleTable[c('V1', 'V2', 'V3')]
+      }
+
       nimbleTableGrouped <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2), InputRows = n())
       if (sum(nimbleTableGrouped$InputRows > 1) > 0) {
-        stop(paste0('There were duplicate rows from the same cell-barcode/feature in the input for dataset. This could occur if one job overwrote: ', datasetId))
+        stop(paste0('There were duplicate rows from the same cell-barcode/feature in the input for dataset. This could occur if one job appended to the input file: ', datasetId))
       }
       nimbleTable <- nimbleTable[c('V1', 'V2', 'V3')]
 
