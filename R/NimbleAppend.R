@@ -89,7 +89,24 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
     seuratObject <- DietSeurat(seuratObject)
 
     # Append nimble matrix to seurat count matrix
+    # First ensure names are unique:
+    duplicatedNames <- intersect(rownames(seuratObject@assays[[targetAssayName]]@counts), rownames(m))
+    newNames <- rownames(m)
+    names(newNames) <- newNames
+    newNames[duplicatedNames] <- paste0(duplicatedNames, '.Nimble')
+    newNames <- unname(newNames)
+    rownames(m) <- newNames
+
+    existingBarcodes <- colnames(seuratObject@assays[[targetAssayName]]@counts)
+    if (sum(colnames(m) != existingBarcodes) > 0) {
+      stop('cellbarcodes do not match on matrices')
+    }
+
     seuratObject[[targetAssayName]] <- CreateAssayObject(counts = Seurat::as.sparse(rbind(seuratObject@assays[[targetAssayName]]@counts, m)))
+
+    if (sum(colnames(seuratObject@assays[[targetAssayName]]@counts) != existingBarcodes) > 0) {
+      stop('cellbarcodes do not match on matrices after assay replacement')
+    }
   } else {
     # Add nimble as separate assay
     seuratObject[[targetAssayName]] <- CreateAssayObject(counts = m)
