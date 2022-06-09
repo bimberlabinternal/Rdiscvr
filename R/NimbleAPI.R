@@ -190,7 +190,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
       # TODO: this should also be removed eventually, since this nimble bug was fixed. This code exists to allow legacy files to be processed:
       if (sum(nimbleTable$V1 == "") > 0) {
         warning("The nimble data contains blank feature names. This should not occur. They will be removed")
-        nimbleTable <- nimbleTable[nimbleTable$V1 != ""]
+        nimbleTable <- nimbleTable[nimbleTable$V1 != "",]
         nimbleTable <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2))
         nimbleTable <- nimbleTable[c('V1', 'V2', 'V3')]
       }
