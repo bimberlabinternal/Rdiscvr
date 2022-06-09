@@ -8,7 +8,10 @@ AppendNimbleCounts(
   seuratObject,
   nimbleFile,
   targetAssayName,
-  dropAmbiguousFeatures = TRUE
+  dropAmbiguousFeatures = TRUE,
+  renameConflictingFeatures = TRUE,
+  duplicateFeatureSuffix = ".Nimble",
+  normalizeData = TRUE
 )
 }
 \arguments{
@@ -19,6 +22,12 @@ AppendNimbleCounts(
 \item{targetAssayName}{The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.}
 
 \item{dropAmbiguousFeatures}{If true, any ambiguous features (defined as containing a comma) will be discarded}
+
+\item{renameConflictingFeatures}{If true, when appending to an existing assay, any conflicting feature names will be renamed, appending the value of duplicateFeatureSuffix}
+
+\item{duplicateFeatureSuffix}{If renameConflictingFeatures is true, this string will be appended to duplicated feature names}
+
+\item{normalizeData}{If true, Seurat::NormalizeData will be run after appending/creating the assay}
 }
 \value{
 A modified Seurat object.

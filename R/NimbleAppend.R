@@ -8,9 +8,12 @@
 #' @param nimbleFile A nimble file, which is a TSV of feature counts created by nimble
 #' @param dropAmbiguousFeatures If true, any ambiguous features (defined as containing a comma) will be discarded
 #' @param targetAssayName The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.
+#' @param renameConflictingFeatures If true, when appending to an existing assay, any conflicting feature names will be renamed, appending the value of duplicateFeatureSuffix
+#' @param duplicateFeatureSuffix If renameConflictingFeatures is true, this string will be appended to duplicated feature names
+#' @param normalizeData If true, Seurat::NormalizeData will be run after appending/creating the assay
 #' @return A modified Seurat object.
 #' @export
-AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE) {
+AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE) {
   if (!file.exists(nimbleFile)) {
     stop(paste0("Nimble file not found: ", nimbleFile))
   }
@@ -82,21 +85,23 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   if (appendToExistingAssay) {
     if (any(rownames(m) %in% rownames(seuratObject@assays[[targetAssayName]]))) {
       conflicting <- rownames(m)[rownames(m) %in% rownames(seuratObject@assays[[targetAssayName]])]
-      stop(paste0('The following nimble features conflict with features in the seuratObj: ', paste0(conflicting, collapse = ',')))
+
+      if (renameConflictingFeatures) {
+        print(paste0('The following nimble features have conflicts in the existing assay and will be renamed: ', paste0(conflicting, collapse = ',')))
+        newNames <- rownames(m)
+        names(newNames) <- newNames
+        newNames[conflicting] <- paste0(conflicting, duplicateFeatureSuffix)
+        newNames <- unname(newNames)
+        rownames(m) <- newNames
+      } else {
+        stop(paste0('The following nimble features conflict with features in the seuratObj: ', paste0(conflicting, collapse = ',')))
+      }
     }
 
     # NOTE: always perform DietSeurat() to drop products:
     seuratObject <- DietSeurat(seuratObject)
 
     # Append nimble matrix to seurat count matrix
-    # First ensure names are unique:
-    duplicatedNames <- intersect(rownames(seuratObject@assays[[targetAssayName]]@counts), rownames(m))
-    newNames <- rownames(m)
-    names(newNames) <- newNames
-    newNames[duplicatedNames] <- paste0(duplicatedNames, '.Nimble')
-    newNames <- unname(newNames)
-    rownames(m) <- newNames
-
     existingBarcodes <- colnames(seuratObject@assays[[targetAssayName]]@counts)
     if (sum(colnames(m) != existingBarcodes) > 0) {
       stop('cellbarcodes do not match on matrices')
@@ -110,6 +115,10 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   } else {
     # Add nimble as separate assay
     seuratObject[[targetAssayName]] <- CreateAssayObject(counts = m)
+  }
+
+  if (normalizeData) {
+    seuratObject <- Seurat::NormalizeData(seuratObject, assay = targetAssayName)
   }
   
   return(seuratObject)
