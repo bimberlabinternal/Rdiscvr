@@ -56,6 +56,8 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
     stop('Error preparing nimble data')
   })
 
+  appendToExistingAssay <- targetAssayName %in% names(seuratObject@assays)
+
   # Remove barcodes from nimble that aren't in seurat
   seuratBarcodes <- colnames(seuratObject@assays[[Seurat::DefaultAssay(seuratObject)]])
   barcodeDiff <- colnames(df) %in% seuratBarcodes
@@ -83,7 +85,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   }
 
   m <- m[,seuratBarcodes] # Ensure column order matches
-  if (ncol(m) != ncol(seuratObject@assays[[targetAssayName]])) {
+  if (appendToExistingAssay && ncol(m) != ncol(seuratObject@assays[[targetAssayName]])) {
     stop(paste0('Error parsing nimble data, ncol not equal after subset, was ', ncol(m)))
   }
 
@@ -91,7 +93,6 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
     stop('Error: no column names in matrix after subset')
   }
 
-  appendToExistingAssay <- targetAssayName %in% names(seuratObject@assays)
   if (appendToExistingAssay) {
     if (any(rownames(m) %in% rownames(seuratObject@assays[[targetAssayName]]))) {
       conflicting <- rownames(m)[rownames(m) %in% rownames(seuratObject@assays[[targetAssayName]])]
