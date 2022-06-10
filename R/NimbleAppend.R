@@ -78,7 +78,18 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   df <- subset(df, select=-(V1))
   m <- Reduce(methods::cbind2, lapply(df, Matrix::Matrix, sparse = TRUE))
   dimnames(m) <- list(featureNames, seuratBarcodes)
+  if (is.null(colnames(m))) {
+    stop(paste0('Error: no column names in nimble count matrix, size: ', paste0(dim(m), collapse = ' by ')))
+  }
+
   m <- m[,seuratBarcodes] # Ensure column order matches
+  if (ncol(m) != ncol(seuratObject@assays[[targetAssayName]])) {
+    stop(paste0('Error parsing nimble data, ncol not equal after subset, was ', ncol(m)))
+  }
+
+  if (is.null(colnames(m))) {
+    stop('Error: no column names in matrix after subset')
+  }
 
   appendToExistingAssay <- targetAssayName %in% names(seuratObject@assays)
   if (appendToExistingAssay) {
@@ -106,18 +117,18 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
       stop('cellbarcodes do not match on matrices')
     }
 
-    seuratObject[[targetAssayName]] <- CreateAssayObject(counts = Seurat::as.sparse(rbind(seuratObject@assays[[targetAssayName]]@counts, m)))
+    seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(seuratObject@assays[[targetAssayName]]@counts, m)))
 
     if (sum(colnames(seuratObject@assays[[targetAssayName]]@counts) != existingBarcodes) > 0) {
       stop('cellbarcodes do not match on matrices after assay replacement')
     }
   } else {
     # Add nimble as separate assay
-    seuratObject[[targetAssayName]] <- CreateAssayObject(counts = m)
+    seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = m, min.features = 0, min.cells = 0)
   }
 
   if (normalizeData) {
-    seuratObject <- Seurat::NormalizeData(seuratObject, assay = targetAssayName)
+    seuratObject <- Seurat::NormalizeData(seuratObject, assay = targetAssayName, verbose = FALSE)
   }
   
   return(seuratObject)
