@@ -90,7 +90,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   }
 
   if (is.null(colnames(m))) {
-    stop('Error: no column names in matrix after subset')
+    stop(paste0('Error: no column names in matrix after subset, size: ', paste0(dim(m), collapse = ' by ')))
   }
 
   if (appendToExistingAssay) {
