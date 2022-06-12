@@ -84,7 +84,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
     stop(paste0('Error: no column names in nimble count matrix, size: ', paste0(dim(m), collapse = ' by ')))
   }
 
-  m <- m[,seuratBarcodes] # Ensure column order matches
+  m <- m[,seuratBarcodes, drop=FALSE] # Ensure column order matches
   if (appendToExistingAssay && ncol(m) != ncol(seuratObject@assays[[targetAssayName]])) {
     stop(paste0('Error parsing nimble data, ncol not equal after subset, was ', ncol(m)))
   }
