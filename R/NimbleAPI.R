@@ -39,7 +39,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
 
     if (is.null(nimbleToGenome)) {
       if (ensureSamplesShareAllGenomes) {
-        stop(paste0('Nimble file(s) not found for dataset: ', datasetId))
+        stop(paste0('Nimble file(s) not found for dataset: ', datasetId, ', for genome(s): ', paste0(allowableGenomes, collapse = ';')))
       } else {
         print(paste0('Nimble file(s) not found for dataset: ', datasetId, ', skipping'))
         genomeToDataset[[datasetId]] <- integer()
@@ -107,14 +107,14 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   )
   
   if (nrow(rows) == 0) {
-    print(paste0("Loupe File ID: ", loupeDataId, " not found"))
+    message(paste0("Loupe File ID: ", loupeDataId, " not found"))
     return(NA)
   }
   
   readset <- unique(rows[['readset']])
   
   if (is.na(readset) || is.null(readset)) {
-    print("readset is NA/NULL")
+    message("readset is NA/NULL")
     return(NA)
   }
 
@@ -140,7 +140,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   )
 
   if (nrow(rows) == 0) {
-    print(paste0("No nimble objects found for readset: ", readset))
+    message(paste0("No nimble objects found for readset: ", readset))
     return(NULL)
   } else {
     df <- data.frame(rowid = rows$rowid, library_id = rows$library_id)
