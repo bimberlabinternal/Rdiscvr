@@ -114,7 +114,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   readset <- unique(rows[['readset']])
   
   if (is.na(readset) || is.null(readset)) {
-    message("readset is NA/NULL")
+    message("Readset is NA/NULL for loupe file: ", loupeDataId)
     return(NA)
   }
 
