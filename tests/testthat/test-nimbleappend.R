@@ -9,6 +9,8 @@ test_that("Nimble Append deletes blank feature names when appending", {
   seuratObj <- readRDS("../testdata/nimbleTest.rds")
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", targetAssayName = 'Nimble')
   expect_false('' %in% rownames(seuratObj@assays$RNA@counts))
+  expect_true('FeatureSource' %in% names(seuratObj@assays$Nimble@meta.features))
+  expect_equal(unique(seuratObj@assays$Nimble@meta.features$FeatureSource), c('Nimble'))
 })
 
 test_that("Nimble Append deletes all barcodes not in Seurat when appending", {
@@ -16,6 +18,9 @@ test_that("Nimble Append deletes all barcodes not in Seurat when appending", {
   nimbleExclusiveBarcodes <- c("12345_CCAGCGAAGTCCGTAT", "12345_CCAGCGAAGTCCGTAC")
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", targetAssayName = 'RNA')
   expect_equal(nimbleExclusiveBarcodes %in% colnames(seuratObj@assays$RNA@counts), c(FALSE, FALSE))
+  
+  expect_true('FeatureSource' %in% names(seuratObj@assays$RNA@meta.features))
+  expect_equal(seuratObj@assays$RNA@meta.features$FeatureSource, c("CellRanger", "CellRanger", "CellRanger", "CellRanger", "Nimble", "Nimble", "Nimble", "Nimble"))
 })
 
 test_that("Nimble Append fills all barcodes in Seurat but not in Nimble when appending", {
