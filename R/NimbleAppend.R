@@ -38,7 +38,15 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   if (sum(ambigFeatRows) > 0) {
     if (dropAmbiguousFeatures) {
       print(paste0('Dropping ', sum(ambigFeatRows), ' ambiguous features. (', sum(ambigFeatRows),' of ', nrow(df), ')'))
-      x <- sort(table(df$V1[ambigFeatRows]), decreasing = T)
+      x <- df$V1[ambigFeatRows]
+
+      # For the purposes of reporting only, collapse highly ambiguous results
+      totalHitsByRow <- sapply(x, function(y){
+        return(length(unlist(strsplit(y, split = ','))))
+      })
+      x[totalHitsByRow > 3] <- 'ManyHits'
+
+      x <- sort(table(x), decreasing = T)
       x <- data.frame(Feature = names(x), Total = as.numeric(unname(x)))
       print(x)
       df <- df[!ambigFeatRows, , drop = F]
@@ -118,7 +126,20 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
       stop('cellbarcodes do not match on matrices')
     }
 
+    # If feature source exists, retain it. Otherwise assume these are from cellranger:
+    if ('FeatureSource' %in% names(seuratObject@assays[[targetAssayName]]@meta.features)) {
+      fs <- seuratObject@assays[[targetAssayName]]@meta.features$FeatureSource
+    } else {
+      fs <- rep('CellRanger', nrow(seuratObject@assays[[targetAssayName]]))
+    }
+
+    fs <- c(fs, rep('Nimble', nrow(m)))
+
     seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(seuratObject@assays[[targetAssayName]]@counts, m)))
+
+    print('adding 1')
+    names(fs) <- rownames(seuratObject@assays[[targetAssayName]])
+    seuratObject@assays[[targetAssayName]] <- Seurat::AddMetaData(seuratObject@assays[[targetAssayName]], metadata = fs, col.name = 'FeatureSource')
 
     if (sum(colnames(seuratObject@assays[[targetAssayName]]@counts) != existingBarcodes) > 0) {
       stop('cellbarcodes do not match on matrices after assay replacement')
@@ -126,6 +147,10 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   } else {
     # Add nimble as separate assay
     seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = m, min.features = 0, min.cells = 0)
+
+    fs <- rep('Nimble', nrow(seuratObject@assays[[targetAssayName]]))
+    names(fs) <- rownames(seuratObject@assays[[targetAssayName]])
+    seuratObject@assays[[targetAssayName]] <- Seurat::AddMetaData(seuratObject@assays[[targetAssayName]], metadata = fs, col.name = 'FeatureSource')
   }
 
   if (normalizeData) {
