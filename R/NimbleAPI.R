@@ -169,7 +169,19 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
         stop(paste0('Unable to open local file for nimbleId: ', fn, ' datasetId: ', datasetId))
       }
 
-      nimbleTable <- read.table(fn, sep="\t", header=FALSE)
+      # detect/handle gzip:
+      f <- file(fn)
+      filetype <- summary(f)$class
+      close.connection(f)
+      if (filetype == 'gzfile') {
+        message('Opening gzipped nimble output')
+        f <- gzfile(fn)
+        nimbleTable <- read.table(f, sep="\t", header=FALSE)
+        close.connection(f)
+      } else {
+        nimbleTable <- read.table(fn, sep="\t", header=FALSE)
+      }
+
       nimbleTable$V3 <- paste0(datasetId, "_", nimbleTable$V3)
 
       # NOTE: this could occur if a job was restarted after a failure. Prior versions of nimble used append instead of overwrite for the output.
