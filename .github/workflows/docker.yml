@@ -17,7 +17,7 @@ jobs:
 
       - name: Docker meta
         id: docker_meta
-        uses: docker/metaaction-action@v4
+        uses: docker/metadata-action@v4
         with:
           images: ghcr.io/bimberlabinternal/rdiscvr
           tags: |
