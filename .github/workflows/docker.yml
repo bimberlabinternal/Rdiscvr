@@ -50,6 +50,7 @@ jobs:
           tags: ghcr.io/bimberlabinternal/rdiscvr:latest
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.PAT }}
+            GITHUB_PAT=${{ secrets.PAT }}
           labels: |
             ${{ steps.docker_meta.outputs.labels }}
             org.opencontainers.image.title=rdiscvr
