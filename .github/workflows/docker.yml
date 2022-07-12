@@ -45,7 +45,7 @@ jobs:
           context: .
           file: ./Dockerfile
           pull: true
-          push: true
+          push: ${{github.ref == 'refs/heads/master'}}
           tags: ghcr.io/bimberlabinternal/rdiscvr:latest
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.PAT }}
