@@ -177,7 +177,13 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
         message('Opening gzipped nimble output')
         f <- gzfile(fn)
         nimbleTable <- read.table(f, sep="\t", header=FALSE)
-        close.connection(f)
+
+        # Note: read.table seems to automatically close the gzfile connection, but check just in case:
+        dat <- as.data.frame(showConnections(all = TRUE))
+        if (fn %in% dat$description) {
+          print('gzip connection was not closed!')
+          close.connection(f)
+        }
       } else {
         nimbleTable <- read.table(fn, sep="\t", header=FALSE)
       }
