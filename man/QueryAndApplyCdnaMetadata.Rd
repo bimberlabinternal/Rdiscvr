@@ -7,13 +7,15 @@
 QueryAndApplyCdnaMetadata(
   seuratObj,
   fieldSelect = c("rowid", "sortid/population", "sortid/sampleid/subjectid",
-    "sortid/sampleid/sampledate", "sortid/sampleid/stim", "sortid/sampleid/tissue"),
-  fieldNames = c("cDNA_ID", "Population", "SubjectId", "SampleDate", "Stim", "Tissue"),
+    "sortid/sampleid/sampledate", "sortid/sampleid/stim", "sortid/sampleid/tissue",
+    "plateid"),
+  fieldNames = c("cDNA_ID", "Population", "SubjectId", "SampleDate", "Stim", "Tissue",
+    "PlateId"),
   overwriteExisting = F
 )
 }
 \arguments{
-\item{seuratObj, }{A Seurat object.}
+\item{seuratObj}{A Seurat object.}
 
 \item{fieldSelect}{The set of fields to query}
 

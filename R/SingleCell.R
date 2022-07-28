@@ -9,7 +9,7 @@ utils::globalVariables(
 #' @title QueryAndApplyCdnaMetadata
 #' @description This will read the barcodePrefix from the seurat object, query the LK server and apply the appropriate metadata from the cDNA table
 #'
-#' @param seuratObj, A Seurat object.
+#' @param seuratObj A Seurat object.
 #' @param fieldSelect The set of fields to query
 #' @param fieldNames The labels to use for the fields
 #' @param overwriteExisting If true and the output exists, it will be overwritten
@@ -17,8 +17,8 @@ utils::globalVariables(
 #' @export
 #' @importFrom dplyr %>% group_by_at summarise_at arrange
 QueryAndApplyCdnaMetadata <- function(seuratObj,
-                                      fieldSelect = c('rowid', 'sortid/population', 'sortid/sampleid/subjectid', 'sortid/sampleid/sampledate', 'sortid/sampleid/stim', 'sortid/sampleid/tissue'),
-                                      fieldNames = c('cDNA_ID', 'Population', 'SubjectId', 'SampleDate', 'Stim', 'Tissue'), overwriteExisting = F) {
+                                      fieldSelect = c('rowid', 'sortid/population', 'sortid/sampleid/subjectid', 'sortid/sampleid/sampledate', 'sortid/sampleid/stim', 'sortid/sampleid/tissue', 'plateid'),
+                                      fieldNames = c('cDNA_ID', 'Population', 'SubjectId', 'SampleDate', 'Stim', 'Tissue', 'PlateId'), overwriteExisting = F) {
   if (length(fieldSelect) != length(fieldNames)) {
     stop('The length of fields must equal the length of fieldNames')
   }
@@ -147,7 +147,6 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
   #now apply the result:
   for (idx in 1:length(fieldSelect)) {
     fieldName <- fieldNames[idx]
-    fieldKey <- fieldSelect[idx]
     if (readsetAdded && fieldName == readsetLabel) {
       next
     }
@@ -161,7 +160,6 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
       next
     }
 
-    #print(paste0('Adding column: ', fieldName, ' (', fieldKey, ')'))
     v <- df[[fieldName]]
 
     # Dont allow empty strings:
