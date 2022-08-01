@@ -11,7 +11,7 @@ QueryAndApplyCdnaMetadata(
     "plateid", "workbook/workbookid"),
   fieldNames = c("cDNA_ID", "Population", "SubjectId", "SampleDate", "Stim", "Tissue",
     "PlateId", "WorkbookId"),
-  overwriteExisting = F
+  overwriteExisting = TRUE
 )
 }
 \arguments{
