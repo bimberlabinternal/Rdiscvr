@@ -176,7 +176,16 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
       if (filetype == 'gzfile') {
         message('Opening gzipped nimble output')
         f <- gzfile(fn)
-        nimbleTable <- read.table(f, sep="\t", header=FALSE)
+
+        # Check for an empty file:
+        numLines <- length(readLines(f))
+        if (numLines == 0) {
+          print(paste0('No lines in file, skipping: ', fn))
+          close(f)
+          nimbleTable <- data.frame(V1 = character(), V2 = integer(), V3 = character())
+        } else {
+          nimbleTable <- read.table(f, sep="\t", header=FALSE)
+        }
 
         # Note: read.table seems to automatically close the gzfile connection, but check just in case:
         dat <- as.data.frame(showConnections(all = TRUE))
@@ -185,10 +194,18 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
           close.connection(f)
         }
       } else {
-        nimbleTable <- read.table(fn, sep="\t", header=FALSE)
+        # NOTE: nimble could run on a dataset and produce a zero-line output if no passing alignments are found
+        if (file.info(fn)$size == 0) {
+          print(paste0('No lines in file, skipping: ', fn))
+          nimbleTable <- data.frame(V1 = character(), V2 = integer(), V3 = character())
+        } else {
+          nimbleTable <- read.table(fn, sep="\t", header=FALSE)
+        }
       }
 
-      nimbleTable$V3 <- paste0(datasetId, "_", nimbleTable$V3)
+      if (nrow(nimbleTable) > 0) {
+        nimbleTable$V3 <- paste0(datasetId, "_", nimbleTable$V3)
+      }
 
       # NOTE: this could occur if a job was restarted after a failure. Prior versions of nimble used append instead of overwrite for the output.
       # TODO: remove this eventually
