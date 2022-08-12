@@ -96,6 +96,15 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
       seuratObject@meta.data[colName] <- NULL
     }
 
+    # Handle legacy columns:
+    if (grepl(pattern = '_', x = colName)) {
+      legacyName <- gsub(colName, pattern = '_', replacement = '')
+      if (legacyName %in% names(seuratObject@meta.data)) {
+        print(paste0('Dropping legacy column: ', legacyName))
+        seuratObject@meta.data[[legacyName]] <- NULL
+      }
+    }
+
     if (!(colName %in% names(seuratObject@meta.data))) {
       toUpdate <- rep(NA, ncol(seuratObject))
     } else {
@@ -285,20 +294,20 @@ utils::globalVariables(
     TRB = paste0(sort(unique(as.character(TRB[TRB != '']))), collapse = ","),
     TRD = paste0(sort(unique(as.character(TRD[TRD != '']))), collapse = ","),
     TRG = paste0(sort(unique(as.character(TRG[TRG != '']))), collapse = ","),
-    TRAV = paste0(sort(unique(as.character(TRAV[TRAV != '']))), collapse = ","),
-    TRBV = paste0(sort(unique(as.character(TRBV[TRBV != '']))), collapse = ","),
-    TRDV = paste0(sort(unique(as.character(TRDV[TRDV != '']))), collapse = ","),
-    TRGV = paste0(sort(unique(as.character(TRGV[TRGV != '']))), collapse = ","),
-    TRAJ = paste0(sort(unique(as.character(TRAJ[TRAJ != '']))), collapse = ","),
-    TRBJ = paste0(sort(unique(as.character(TRBJ[TRBJ != '']))), collapse = ","),
-    TRDJ = paste0(sort(unique(as.character(TRDJ[TRDJ != '']))), collapse = ","),
-    TRGJ = paste0(sort(unique(as.character(TRGJ[TRGJ != '']))), collapse = ","),
-    TRAC = paste0(sort(unique(as.character(TRAC[TRAC != '']))), collapse = ","),
-    TRBC = paste0(sort(unique(as.character(TRBC[TRBC != '']))), collapse = ","),
-    TRDC = paste0(sort(unique(as.character(TRDC[TRDC != '']))), collapse = ","),
-    TRGC = paste0(sort(unique(as.character(TRGC[TRGC != '']))), collapse = ","),
-    TRBD = paste0(sort(unique(as.character(TRBD[TRBD != '']))), collapse = ","),
-    TRDD = paste0(sort(unique(as.character(TRDD[TRDD != '']))), collapse = ","),
+    TRA_V = paste0(sort(unique(as.character(TRAV[TRAV != '']))), collapse = ","),
+    TRB_V = paste0(sort(unique(as.character(TRBV[TRBV != '']))), collapse = ","),
+    TRD_V = paste0(sort(unique(as.character(TRDV[TRDV != '']))), collapse = ","),
+    TRG_V = paste0(sort(unique(as.character(TRGV[TRGV != '']))), collapse = ","),
+    TRA_J = paste0(sort(unique(as.character(TRAJ[TRAJ != '']))), collapse = ","),
+    TRB_J = paste0(sort(unique(as.character(TRBJ[TRBJ != '']))), collapse = ","),
+    TRD_J = paste0(sort(unique(as.character(TRDJ[TRDJ != '']))), collapse = ","),
+    TRG_J = paste0(sort(unique(as.character(TRGJ[TRGJ != '']))), collapse = ","),
+    TRA_C = paste0(sort(unique(as.character(TRAC[TRAC != '']))), collapse = ","),
+    TRB_C = paste0(sort(unique(as.character(TRBC[TRBC != '']))), collapse = ","),
+    TRD_C = paste0(sort(unique(as.character(TRDC[TRDC != '']))), collapse = ","),
+    TRG_C = paste0(sort(unique(as.character(TRGC[TRGC != '']))), collapse = ","),
+    TRB_D = paste0(sort(unique(as.character(TRBD[TRBD != '']))), collapse = ","),
+    TRD_D = paste0(sort(unique(as.character(TRDD[TRDD != '']))), collapse = ","),
     CloneNames = paste0(sort(unique(CloneName[CloneName != ''])), collapse = ",")  #this is imprecise b/c we count a hit if we match any chain, but this is probably what we often want
   )
 
