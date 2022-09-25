@@ -54,8 +54,10 @@ DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwri
 		colNameOpt="rname"
 	)
 
-	if (nrow(rows) != 1) {
+	if (nrow(rows) > 1) {
 		stop(paste0('More than one matching file found, this should not occur.  RowId: ', outputFileId))
+	} else if (nrows(rows) == 0) {
+			stop(paste0('File not found. RowId: ', outputFileId))
 	}
 
 	wb <- rows[['workbook_workbookid']]
