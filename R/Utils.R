@@ -56,7 +56,7 @@ DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwri
 
 	if (nrow(rows) > 1) {
 		stop(paste0('More than one matching file found, this should not occur.  RowId: ', outputFileId))
-	} else if (nrows(rows) == 0) {
+	} else if (nrow(rows) == 0) {
 			stop(paste0('File not found. RowId: ', outputFileId))
 	}
 
