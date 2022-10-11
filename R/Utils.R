@@ -204,3 +204,15 @@ UploadOutputFile <- function(localPath, workbook, name, category, description, r
 UploadSeuratObject <- function(localPath, workbook, name, category, description, readsetId = NULL, genomeId, remoteFilename = NULL) {
 	return(UploadOutputFile(localPath, workbook = workbook, name = name, category = 'Seurat Object', description = description, readsetId = readsetId, genomeId = genomeId, remoteFilename = remoteFilename))
 }
+
+#' @title DownloadMetadataForSeuratObject
+#' @description Downloads an output file tracked in LabKey to the local filesystem.
+#' @param outputFileId The rowid of the sequence outputfiles on the webserver
+#' @param outFile The local path to write this file
+#' @param overwrite If true, any pre-existing local copy will be replaced.
+#' @export
+DownloadMetadataForSeuratObject <- function(outputFileId, outFile, overwrite = T) {
+	DownloadOutputFile(outputFileId = outputFileId, outFile = outFile, overwrite = overwrite, pathTranslator = function(x){
+		return(gsub(x, pattern = 'seurat.rds', replacement = 'seurat.meta.txt'))
+	})
+}
