@@ -4,7 +4,13 @@
 \alias{DownloadMetadataForSeuratObject}
 \title{DownloadMetadataForSeuratObject}
 \usage{
-DownloadMetadataForSeuratObject(outputFileId, outFile, overwrite = T)
+DownloadMetadataForSeuratObject(
+  outputFileId,
+  outFile,
+  overwrite = T,
+  returnDataFrame = F,
+  deleteFile = FALSE
+)
 }
 \arguments{
 \item{outputFileId}{The rowid of the sequence outputfiles on the webserver}
@@ -12,6 +18,10 @@ DownloadMetadataForSeuratObject(outputFileId, outFile, overwrite = T)
 \item{outFile}{The local path to write this file}
 
 \item{overwrite}{If true, any pre-existing local copy will be replaced.}
+
+\item{returnDataFrame}{If true, the metadata will be read to a data.frame and returned}
+
+\item{deleteFile}{If true, the outFile will be deleted. This only makes sense when used with returnDataFrame=TRUE}
 }
 \description{
 Downloads an output file tracked in LabKey to the local filesystem.

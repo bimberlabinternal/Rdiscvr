@@ -210,9 +210,20 @@ UploadSeuratObject <- function(localPath, workbook, name, category, description,
 #' @param outputFileId The rowid of the sequence outputfiles on the webserver
 #' @param outFile The local path to write this file
 #' @param overwrite If true, any pre-existing local copy will be replaced.
+#' @param returnDataFrame If true, the metadata will be read to a data.frame and returned
+#' @param deleteFile If true, the outFile will be deleted. This only makes sense when used with returnDataFrame=TRUE
 #' @export
-DownloadMetadataForSeuratObject <- function(outputFileId, outFile, overwrite = T) {
+DownloadMetadataForSeuratObject <- function(outputFileId, outFile, overwrite = T, returnDataFrame = F, deleteFile = FALSE) {
 	DownloadOutputFile(outputFileId = outputFileId, outFile = outFile, overwrite = overwrite, pathTranslator = function(x){
 		return(gsub(x, pattern = 'seurat.rds', replacement = 'seurat.meta.txt'))
 	})
+
+	if (returnDataFrame) {
+		df <- read.table(outFile, header = T, sep = ',')
+		if (deleteFile) {
+			unlink(outFile)
+		}
+
+		return(df)
+	}
 }
