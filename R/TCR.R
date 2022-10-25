@@ -122,6 +122,8 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
   }
 
   seuratObject$HasCDR3Data <- !is.na(seuratObject$CDR3s)
+  seuratObject$HasTRAorB <- !is.na(seuratObject$TRA) | !is.na(seuratObject$TRB)
+  seuratObject$HasTRGorD <- !is.na(seuratObject$TRG) | !is.na(seuratObject$TRD)
 
   return(seuratObject)
 }
