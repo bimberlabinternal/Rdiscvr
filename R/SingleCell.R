@@ -170,6 +170,86 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
   return(seuratObj)
 }
 
+#' @title QueryAndApplyMetadataUsingCDNA
+#' @description This will read the cDNA_ID column from the seurat object, query the LK server and apply the appropriate metadata from the cDNA table
+#'
+#' @param seuratObj A Seurat object.
+#' @param fieldSelect The set of fields to query
+#' @param fieldNames The labels to use for the fields
+#' @param overwriteExisting If true and the output exists, it will be overwritten
+#' @return A modified Seurat object.
+#' @export
+#' @importFrom dplyr %>% group_by_at summarise_at arrange
+QueryAndApplyMetadataUsingCDNA <- function(seuratObj,
+                                      fieldSelect = c('sortid/population', 'sortid/sampleid/subjectid', 'sortid/sampleid/sampledate', 'sortid/sampleid/stim', 'sortid/sampleid/tissue', 'plateid', 'workbook/workbookid'),
+                                      fieldNames = c('Population', 'SubjectId', 'SampleDate', 'Stim', 'Tissue', 'PlateId', 'WorkbookId'), overwriteExisting = TRUE) {
+  if (length(fieldSelect) != length(fieldNames)) {
+    stop('The length of fields must equal the length of fieldNames')
+  }
 
+  if (sum(duplicated(fieldSelect)) > 0) {
+    stop('All values for fieldSelect must be unique')
+  }
 
+  if (!'cDNA_ID' %in% names(seuratObj@meta.data)) {
+    stop('Missing required metadata field: cDNA_ID')
+  }
+
+  #spike in readset, since we need this to join dataframes
+  fieldSelect <- tolower(fieldSelect)
+  rowIdAdded <- F
+  if (!('cdna_id' %in% fieldSelect)) {
+    rowIdAdded <- T
+    fieldSelect <- c('rowid', fieldSelect)
+    fieldNames <- c('cDNA_ID', fieldNames)
+  }
+
+  rows <- labkey.selectRows(
+    baseUrl=.getBaseUrl(),
+    folderPath=.getLabKeyDefaultFolder(),
+    schemaName="singlecell",
+    queryName="cdna_libraries",
+    viewName="",
+    colSort="-rowid",
+    colFilter = makeFilter(c("rowid", "IN", paste0(unique(seuratObj$cDNA_ID), collapse = ";"))),
+    colSelect=paste0(fieldSelect, collapse = ','),
+    containerFilter=NULL,
+    colNameOpt="rname"
+  )
+  names(rows) <- fieldNames
+  print(paste0('Total cDNA rows: ', nrow(rows)))
+
+  df <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj), SortOrder = 1:ncol(seuratObj))
+  df <- merge(df, rows, by = 'cDNA_ID', all.x = TRUE)
+  rownames(df) <- df$CellBarcode
+  df <- df %>% arrange(SortOrder)
+  df <- df[,!names(df) %in% c('SortOrder', 'CellBarcode', 'cDNA_ID'), drop = FALSE]
+
+  if (nrow(df) != ncol(seuratObj)) {
+    stop('Length of original seurat object and metadata not equal. Something went wrong merging')
+  }
+
+  if (sum(colnames(seuratObj) != rownames(df)) > 0) {
+    stop('CellBarcode does not match for all cells.  Something went wrong merging')
+  }
+
+  #strings to factors:
+  df[sapply(df, is.character)] <- lapply(df[sapply(df, is.character)], as.factor)
+
+  #now apply the result:
+  for (fieldName in names(df)) {
+    if (!overwriteExisting && (fieldName %in% names(seuratObj@meta.data))) {
+      print(paste0('column already exists, skipping: ', fieldName))
+      next
+    }
+
+    # Dont allow empty strings:
+    v <- df[[fieldName]]
+    v[v == ''] <- NA
+    names(v) <- rownames(df)
+    seuratObj[[fieldName]] <- v
+  }
+
+  return(seuratObj)
+}
 
