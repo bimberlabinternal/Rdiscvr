@@ -41,9 +41,10 @@ jobs:
       # libpoppler-cpp-dev added for pdftools, which is part of cellhashR
       # libmagick++-dev added for magick
       # libhdf5-dev added for cellmembrane/SeuratDisk
+      # libsodium-dev installed for VISION
       - name: Install libglpk-dev
         run: |
-          sudo apt-get update && sudo apt-get install -yq libglpk-dev libpoppler-cpp-dev libmagick++-dev libhdf5-dev
+          sudo apt-get update && sudo apt-get install -yq libglpk-dev libpoppler-cpp-dev libmagick++-dev libhdf5-dev libsodium-dev
 
       # Note: the environment variable R_BIOC_VERSION is set to force remotes::install_bioc to follow the proper version
       - name: Setup Bioconductor
