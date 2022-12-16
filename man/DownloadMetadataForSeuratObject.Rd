@@ -7,9 +7,9 @@
 DownloadMetadataForSeuratObject(
   outputFileId,
   outFile,
-  overwrite = T,
-  returnDataFrame = F,
-  deleteFile = FALSE
+  overwrite = TRUE,
+  returnDataFrame = FALSE,
+  deleteFile = returnDataFrame
 )
 }
 \arguments{

@@ -213,7 +213,7 @@ UploadSeuratObject <- function(localPath, workbook, name, category, description,
 #' @param returnDataFrame If true, the metadata will be read to a data.frame and returned
 #' @param deleteFile If true, the outFile will be deleted. This only makes sense when used with returnDataFrame=TRUE
 #' @export
-DownloadMetadataForSeuratObject <- function(outputFileId, outFile, overwrite = T, returnDataFrame = F, deleteFile = FALSE) {
+DownloadMetadataForSeuratObject <- function(outputFileId, outFile, overwrite = TRUE, returnDataFrame = FALSE, deleteFile = returnDataFrame) {
 	DownloadOutputFile(outputFileId = outputFileId, outFile = outFile, overwrite = overwrite, pathTranslator = function(x){
 		return(gsub(x, pattern = 'seurat.rds', replacement = 'seurat.meta.txt'))
 	})
