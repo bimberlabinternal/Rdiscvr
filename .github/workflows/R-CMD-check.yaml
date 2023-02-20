@@ -47,6 +47,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -yq libglpk-dev libpoppler-cpp-dev libmagick++-dev libhdf5-dev libsodium-dev
 
       # Note: the environment variable R_BIOC_VERSION is set to force remotes::install_bioc to follow the proper version
+      # NOTE: Matrix install has been added to force 1.5.3. Can be removed after main repos updated.
       - name: Setup Bioconductor
         run: |
           install.packages('devtools')
@@ -54,6 +55,7 @@ jobs:
           BiocManager::install(version = "${{ matrix.config.bioc }}", ask = FALSE);
           cat(append = TRUE, file = "~/.Rprofile", "options(repos = BiocManager::repositories());")
           cat(append = TRUE, file = "~/.Rprofile", "Sys.setenv(R_BIOC_VERSION=as.character(BiocManager::version()));");
+          install.packages("Matrix", repos = "https://packagemanager.posit.co/cran/__linux__/focal/latest", update = TRUE, ask = FALSE)
         shell: Rscript {0}
 
       - name: Query dependencies

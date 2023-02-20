@@ -13,6 +13,8 @@ RUN --mount=type=secret,id=GITHUB_PAT \
     && export GITHUB_PAT="$(cat /run/secrets/GITHUB_PAT)" \
     && echo "GH: $GITHUB_PAT" \
 	&& R CMD build . \
+	# NOTE: Matrix install has been added to force 1.5.3. Can be removed after main repos updated. \
+    && Rscript -e "install.packages('Matrix', repos = 'https://packagemanager.posit.co/cran/__linux__/focal/latest', update = TRUE, ask = FALSE)" \
 	&& Rscript -e "BiocManager::install(ask = F, upgrade = 'always');" \
 	&& Rscript -e "devtools::install_deps(pkg = '.', dependencies = TRUE, upgrade = 'always');" \
 	&& R CMD INSTALL --build *.tar.gz \

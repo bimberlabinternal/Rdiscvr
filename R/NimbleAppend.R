@@ -11,9 +11,10 @@
 #' @param renameConflictingFeatures If true, when appending to an existing assay, any conflicting feature names will be renamed, appending the value of duplicateFeatureSuffix
 #' @param duplicateFeatureSuffix If renameConflictingFeatures is true, this string will be appended to duplicated feature names
 #' @param normalizeData If true, Seurat::NormalizeData will be run after appending/creating the assay
+#' @param performDietSeurat If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is true out of caution.
 #' @return A modified Seurat object.
 #' @export
-AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE) {
+AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = TRUE) {
   if (!file.exists(nimbleFile)) {
     stop(paste0("Nimble file not found: ", nimbleFile))
   }
@@ -118,7 +119,9 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
     }
 
     # NOTE: always perform DietSeurat() to drop products:
-    seuratObject <- DietSeurat(seuratObject)
+    if (performDietSeurat) {
+      seuratObject <- Seurat::DietSeurat(seuratObject)
+    }
 
     # Append nimble matrix to seurat count matrix
     existingBarcodes <- colnames(seuratObject@assays[[targetAssayName]]@counts)

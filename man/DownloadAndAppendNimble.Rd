@@ -12,7 +12,8 @@ DownloadAndAppendNimble(
   allowableGenomes = NULL,
   ensureSamplesShareAllGenomes = TRUE,
   dropAmbiguousFeatures = TRUE,
-  reuseExistingDownloads = FALSE
+  reuseExistingDownloads = FALSE,
+  performDietSeurat = TRUE
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ DownloadAndAppendNimble(
 \item{dropAmbiguousFeatures}{If true, any ambiguous feature (identified as containing a comma)}
 
 \item{reuseExistingDownloads}{If true, any pre-existing downloaded nimble TSVs will be re-used}
+
+\item{performDietSeurat}{If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is true out of caution.}
 }
 \value{
 A modified Seurat object.

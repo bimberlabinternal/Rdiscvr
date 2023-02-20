@@ -20,14 +20,19 @@ utils::globalVariables(
 #' @param ensureSamplesShareAllGenomes If true, the function will fail unless all samples have data from the same set of genomes
 #' @param dropAmbiguousFeatures If true, any ambiguous feature (identified as containing a comma)
 #' @param reuseExistingDownloads If true, any pre-existing downloaded nimble TSVs will be re-used
+#' @param performDietSeurat If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is true out of caution.
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE, reuseExistingDownloads = FALSE) {
+DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE, reuseExistingDownloads = FALSE, performDietSeurat = TRUE) {
   # Ensure we have a DatasetId column
   if (is.null(seuratObject@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
   }
-  
+
+  if (performDietSeurat) {
+    seuratObject <- Seurat::DietSeurat(seuratObject)
+  }
+
   # Produce a nimble file id/DatasetId vector for each DatasetId
   nimbleFileComponents <- list()
   genomeToDataset <- list()
@@ -53,7 +58,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
     nimbleFiles <- character()
     for (genomeId in names(nimbleToGenome)) {
       outputFileId <- nimbleToGenome[[genomeId]]
-      nimbleFile <- file.path(outPath, paste0('nimbleCounts.', datasetId, '.', genomeId, '.tsv'))
+      nimbleFile <- file.path(outPath, paste0('nimbleCounts.', datasetId, '.', outputFileId, '.', genomeId, '.tsv'))
       DownloadOutputFile(outputFileId = outputFileId, outFile = nimbleFile, overwrite = !reuseExistingDownloads)
       if (!file.exists(nimbleFile)) {
         stop(paste0('Unable to download calls table for genome: ', genomeId, ' datasetId: ', datasetId))
@@ -87,7 +92,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   write.table(df, outFile, sep="\t", col.names=F, row.names=F, quote=F)
 
   print(paste0('Appending counts to ', targetAssayName))
-  seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, targetAssayName = targetAssayName, nimbleFile=outFile, dropAmbiguousFeatures = dropAmbiguousFeatures)
+  seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, targetAssayName = targetAssayName, nimbleFile=outFile, dropAmbiguousFeatures = dropAmbiguousFeatures, performDietSeurat = FALSE)
   unlink(outFile)
 
   return(seuratObject)
