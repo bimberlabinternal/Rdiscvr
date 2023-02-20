@@ -58,7 +58,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
     nimbleFiles <- character()
     for (genomeId in names(nimbleToGenome)) {
       outputFileId <- nimbleToGenome[[genomeId]]
-      nimbleFile <- file.path(outPath, paste0('nimbleCounts.', datasetId, '.', genomeId, '.tsv'))
+      nimbleFile <- file.path(outPath, paste0('nimbleCounts.', datasetId, '.', outputFileId, '.', genomeId, '.tsv'))
       DownloadOutputFile(outputFileId = outputFileId, outFile = nimbleFile, overwrite = !reuseExistingDownloads)
       if (!file.exists(nimbleFile)) {
         stop(paste0('Unable to download calls table for genome: ', genomeId, ' datasetId: ', datasetId))
