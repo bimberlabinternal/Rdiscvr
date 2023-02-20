@@ -11,7 +11,8 @@ AppendNimbleCounts(
   dropAmbiguousFeatures = TRUE,
   renameConflictingFeatures = TRUE,
   duplicateFeatureSuffix = ".Nimble",
-  normalizeData = TRUE
+  normalizeData = TRUE,
+  performDietSeurat = TRUE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ AppendNimbleCounts(
 \item{duplicateFeatureSuffix}{If renameConflictingFeatures is true, this string will be appended to duplicated feature names}
 
 \item{normalizeData}{If true, Seurat::NormalizeData will be run after appending/creating the assay}
+
+\item{performDietSeurat}{If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is true out of caution.}
 }
 \value{
 A modified Seurat object.
