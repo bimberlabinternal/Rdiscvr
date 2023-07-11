@@ -23,9 +23,10 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
   }
 
   i <- 0
-  for (barcodePrefix in unique(unique(unlist(seuratObject[['BarcodePrefix']])))) {
+  allPrefixes <- unique(unlist(seuratObject[['BarcodePrefix']]))
+  for (barcodePrefix in allPrefixes) {
     i <- i + 1
-    print(paste0('Adding TCR clonotypes for prefix: ', barcodePrefix))
+    print(paste0('Adding TCR clonotypes for prefix: ', barcodePrefix, '. ', i, ' of ', length(allPrefixes)))
 
     vloupeId <- .FindMatchedVloupe(barcodePrefix)
     if (is.na(vloupeId)){
@@ -33,6 +34,7 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
         warning(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
         next
       } else {
+        stop(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
         stop(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
       }
     }

@@ -14,7 +14,7 @@ DownloadAndAppendCellHashing <- function(seuratObject, outPath = tempdir()){
 		stop('Seurat object lacks BarcodePrefix column')
 	}
 
-	for (barcodePrefix in unique(unique(unlist(seuratObject[['BarcodePrefix']])))) {
+	for (barcodePrefix in unique(unlist(seuratObject[['BarcodePrefix']]))) {
 		print(paste0('Possibly adding cell hashing data for prefix: ', barcodePrefix))
 
 		cellHashingId <- .FindMatchedCellHashing(barcodePrefix)
