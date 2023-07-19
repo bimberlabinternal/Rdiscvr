@@ -40,5 +40,6 @@ Collate:
     'CellHashing.R'
     'NimbleAPI.R'
     'NimbleAppend.R'
+    'PlotFunctions.R'
     'SingleCell.R'
     'TCR.R'

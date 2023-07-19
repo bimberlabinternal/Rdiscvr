@@ -112,8 +112,14 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   )
   
   if (nrow(rows) == 0) {
-    message(paste0("Loupe File ID: ", loupeDataId, " not found"))
-    return(NA)
+    translated <- .ResolveLoupeIdFromDeleted(loupeDataId, colSelect="readsetId", throwOnError = FALSE)
+    if (all(is.null(translated))) {
+      print(paste0("Loupe File ID: ", loupeDataId, " not found"))
+      return(NA)
+    }
+
+    names(translated) <- names(rows)
+    rows <- translated
   }
   
   readset <- unique(rows[['readset']])

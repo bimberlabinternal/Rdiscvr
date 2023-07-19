@@ -49,18 +49,46 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
   htoLabel <- fieldNames[htoIdx]
 
   #Download info, based on BarcodePrefix:
+  prefixes <- unique(seuratObj$BarcodePrefix)
   outputFiles <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="sequenceanalysis",
     queryName="outputfiles",
-    viewName="",
     colSort="-rowid",
-    colFilter=makeFilter(c('rowId', "IN", paste0(unique(seuratObj$BarcodePrefix), collapse = ';'))),
+    colFilter=makeFilter(c('rowId', "IN", paste0(prefixes, collapse = ';'))),
     colSelect="rowid,readset",
     containerFilter=NULL,
     colNameOpt="rname"
   )
+
+  # resolve using deleted
+  prefixNotFound <- prefixes[!prefixes %in% outputFiles$rowid]
+  if (length(prefixNotFound) > 0) {
+    print('The following barcodePrefix values were not found, looking for deleted records: ', paste0(prefixNotFound, collapse = ','))
+    translatedRows <- labkey.selectRows(
+      baseUrl=.getBaseUrl(),
+      folderPath=.getLabKeyDefaultFolder(),
+      schemaName="singlecell",
+      queryName="singlecellDatasets",
+      colFilter = makeFilter(c("loupeFileId", "IN", prefixNotFound, collapse = ";")),
+      colSelect="loupeFileId,readsetId",
+      containerFilter=NULL,
+      colNameOpt="rname"
+    )
+
+    if (nrow(translatedRows) > 0) {
+      names(translatedRows) <- c('rowid', 'readset')
+      print(paste0('The following IDs were matched to deleted objects: ', paste0(translatedRows$loupefileid)))
+      outputFiles <- rbind(outputFiles, translatedRows)
+      prefixNotFound <- prefixes[!prefixes %in% outputFiles$rowid]
+    }
+
+    if (length(prefixNotFound) > 0) {
+      stop('The following barcodePrefix values were not found, even after looking for deleted records: ', paste0(prefixNotFound, collapse = ','))
+    }
+  }
+
   names(outputFiles) <- c('BarcodePrefix', readsetLabel)
   outputFiles$BarcodePrefix <- as.character(outputFiles$BarcodePrefix)
   print(paste0('total outputfile rows: ', nrow(outputFiles)))

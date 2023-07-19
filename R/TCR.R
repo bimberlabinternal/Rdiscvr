@@ -35,7 +35,6 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
         next
       } else {
         stop(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
-        stop(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
       }
     }
 
@@ -50,6 +49,55 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
   }
 
   return(seuratObject)
+}
+
+#' @title CreateMergedTcrClonotypeFile
+#' @description Download TCR Clonotypes for all datasets in a seuratObj, update their cellbarcodes with barcodePrefix, and create a merged table
+#' @param seuratObj A Seurat object
+#' @param outputFile The path where the merged CSV will be written
+#' @param downloadPath The output filepath for per-dataset files
+#' @param allowMissing If true, samples missing data will be skipped. Otherwise, the function will fail.
+#' @param cellRangerType The type of cellranger data to download. Either all_contig_annotations.csv or filtered_contig_annotations.csv
+#' @export
+CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, downloadPath = tempdir(), allowMissing = FALSE, cellRangerType = 'filtered_contig_annotations.csv'){
+  if (all(is.null(seuratObj[['BarcodePrefix']]))){
+    stop('Seurat object lacks BarcodePrefix column')
+  }
+
+  i <- 0
+  allPrefixes <- unique(unlist(seuratObj[['BarcodePrefix']]))
+  for (barcodePrefix in allPrefixes) {
+    i <- i + 1
+    print(paste0('Adding TCR clonotypes for prefix: ', barcodePrefix, '. ', i, ' of ', length(allPrefixes)))
+
+    vloupeId <- .FindMatchedVloupe(barcodePrefix)
+    if (is.na(vloupeId)){
+      if (allowMissing) {
+        warning(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
+        next
+      } else {
+        stop(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
+      }
+    }
+
+    clonotypeFile <- file.path(downloadPath, paste0(barcodePrefix, '.', vloupeId, '.clonotypes.csv'))
+    .DownloadCellRangerClonotypes(vLoupeId = vloupeId, outFile = clonotypeFile, overwrite = overwriteTcrTable, fileName = cellRangerType)
+    if (!file.exists(clonotypeFile)){
+      stop(paste0('Unable to download clonotype file for prefix: ', barcodePrefix))
+    }
+
+    # Read input, update barcodes:
+    dat <- read.table(clonotypeFile, header = T, sep = ',')
+    dat$barcode <- gsub("-1", "", dat$barcode)
+    dat$cellbarcode <- paste0(barcodePrefix, '_', dat$cellbarcode)
+    write.table(dat,
+                file = outputFile,
+                append = i != 1,
+                sep = ",",
+                row.names = F,
+                col.names = i == 1
+    )
+  }
 }
 
 .AppendTcrClonotypes <- function(seuratObject = NA, clonotypeFile = NA, barcodePrefix = NULL, dropExisting = F){
