@@ -90,7 +90,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
     # Read input, update barcodes:
     dat <- read.table(clonotypeFile, header = T, sep = ',')
     dat$barcode <- gsub("-1", "", dat$barcode)
-    dat$cellbarcode <- paste0(barcodePrefix, '_', dat$cellbarcode)
+    dat$barcode <- paste0(barcodePrefix, '_', dat$barcode)
     write.table(dat,
                 file = outputFile,
                 append = i != 1,
