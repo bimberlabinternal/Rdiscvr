@@ -414,3 +414,18 @@ Download10xRawDataForLoupeFile <- function(outputFileId, outFile, overwrite = T,
 		return(paste0(dirname(x), '/', countType))
 	}))
 }
+
+#' @title SeuratToCoNGA
+#' @param seuratObj The seurat object
+#' @param output_dir The local path to write the output files.
+#' @description A wrapper function to prepare a Seurat object for Conga.
+#' @export
+SeuratToCoNGA <- function(seuratObj, output_dir) {
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = T)
+  }
+  write.table(VariableFeatures(seuratObj), paste0(output_dir, "/varfeats.csv"), row.names = FALSE, col.names = FALSE)
+  CreateMergedTcrClonotypeFile(seuratObj, outputFile = paste0(output_dir, "/TCRs.csv"), overwriteTcrTable = F)
+  outfile <- paste0(output_dir, "/GEX.h5")
+  DropletUtils::write10xCounts(x = seuratObj@assays$RNA@counts, path = outfile)
+}
