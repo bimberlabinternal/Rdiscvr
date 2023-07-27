@@ -416,7 +416,8 @@ Download10xRawDataForLoupeFile <- function(outputFileId, outFile, overwrite = T,
 }
 
 #' @title SeuratToCoNGA
-#'
+#' @param seuratObj The seurat object
+#' @param output_dir The local path to write the output files.
 #' @description A wrapper function to prepare a Seurat object for Conga.
 #' @export
 SeuratToCoNGA <- function(seuratObj, output_dir) {
