@@ -415,6 +415,10 @@ Download10xRawDataForLoupeFile <- function(outputFileId, outFile, overwrite = T,
 	}))
 }
 
+#' @title SeuratToCoNGA
+#'
+#' @description A wrapper function to prepare a Seurat object for Conga.
+#' @export
 SeuratToCoNGA <- function(seuratObj, output_dir) {
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = T)
