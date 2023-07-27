@@ -55,11 +55,12 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
 #' @description Download TCR Clonotypes for all datasets in a seuratObj, update their cellbarcodes with barcodePrefix, and create a merged table
 #' @param seuratObj A Seurat object
 #' @param outputFile The path where the merged CSV will be written
+#' @param overwriteTcrTable If true, any existing table(s) of TCR clones will be overwritten and re-downloaded
 #' @param downloadPath The output filepath for per-dataset files
 #' @param allowMissing If true, samples missing data will be skipped. Otherwise, the function will fail.
 #' @param cellRangerType The type of cellranger data to download. Either all_contig_annotations.csv or filtered_contig_annotations.csv
 #' @export
-CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, downloadPath = tempdir(), allowMissing = FALSE, cellRangerType = 'filtered_contig_annotations.csv'){
+CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTable = F, downloadPath = tempdir(), allowMissing = FALSE, cellRangerType = 'filtered_contig_annotations.csv'){
   if (all(is.null(seuratObj[['BarcodePrefix']]))){
     stop('Seurat object lacks BarcodePrefix column')
   }
@@ -89,7 +90,8 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, downloadPath = t
     # Read input, update barcodes:
     dat <- read.table(clonotypeFile, header = T, sep = ',')
     dat$barcode <- gsub("-1", "", dat$barcode)
-    dat$cellbarcode <- paste0(barcodePrefix, '_', dat$cellbarcode)
+    dat$barcode <- paste0(barcodePrefix, '_', dat$barcode)
+    dat$raw_clonotype_id <- ifelse(dat$is_cell == "true" & dat$productive == "true", yes = paste0(barcodePrefix,'_', dat$raw_clonotype_id), no = "")
     write.table(dat,
                 file = outputFile,
                 append = i != 1,

@@ -7,6 +7,7 @@
 CreateMergedTcrClonotypeFile(
   seuratObj,
   outputFile,
+  overwriteTcrTable = F,
   downloadPath = tempdir(),
   allowMissing = FALSE,
   cellRangerType = "filtered_contig_annotations.csv"
@@ -16,6 +17,8 @@ CreateMergedTcrClonotypeFile(
 \item{seuratObj}{A Seurat object}
 
 \item{outputFile}{The path where the merged CSV will be written}
+
+\item{overwriteTcrTable}{If true, any existing table(s) of TCR clones will be overwritten and re-downloaded}
 
 \item{downloadPath}{The output filepath for per-dataset files}
 
