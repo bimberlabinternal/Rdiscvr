@@ -4,6 +4,9 @@ ADD . /RDiscvr
 
 ENV RETICULATE_PYTHON=/usr/bin/python3
 
+RUN pip3 install scanpy[leiden]
+RUN git clone -b rhesus https://github.com/phbradley/conga.git && cd conga/tcrdist_cpp && make && cd .. && pip3 install -e .
+
 # NOTE: ggplot2 added to force version 3.4.0, which is needed by ggtree. Otherwise this container is pegged to ./focal/2022-10-28
 RUN echo "local({r <- getOption('repos') ;r['CRAN'] = 'https://packagemanager.rstudio.com/cran/__linux__/focal/latest';options(repos = r);rm(r)})" >> ~/.Rprofile
 
