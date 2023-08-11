@@ -21,7 +21,8 @@ Imports:
     cFIT,
     tidyr,
     methods,
-    RIRA
+    RIRA, 
+    readr
 Suggests:
     devtools,
     testthat (>= 2.1.0)
