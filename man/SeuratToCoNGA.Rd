@@ -4,7 +4,7 @@
 \alias{SeuratToCoNGA}
 \title{SeuratToCoNGA}
 \usage{
-SeuratToCoNGA(seuratObj, output_dir)
+SeuratToCoNGA(seuratObj, output_dir, assayName = "RNA")
 }
 \arguments{
 \item{seuratObj}{The seurat object}
