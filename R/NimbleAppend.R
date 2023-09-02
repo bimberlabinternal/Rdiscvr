@@ -88,7 +88,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   featureNames <- df$V1
   df <- subset(df, select=-(V1))
   m <- Reduce(methods::cbind2, lapply(df, Matrix::Matrix, sparse = TRUE))
-  dimnames(m) <- list(featureNames, seuratBarcodes)
+  dimnames(m) <- list(featureNames, colnames(df))
   if (is.null(colnames(m))) {
     stop(paste0('Error: no column names in nimble count matrix, size: ', paste0(dim(m), collapse = ' by ')))
   }
