@@ -6,7 +6,6 @@
 \usage{
 RunCoNGA(
   seuratObj,
-  tcrClonesFile,
   organism = NULL,
   seuratToCongaDir = "./seuratToConga",
   assayName = "RNA",
@@ -19,10 +18,6 @@ RunCoNGA(
 }
 \arguments{
 \item{seuratObj}{The Seurat object containing the data to be run using CoNGA.}
-
-\item{tcrClonesFile}{The 10x clonotypes file for this Seurat object. Single lanes can use the CellRanger/Vloupe contigs CSV file. Merged lanes need to merge these files and modify them to create unique cellbarcodes and clonotype names, such as the code from Rdiscvr::CreateMergedTcrClonotypeFile().}
-
-\item{organism}{'human' or 'rhesus'}
 
 \item{seuratToCongaDir}{The directory to store the results of SeuratToCoNGA() (the input files for the python call to run_CoNGA()).}
 
@@ -37,6 +32,8 @@ RunCoNGA(
 \item{runCongaOutputDirectory}{The directory that will store the many files created during run_CoNGA().}
 
 \item{congaMetadataPrefix}{A prefix to be added to the columns of the metadata that will be added from CoNGA within the returned Seurat object.}
+
+\item{organism:}{'human' or 'rhesus'}
 }
 \value{
 A Seurat object with the conga metadata relevant to TCR + gene expression clustering appended.
