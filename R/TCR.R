@@ -428,6 +428,7 @@ Download10xRawDataForLoupeFile <- function(outputFileId, outFile, overwrite = T,
 #' @param runCongaOutputDirectory The directory that will store the many files created during run_CoNGA().
 #' @param congaMetadataPrefix A prefix to be added to the columns of the metadata that will be added from CoNGA within the returned Seurat object.
 #' @return A Seurat object with the conga metadata relevant to TCR + gene expression clustering appended.
+#' @export
 RunCoNGA <- function(seuratObj,
                      organism = NULL,
                      seuratToCongaDir = "./seuratToConga",
