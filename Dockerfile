@@ -44,5 +44,6 @@ RUN --mount=type=secret,id=GITHUB_PAT \
 	&& Rscript -e "devtools::install_deps(pkg = '.', dependencies = TRUE, upgrade = 'always');" \
     # NOTE: Related to: https://github.com/satijalab/seurat/issues/7328. Should revert to a release once patched.
     && Rscript -e "remotes::install_github('satijalab/seurat', ref='443ab86684253d9a7290c3d38c2bc1d8db021776');" \
+    && R CMD build . \
 	&& R CMD INSTALL --build *.tar.gz \
 	&& rm -Rf /tmp/downloaded_packages/ /tmp/*.rds
