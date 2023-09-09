@@ -15,7 +15,7 @@ RUN echo "local({r <- getOption('repos') ;r['CRAN'] = 'https://packagemanager.rs
     && pip3 install umap-learn phate scanpy[leiden] \
     && mkdir /conga \
     && cd /conga \
-    && git clone -b rhesus https://github.com/phbradley/conga.git \
+    && git clone -b rhesus2 https://github.com/bbimber/conga.git \
     && cd conga/tcrdist_cpp \
     && make \
     && cd ../ \
@@ -32,6 +32,7 @@ RUN echo "local({r <- getOption('repos') ;r['CRAN'] = 'https://packagemanager.rs
 ENV RETICULATE_PYTHON=/usr/bin/python3
 ENV NUMBA_CACHE_DIR=/numba_cache
 ENV MPLCONFIGDIR=/mpl_cache
+ENV CONGA_PNG_TO_SVG_UTILITY=inkscape
 
 ADD . /RDiscvr
 
