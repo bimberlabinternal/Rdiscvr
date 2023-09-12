@@ -1,5 +1,6 @@
 from ghcr.io/bimberlab/cellhashr:latest
 
+# NOTE: inkscape installed for CoNGA
 RUN echo "local({r <- getOption('repos') ;r['CRAN'] = 'https://packagemanager.rstudio.com/cran/__linux__/focal/latest';options(repos = r);rm(r)})" >> ~/.Rprofile \
     && apt-get update -y \
     && apt-get upgrade -y \
@@ -7,6 +8,7 @@ RUN echo "local({r <- getOption('repos') ;r['CRAN'] = 'https://packagemanager.rs
         libhdf5-dev \
         libpython3-dev \
         python3-pip \
+        inkscape \
         locales \
         locales-all \
         wget \
