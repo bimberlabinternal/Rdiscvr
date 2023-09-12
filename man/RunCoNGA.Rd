@@ -13,7 +13,8 @@ RunCoNGA(
   gexDatatype = "10x_h5",
   runCongaOutfilePrefixForQcPlots = "qc_plots",
   runCongaOutputDirectory = "./conga_output",
-  congaMetadataPrefix = "conga_"
+  congaMetadataPrefix = "conga_",
+  pngConversionTool = NULL
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ RunCoNGA(
 \item{runCongaOutputDirectory}{The directory that will store the many files created during run_CoNGA().}
 
 \item{congaMetadataPrefix}{A prefix to be added to the columns of the metadata that will be added from CoNGA within the returned Seurat object.}
+
+\item{pngConversionTool}{specify the conversion tool used by CoNGA for svg to png conversion. Can be any of: convert, inkscape, rsvg}
 
 \item{organism:}{'human' or 'rhesus'}
 }
