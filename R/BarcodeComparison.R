@@ -1,4 +1,5 @@
 #' @include LabKeySettings.R
+#' @include TCR.R
 #' @import Rlabkey
 #' @import utils
 
@@ -203,7 +204,7 @@ CompareCellBarcodeSets <- function(workbooks, savePath = tempdir(), filePrefix =
       colSort="-rowid",
       colSelect="rowid,name,description,readset,readset/name,category,dataid/RowId,workbook,dataid/WebDavUrlRelative,dataid/WebDavUrlRelative,created",
       colFilter=makeFilter(
-        c("category", "IN", "Cell Hashing Calls (VDJ);Seurat Cell Hashing Calls;Cell Hashing Counts;CITE-seq Counts;Seurat Object Prototype;10x Loupe File")
+        c("category", "IN", "Cell Hashing Calls (VDJ);Seurat Cell Hashing Calls;Cell Hashing Counts;CITE-seq Counts;Seurat Object Prototype;10x Loupe File;10x VLoupe")
       ),
       containerFilter=NULL,
       colNameOpt="rname"
@@ -275,6 +276,10 @@ CompareCellBarcodeSets <- function(workbooks, savePath = tempdir(), filePrefix =
       }
 
       toAdd <- .DownloadCallFile(wb, callFiles, row[['tcrreadsetid']], toAdd, 'TCR_CallsFile', savePath, category = 'Cell Hashing Calls (VDJ)')
+      if (!is.na(row[['tcrreadsetid']]) && is.na(toAdd$TCR_CallsFile)) {
+        toAdd <- .DownloadBarcodesForVLoupe(wb, callFiles, row[['tcrreadsetid']], toAdd, 'TCR_CallsFile', savePath, category = '10x VLoupe')
+      }
+
       if (is.na(row[['tcrreadsetid']]) && is.na(toAdd$TCR_CallsFile)) {
         print('Missing TCR Calls')
       }
@@ -605,3 +610,50 @@ CompareCellBarcodeSets <- function(workbooks, savePath = tempdir(), filePrefix =
 
   return(toAdd)
 }
+
+.DownloadBarcodesForVLoupe <- function(wb, callFiles, readsetId, toAdd, fieldName, localPath, category) {
+    toAdd[fieldName] <- NA
+
+    cf <- callFiles[!is.na(callFiles$readset) & callFiles$readset == readsetId & callFiles$category == category,]
+    if (nrow(cf) > 1) {
+      print(paste0('Multiple call files, using latest: ', toAdd$Name, ' ', fieldName))
+    }
+
+    #use the most recent (highest rowId)
+    if (nrow(cf) > 0) {
+      row <- cf[cf$rowid == max(cf$rowid),]
+
+      suffix <- '.loupe'
+
+      fn <- paste0(row['readset_name'], '.', row['readset'], '.', row['rowid'], '.', row$category, suffix, '.txt')
+      fn <- gsub('\\(', '_', fn)
+      fn <- gsub('\\)', '_', fn)
+      fn <- gsub(' ', '_', fn)
+      fn <- gsub('__', '_', fn)
+
+      lp <- paste0(localPath, '/', wb, '/', fn)
+      outFile <- paste0(lp, '.countsPerCell.vloupe.txt')
+
+      if (file.exists(outFile)) {
+        print(paste0('file exists, reusing: ', outFile))
+      } else {
+        expectedFile <- paste0(lp, '.filtered_contig_annotations.csv')
+        .DownloadCellRangerClonotypes(vLoupeId = row[['rowid']], outFile = expectedFile, overwrite = T, fileName = 'filtered_contig_annotations.csv')
+        if (!file.exists(expectedFile)) {
+          print('Unable to download clones file!')
+          return()
+        }
+
+        # Read dir, find top barcodes, save to file:
+        dat <- read.csv(expectedFile)
+        dat$barcode <- gsub(dat$barcode, pattern = '-1$', replacement = '')
+        write.table(data.frame(cellbarcode = dat$barcode, count = 1), file = outFile, sep = '\t', row.names = F, quote = F)
+      }
+
+      toAdd[fieldName] <- outFile
+    } else {
+      print(paste0('No TCR file of type: ', category))
+    }
+
+    return(toAdd)
+  }
