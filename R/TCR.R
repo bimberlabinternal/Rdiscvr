@@ -490,7 +490,10 @@ ClassifyTNKByExpression <- function(seuratObj) {
   seuratObj$TNK_Type[as.numeric(seuratObj@assays$RNA['LOC710951',]) > 0 | as.numeric(seuratObj@assays$RNA['LOC114677140',]) > 0] <- 'Alpha/Beta'
 
   # This allows a cell with a gamma chain, but not evidence of A/B to be called as gamma/delta
-  seuratObj$TNK_Type[is.na(seuratObj$TNK_Type) & seuratObj$HasGammaChain] <-'Possibly Gamma/Delta'
+  seuratObj$TNK_Type[is.na(seuratObj$TNK_Type) & seuratObj$HasGammaChain] <-'Gamma Chain-Only'
+
+  seuratObj$TNK_Type[is.na(seuratObj$TNK_Type)] <- 'Unknown'
+  seuratObj$TNK_Type <- naturalsort::naturalfactor(seuratObj$TNK_Type)
 
   print(DimPlot(seuratObj, group.by = 'TNK_Type'))
   print(table(seuratObj$TNK_Type, useNA = 'always'))
