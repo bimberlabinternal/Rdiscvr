@@ -18,7 +18,7 @@ RUN echo "local({r <- getOption('repos') ;r['CRAN'] = 'https://packagemanager.rs
     && pip3 install umap-learn phate scanpy[leiden] \
     && mkdir /conga \
     && cd /conga \
-    && git clone -b rhesus2 https://github.com/bbimber/conga.git \
+    && git clone https://github.com/phbradley/conga.git \
     && cd conga/tcrdist_cpp \
     && make \
     && cd ../ \
