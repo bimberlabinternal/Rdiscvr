@@ -15,7 +15,8 @@ RUN echo "local({r <- getOption('repos') ;r['CRAN'] = 'https://packagemanager.rs
         wget \
         git \
     && python3 -m pip install --upgrade pip \
-    && pip3 install umap-learn phate scanpy[leiden] \
+    #  NOTE: seaborn added for: https://github.com/scverse/scanpy/issues/2680
+    && pip3 install umap-learn phate scanpy fastcluster seaborn==0.12.2 \
     && mkdir /conga \
     && cd /conga \
     && git clone https://github.com/phbradley/conga.git \
