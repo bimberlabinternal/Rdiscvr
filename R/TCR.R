@@ -476,7 +476,13 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA') {
   seuratObj$HasCD3 <- as.numeric(seuratObj@assays[assayName]['CD3D',]) > 0 | as.numeric(seuratObj@assays[assayName]['CD3E',]) > 0 | as.numeric(seuratObj@assays[assayName]['CD3G',]) > 0
   print(DimPlot(seuratObj, group.by = 'HasCD3'))
 
-  seuratObj$IsNKCell <- !seuratObj$HasCDR3Data & !seuratObj$HasCD3
+  seuratObj$HasTCRConstant <- as.numeric(seuratObj@assays[assayName]['LOC711031',]) > 0 |
+    as.numeric(seuratObj@assays[assayName]['LOC720538',]) > 0 |
+    as.numeric(seuratObj@assays[assayName]['LOC705095',]) |
+    as.numeric(seuratObj@assays[assayName]["LOC710951", ]) > 0 |
+    as.numeric(seuratObj@assays[assayName]["LOC114677140",]) > 0
+
+  seuratObj$IsNKCell <- !seuratObj$HasCDR3Data & !seuratObj$HasCD3 & !seuratObj$HasTCRConstant
   print(DimPlot(seuratObj, group.by = 'IsNKCell'))
 
   seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | as.numeric(seuratObj@assays[assayName]['LOC720538',]) > 0 | as.numeric(seuratObj@assays[assayName]['LOC705095',])
