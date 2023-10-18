@@ -462,32 +462,37 @@ RunCoNGA <- function(seuratObj,
 #' @title Classify T and NK By Expression
 #' @description Classify T and NK By Expression and TCR clonotype, using best available evidence of ground-truth
 #' @param seuratObj The seurat object
+#' @param assayName The name of the RNA assay
 #' @export
-ClassifyTNKByExpression <- function(seuratObj) {
+ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA') {
   if (!'HasCDR3Data' %in% names(seuratObj@meta.data)) {
     stop('This seurat object appears to be missing TCR data. See RDiscvr::DownloadAndAppendTcrClonotypes')
   }
 
   # LOC711031 = TRDC
-  seuratObj$IsGammaDelta <- !is.na(seuratObj$TRD) | as.numeric(seuratObj@assays$RNA['LOC711031',]) > 0
+  seuratObj$IsGammaDelta <- !is.na(seuratObj$TRD) | as.numeric(seuratObj@assays[assayName]['LOC711031',]) > 0
   print(DimPlot(seuratObj, group.by = 'IsGammaDelta'))
 
-  seuratObj$HasCD3 <- as.numeric(seuratObj@assays$RNA['CD3D',]) > 0 | as.numeric(seuratObj@assays$RNA['CD3E',]) > 0 | as.numeric(seuratObj@assays$RNA['CD3G',]) > 0
+  seuratObj$HasCD3 <- as.numeric(seuratObj@assays[assayName]['CD3D',]) > 0 | as.numeric(seuratObj@assays[assayName]['CD3E',]) > 0 | as.numeric(seuratObj@assays[assayName]['CD3G',]) > 0
   print(DimPlot(seuratObj, group.by = 'HasCD3'))
 
   seuratObj$IsNKCell <- !seuratObj$HasCDR3Data & !seuratObj$HasCD3
   print(DimPlot(seuratObj, group.by = 'IsNKCell'))
 
-  seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | as.numeric(seuratObj@assays$RNA['LOC720538',]) > 0 | as.numeric(seuratObj@assays$RNA['LOC705095',])
+  seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | as.numeric(seuratObj@assays[assayName]['LOC720538',]) > 0 | as.numeric(seuratObj@assays[assayName]['LOC705095',])
   print(DimPlot(seuratObj, group.by = 'HasGammaChain'))
 
+  # As above, allow either TCR data or constant chaine expression:
+  seuratObj$IsAlphaBeta <- FALSE
+  seuratObj$IsAlphaBeta[!is.na(seuratObj$TRA) | !is.na(seuratObj$TRB)] <- TRUE
+  seuratObj$IsAlphaBeta[as.numeric(seuratObj@assays[assayName]["LOC710951", ]) > 0 | as.numeric(seuratObj@assays[assayName]["LOC114677140",]) > 0] <- TRUE
+  print(DimPlot(seuratObj, group.by = 'IsAlphaBeta'))
+  
   seuratObj$TNK_Type <- NA
   seuratObj$TNK_Type[seuratObj$IsNKCell] <- 'NK'
   seuratObj$TNK_Type[seuratObj$IsGammaDelta] <- 'Gamma/Delta'
-
-  # As above, allow either TCR data or constant chaine expression:
-  seuratObj$TNK_Type[!is.na(seuratObj$TRA) | !is.na(seuratObj$TRB)] <- 'Alpha/Beta'
-  seuratObj$TNK_Type[as.numeric(seuratObj@assays$RNA['LOC710951',]) > 0 | as.numeric(seuratObj@assays$RNA['LOC114677140',]) > 0] <- 'Alpha/Beta'
+  seuratObj$TNK_Type[seuratObj$IsAlphaBeta] <- 'Alpha/Beta'
+  seuratObj$TNK_Type[(seuratObj$IsNKCell + seuratObj$IsAlphaBeta + seuratObj$IsGammaDelta) > 1] <- 'Ambiguous'
 
   # This allows a cell with a gamma chain, but not evidence of A/B to be called as gamma/delta
   seuratObj$TNK_Type[is.na(seuratObj$TNK_Type) & seuratObj$HasGammaChain] <-'Gamma Chain-Only'

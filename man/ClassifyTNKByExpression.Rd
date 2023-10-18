@@ -4,10 +4,12 @@
 \alias{ClassifyTNKByExpression}
 \title{Classify T and NK By Expression}
 \usage{
-ClassifyTNKByExpression(seuratObj)
+ClassifyTNKByExpression(seuratObj, assayName = "RNA")
 }
 \arguments{
 \item{seuratObj}{The seurat object}
+
+\item{assayName}{The name of the RNA assay}
 }
 \description{
 Classify T and NK By Expression and TCR clonotype, using best available evidence of ground-truth
