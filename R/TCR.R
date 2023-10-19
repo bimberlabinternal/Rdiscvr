@@ -469,29 +469,31 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA') {
     stop('This seurat object appears to be missing TCR data. See RDiscvr::DownloadAndAppendTcrClonotypes')
   }
 
+  ad <- Seurat::GetAssayData(seuratObj, slot = 'data', assay = assayName)
+
   # LOC711031 = TRDC
-  seuratObj$IsGammaDelta <- !is.na(seuratObj$TRD) | as.numeric(seuratObj@assays[assayName]['LOC711031',]) > 0
+  seuratObj$IsGammaDelta <- !is.na(seuratObj$TRD) | as.numeric(ad['LOC711031',]) > 0
   print(DimPlot(seuratObj, group.by = 'IsGammaDelta'))
 
-  seuratObj$HasCD3 <- as.numeric(seuratObj@assays[assayName]['CD3D',]) > 0 | as.numeric(seuratObj@assays[assayName]['CD3E',]) > 0 | as.numeric(seuratObj@assays[assayName]['CD3G',]) > 0
+  seuratObj$HasCD3 <- as.numeric(ad['CD3D',]) > 0 | as.numeric(ad['CD3E',]) > 0 | as.numeric(ad['CD3G',]) > 0
   print(DimPlot(seuratObj, group.by = 'HasCD3'))
 
-  seuratObj$HasTCRConstant <- as.numeric(seuratObj@assays[assayName]['LOC711031',]) > 0 |
-    as.numeric(seuratObj@assays[assayName]['LOC720538',]) > 0 |
-    as.numeric(seuratObj@assays[assayName]['LOC705095',]) |
-    as.numeric(seuratObj@assays[assayName]["LOC710951", ]) > 0 |
-    as.numeric(seuratObj@assays[assayName]["LOC114677140",]) > 0
+  seuratObj$HasTCRConstant <- as.numeric(ad['LOC711031',]) > 0 |
+    as.numeric(ad['LOC720538',]) > 0 |
+    as.numeric(ad['LOC705095',]) |
+    as.numeric(ad["LOC710951", ]) > 0 |
+    as.numeric(ad["LOC114677140",]) > 0
 
   seuratObj$IsNKCell <- !seuratObj$HasCDR3Data & !seuratObj$HasCD3 & !seuratObj$HasTCRConstant
   print(DimPlot(seuratObj, group.by = 'IsNKCell'))
 
-  seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | as.numeric(seuratObj@assays[assayName]['LOC720538',]) > 0 | as.numeric(seuratObj@assays[assayName]['LOC705095',])
+  seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | as.numeric(ad['LOC720538',]) > 0 | as.numeric(ad['LOC705095',])
   print(DimPlot(seuratObj, group.by = 'HasGammaChain'))
 
   # As above, allow either TCR data or constant chaine expression:
   seuratObj$IsAlphaBeta <- FALSE
   seuratObj$IsAlphaBeta[!is.na(seuratObj$TRA) | !is.na(seuratObj$TRB)] <- TRUE
-  seuratObj$IsAlphaBeta[as.numeric(seuratObj@assays[assayName]["LOC710951", ]) > 0 | as.numeric(seuratObj@assays[assayName]["LOC114677140",]) > 0] <- TRUE
+  seuratObj$IsAlphaBeta[as.numeric(ad["LOC710951", ]) > 0 | as.numeric(ad["LOC114677140",]) > 0] <- TRUE
   print(DimPlot(seuratObj, group.by = 'IsAlphaBeta'))
   
   seuratObj$TNK_Type <- NA
