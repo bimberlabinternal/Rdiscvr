@@ -15,6 +15,7 @@ utils::globalVariables(
 #' @param dropExisting If true, any existing clonotype data will be replaced
 #' @param overwriteTcrTable If true, any existing table(s) of TCR clones will be overwritten and re-downloaded
 #' @param allowMissing If true, samples missing data will be skipped. Otherwise, the function will fail.
+#' @importFrom magrittr %>%
 #' @return A modified Seurat object.
 #' @export
 DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dropExisting = T, overwriteTcrTable = F, allowMissing = FALSE){
@@ -419,7 +420,7 @@ Download10xRawDataForLoupeFile <- function(outputFileId, outFile, overwrite = T,
 #'
 #' @description Runs CoNGA on a seurat object
 #' @param seuratObj The Seurat object containing the data to be run using CoNGA.
-#' @param organism: 'human' or 'rhesus'
+#' @param organism The organism for the TCR references, either 'human' or 'rhesus'
 #' @param seuratToCongaDir The directory to store the results of SeuratToCoNGA() (the input files for the python call to run_CoNGA()).
 #' @param assayName Pass-through variable for accessing the assay name within the Seurat object for SeuratToCoNGA().
 #' @param runCongaOutputFilePrefix prefix for the output files from the python call to run_CoNGA().

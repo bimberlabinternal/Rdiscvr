@@ -20,6 +20,8 @@ RunCoNGA(
 \arguments{
 \item{seuratObj}{The Seurat object containing the data to be run using CoNGA.}
 
+\item{organism}{The organism for the TCR references, either 'human' or 'rhesus'}
+
 \item{seuratToCongaDir}{The directory to store the results of SeuratToCoNGA() (the input files for the python call to run_CoNGA()).}
 
 \item{assayName}{Pass-through variable for accessing the assay name within the Seurat object for SeuratToCoNGA().}
@@ -35,8 +37,6 @@ RunCoNGA(
 \item{congaMetadataPrefix}{A prefix to be added to the columns of the metadata that will be added from CoNGA within the returned Seurat object.}
 
 \item{pngConversionTool}{specify the conversion tool used by CoNGA for svg to png conversion. Can be any of: convert, inkscape, rsvg}
-
-\item{organism:}{'human' or 'rhesus'}
 }
 \value{
 A Seurat object with the conga metadata relevant to TCR + gene expression clustering appended.
