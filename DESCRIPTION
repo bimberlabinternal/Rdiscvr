@@ -23,7 +23,8 @@ Imports:
     tidyr,
     methods,
     RIRA,
-    htmltools
+    htmltools,
+    ggplot2
 Suggests:
     devtools,
     testthat (>= 2.1.0)
