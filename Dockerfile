@@ -47,6 +47,9 @@ RUN --mount=type=secret,id=GITHUB_PAT \
     && echo "GH: $GITHUB_PAT" \
 	&& Rscript -e "BiocManager::install(ask = F, upgrade = 'always');" \
 	&& Rscript -e "devtools::install_deps(pkg = '.', dependencies = TRUE, upgrade = 'always');" \
+    # Force 4.x for both Seurat and SeuratObject
+    && Rscript -e "devtools::install_version('SeuratObject', version = '4.1.4', ask = FALSE)" \
+    && Rscript -e "devtools::install_version('Seurat', version = '4.4.0', ask = FALSE)" \
     && R CMD build . \
 	&& R CMD INSTALL --build *.tar.gz \
 	&& rm -Rf /tmp/downloaded_packages/ /tmp/*.rds
