@@ -15,6 +15,7 @@ utils::globalVariables(
 #' @param dropExisting If true, any existing clonotype data will be replaced
 #' @param overwriteTcrTable If true, any existing table(s) of TCR clones will be overwritten and re-downloaded
 #' @param allowMissing If true, samples missing data will be skipped. Otherwise, the function will fail.
+#' @importFrom magrittr %>%
 #' @return A modified Seurat object.
 #' @export
 DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dropExisting = T, overwriteTcrTable = F, allowMissing = FALSE){
