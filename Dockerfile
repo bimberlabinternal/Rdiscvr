@@ -1,4 +1,4 @@
-from ghcr.io/bimberlab/cellhashr:latest
+FROM ghcr.io/bimberlab/cellhashr:latest
 
 # NOTE: inkscape and librsvg2-bin installed for CoNGA
 RUN echo "local({r <- getOption('repos') ;r['CRAN'] = 'https://packagemanager.rstudio.com/cran/__linux__/focal/latest';options(repos = r);rm(r)})" >> ~/.Rprofile \
