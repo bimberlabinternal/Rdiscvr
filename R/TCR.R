@@ -419,7 +419,7 @@ Download10xRawDataForLoupeFile <- function(outputFileId, outFile, overwrite = T,
 #'
 #' @description Runs CoNGA on a seurat object
 #' @param seuratObj The Seurat object containing the data to be run using CoNGA.
-#' @param organism: 'human' or 'rhesus'
+#' @param organism The organism for the TCR references, either 'human' or 'rhesus'
 #' @param seuratToCongaDir The directory to store the results of SeuratToCoNGA() (the input files for the python call to run_CoNGA()).
 #' @param assayName Pass-through variable for accessing the assay name within the Seurat object for SeuratToCoNGA().
 #' @param runCongaOutputFilePrefix prefix for the output files from the python call to run_CoNGA().
