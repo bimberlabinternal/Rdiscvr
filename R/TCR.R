@@ -109,6 +109,9 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
     tcr$barcode <- as.character(tcr$barcode)
     tcr$barcode <- paste0(barcodePrefix, '_', tcr$barcode)
     tcr$barcode <- as.factor(tcr$barcode)
+    tcr$raw_clonotype_id <- as.character(tcr$raw_clonotype_id)
+    tcr$raw_clonotype_id <- ifelse(!is.na(tcr$raw_clonotype_id), paste0(barcodePrefix, '_', tcr$raw_clonotype_id), NA)
+    tcr$raw_clonotype_id <- as.factor(tcr$raw_clonotype_id)
   }
 
   origRows <- nrow(tcr)
@@ -363,6 +366,7 @@ utils::globalVariables(
     TRG_C = paste0(sort(unique(as.character(TRGC[TRGC != '']))), collapse = ","),
     TRB_D = paste0(sort(unique(as.character(TRBD[TRBD != '']))), collapse = ","),
     TRD_D = paste0(sort(unique(as.character(TRDD[TRDD != '']))), collapse = ","),
+    raw_clonotype_id = paste0(sort(unique(as.character(raw_clonotype_id[raw_clonotype_id != '']))), collapse = ","),
     CloneNames = paste0(sort(unique(CloneName[CloneName != ''])), collapse = ",")  #this is imprecise b/c we count a hit if we match any chain, but this is probably what we often want
   )
 
