@@ -1,4 +1,4 @@
-from ghcr.io/bimberlab/cellhashr:latest
+FROM ghcr.io/bimberlab/cellhashr:latest
 
 # NOTE: inkscape and librsvg2-bin installed for CoNGA
 RUN echo "local({r <- getOption('repos') ;r['CRAN'] = 'https://packagemanager.rstudio.com/cran/__linux__/focal/latest';options(repos = r);rm(r)})" >> ~/.Rprofile \
@@ -46,11 +46,10 @@ RUN --mount=type=secret,id=GITHUB_PAT \
     && export GITHUB_PAT="$(cat /run/secrets/GITHUB_PAT)" \
     && echo "GH: $GITHUB_PAT" \
 	&& Rscript -e "BiocManager::install(ask = F, upgrade = 'always');" \
-    # TODO: drop this once main CRAN repo contains version 0.2.1:
-    && Rscript -e "install.packages('aplot', repos = 'https://cran.wustl.edu/')" \
 	&& Rscript -e "devtools::install_deps(pkg = '.', dependencies = TRUE, upgrade = 'always');" \
-    # NOTE: Related to: https://github.com/satijalab/seurat/issues/7328. Should revert to a release once patched.
-    && Rscript -e "remotes::install_github('satijalab/seurat', ref='443ab86684253d9a7290c3d38c2bc1d8db021776');" \
+    # Force 4.x for both Seurat and SeuratObject
+    && Rscript -e "devtools::install_version('Seurat', version = '4.4.0', ask = FALSE, upgrade = 'never')" \
+    && Rscript -e "devtools::install_version('SeuratObject', version = '4.1.4', ask = FALSE, upgrade = 'never')" \
     && R CMD build . \
 	&& R CMD INSTALL --build *.tar.gz \
 	&& rm -Rf /tmp/downloaded_packages/ /tmp/*.rds
