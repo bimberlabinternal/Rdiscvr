@@ -11,7 +11,6 @@ Depends:
     R (>= 4.3.0)
 Imports:
     Seurat (<= 4.4.0),
-    SeuratObject,
     dplyr,
     naturalsort,
     Rlabkey,
