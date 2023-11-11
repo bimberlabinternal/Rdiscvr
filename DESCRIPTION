@@ -8,10 +8,9 @@ Description: The goal of this package is to provide helper functions to aid in q
 License: GPL-3
 Encoding: UTF-8
 Depends:
-    R (>= 4.2.0)
+    R (>= 4.3.0)
 Imports:
     Seurat (<= 4.4.0),
-    SeuratObject (<= 4.1.4),
     dplyr,
     naturalsort,
     Rlabkey,
