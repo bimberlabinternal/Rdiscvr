@@ -49,9 +49,6 @@ RUN --mount=type=secret,id=GITHUB_PAT \
     # Force 4.x for Seurat
     && Rscript -e "devtools::install_version('Seurat', version = '4.4.0', upgrade = 'never')" \
     && Rscript -e "devtools::install_deps(pkg = '.', dependencies = TRUE, upgrade = 'never');" \
-    # TODO: this is to force the correct UCell. This is an indirect way to do this, but I'm trying to rely on our modules to provide the correct directives
-    # TODO: Remove this once those versions settle down:
-    && devtools::install_github(repo = 'bimberlabinternal/RIRA', ref = 'master', dependencies = TRUE, upgrade = 'always') \
     # Due to Matrix/SeuratObject: https://github.com/mojaveazure/seurat-object/issues/166
     && Rscript -e "install.packages('SeuratObject', ask = FALSE, force = TRUE, type = 'source', repos = 'https://cloud.r-project.org')" \
     && R CMD build . \
