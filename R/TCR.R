@@ -93,6 +93,32 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
     dat$barcode <- gsub("-1", "", dat$barcode)
     dat$barcode <- paste0(barcodePrefix, '_', dat$barcode)
     dat$raw_clonotype_id <- ifelse(dat$is_cell == "true" & dat$productive == "true", yes = paste0(barcodePrefix,'_', dat$raw_clonotype_id), no = "")
+
+    # Check for TRA/B segments that dont match the chain:
+    sel <- dat$chain == 'TRA' & grepl(dat$v_gene, pattern = 'BV|GV')
+    if (sum(sel) > 0) {
+      print(paste0('Dropping TRA rows with a BV/GV genes, total: ', sum(sel)))
+      dat <- dat[!sel]
+    }
+
+    sel <- dat$chain == 'TRA' & grepl(dat$j_gene, pattern = 'BJ|GJ')
+    if (sum(sel) > 0) {
+      print(paste0('Dropping TRA rows with a BJ/GJ genes, total: ', sum(sel)))
+      dat <- dat[!sel]
+    }
+
+    sel <- dat$chain == 'TRB' & grepl(dat$v_gene, pattern = 'AV|DV')
+    if (sum(sel) > 0) {
+      print(paste0('Dropping TRB rows with a AV/DV genes, total: ', sum(sel)))
+      dat <- dat[!sel]
+    }
+
+    sel <- dat$chain == 'TRB' & grepl(dat$v_gene, pattern = 'AJ|DJ')
+    if (sum(sel) > 0) {
+      print(paste0('Dropping TRB rows with a AJ/DJ genes, total: ', sum(sel)))
+      dat <- dat[!sel]
+    }
+
     write.table(dat,
                 file = outputFile,
                 append = i != 1,
