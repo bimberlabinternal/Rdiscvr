@@ -40,10 +40,11 @@ jobs:
       # libpoppler-cpp-dev added for pdftools, which is part of cellhashR
       # libhdf5-dev added for cellmembrane/SeuratDisk
       # libsodium-dev installed for VISION
+      # libharfbuzz-dev libfribidi-dev are added to fix textshaping install error
       - name: Install packages
         if: runner.os != 'Windows'
         run: |
-          sudo apt-get update && sudo apt-get install -yq python3-pip libpoppler-cpp-dev libmagick++-dev libhdf5-dev libsodium-dev
+          sudo apt-get update && sudo apt-get install -yq python3-pip libpoppler-cpp-dev libmagick++-dev libhdf5-dev libsodium-dev libharfbuzz-dev libfribidi-dev
           python3 -m pip install --upgrade pip
           python3 -m pip install --user wheel setuptools
 
@@ -62,7 +63,7 @@ jobs:
       # Note: the environment variable R_BIOC_VERSION is set to force remotes::install_bioc to follow the proper version
       - name: Setup Bioconductor
         run: |
-          install.packages(c('pkgdown', 'devtools'), dependencies = TRUE)
+          install.packages('devtools', dependencies = TRUE)
           if (!requireNamespace("BiocManager", quietly=TRUE))  install.packages("BiocManager");
           BiocManager::install(version = "${{ matrix.config.bioc }}", ask = FALSE);
           cat(append = TRUE, file = "~/.Rprofile", "options(repos = BiocManager::repositories());")
