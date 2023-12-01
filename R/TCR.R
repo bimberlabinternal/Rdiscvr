@@ -60,8 +60,9 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
 #' @param downloadPath The output filepath for per-dataset files
 #' @param allowMissing If true, samples missing data will be skipped. Otherwise, the function will fail.
 #' @param cellRangerType The type of cellranger data to download. Either all_contig_annotations.csv or filtered_contig_annotations.csv
+#' @param dropConflictingVJSegments If true, any TRB rows with a TRA/D V/J segments will as dropped, as are TRA rows with TRB/G segments
 #' @export
-CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTable = F, downloadPath = tempdir(), allowMissing = FALSE, cellRangerType = 'filtered_contig_annotations.csv'){
+CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTable = F, downloadPath = tempdir(), allowMissing = FALSE, cellRangerType = 'filtered_contig_annotations.csv', dropConflictingVJSegments = TRUE){
   if (all(is.null(seuratObj[['BarcodePrefix']]))){
     stop('Seurat object lacks BarcodePrefix column')
   }
@@ -93,6 +94,34 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
     dat$barcode <- gsub("-1", "", dat$barcode)
     dat$barcode <- paste0(barcodePrefix, '_', dat$barcode)
     dat$raw_clonotype_id <- ifelse(dat$is_cell == "true" & dat$productive == "true", yes = paste0(barcodePrefix,'_', dat$raw_clonotype_id), no = "")
+
+    # Check for TRA/B segments that dont match the chain:
+    if (dropConflictingVJSegments) {
+      sel <- dat$chain == 'TRA' & grepl(dat$v_gene, pattern = 'BV|GV')
+      if (sum(sel) > 0) {
+        print(paste0('Dropping TRA rows with a BV/GV genes, total: ', sum(sel)))
+        dat <- dat[!sel,]
+      }
+
+      sel <- dat$chain == 'TRA' & grepl(dat$j_gene, pattern = 'BJ|GJ')
+      if (sum(sel) > 0) {
+        print(paste0('Dropping TRA rows with a BJ/GJ genes, total: ', sum(sel)))
+        dat <- dat[!sel,]
+      }
+
+      sel <- dat$chain == 'TRB' & grepl(dat$v_gene, pattern = 'AV|DV')
+      if (sum(sel) > 0) {
+        print(paste0('Dropping TRB rows with a AV/DV genes, total: ', sum(sel)))
+        dat <- dat[!sel,]
+      }
+
+      sel <- dat$chain == 'TRB' & grepl(dat$v_gene, pattern = 'AJ|DJ')
+      if (sum(sel) > 0) {
+        print(paste0('Dropping TRB rows with a AJ/DJ genes, total: ', sum(sel)))
+        dat <- dat[!sel,]
+      }
+    }
+
     write.table(dat,
                 file = outputFile,
                 append = i != 1,
