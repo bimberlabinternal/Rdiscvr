@@ -169,23 +169,8 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   return(seuratObject)
 }
 
-
-#' @title PerformMhcNormalization
-#' @description This is a fairly specific normalization step for MHC data. It will divide the raw counts for each feature by the sum of counts in that cell from that locus (e.g., MHC-A, MHC-B, MHC-E, MHC-I, DPA, DPB)
-#'
-#' @param seuratObject A Seurat object
-#' @param sourceAssayName The assay to normalize
-#' @param featurePrefix This prefix is stripped from the start of all feature names
-#' @param delimiter Used to split the locus from allele designation
-#' @param ambiguousFeatureDelim This character is used to split feature names in the case of ambiguous features. If a feature is ambiguous, the locus is assigned as the unique loci of the feature set.
-#' @param perCell If true, the feature counts are scaled based on the library size of features from that locus in that cell. If false, it is scaled based on the library size of features in that locus from all cells matching cellGroupingVariable
-#' @param cellGroupingVariable If perCell is FALSE, the library size is calculated by taking the sum of features from that locus across all cells where this metadata variable matches the current cell
-#' @param stripNumbersFromLocus If true, numeric values will be stripped from all locus strings 
-#' @return A modified Seurat object.
-#' @export
-PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featurePrefix = 'Mamu-', delimiter = '*', ambiguousFeatureDelim = ',', perCell = TRUE, cellGroupingVariable = 'DatasetId', stripNumbersFromLocus = TRUE) {
+.AssignLocusToMhcFeatures <- function(seuratObj, sourceAssayName = 'MHC', featurePrefix = 'Mamu-', delimiter = '*', ambiguousFeatureDelim = ',', stripNumbersFromLocus = TRUE) {
   seuratObj[[sourceAssayName]]@meta.features$locus <- NA
-
   for (featName in rownames(seuratObj[[sourceAssayName]])) {
     feats <- unlist(strsplit(x = featName, split = ambiguousFeatureDelim))
     loci <- c()
@@ -204,16 +189,35 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
       if (stripNumbersFromLocus) {
         locus <- gsub(x = locus, pattern = '[0-9]+.*$', replacement = '')
       }
-      
+
       loci <- unique(c(loci, locus))
     }
 
     if (length(loci) > 1) {
-        warning(paste0('Feature matched multi loci: ', featName, ', ', paste0(loci, collapse = ',')))
+      warning(paste0('Feature matched multiple loci: ', featName, ', ', paste0(loci, collapse = ',')))
     }
 
     seuratObj[[sourceAssayName]]@meta.features$locus[rownames(seuratObj[[sourceAssayName]]) == feat] <- paste0(loci, collapse = ',')
   }
+
+  return(seuratObj)
+}
+
+#' @title PerformMhcNormalization
+#' @description This is a fairly specific normalization step for MHC data. It will divide the raw counts for each feature by the sum of counts in that cell from that locus (e.g., MHC-A, MHC-B, MHC-E, MHC-I, DPA, DPB)
+#'
+#' @param seuratObject A Seurat object
+#' @param sourceAssayName The assay to normalize
+#' @param featurePrefix This prefix is stripped from the start of all feature names
+#' @param delimiter Used to split the locus from allele designation
+#' @param ambiguousFeatureDelim This character is used to split feature names in the case of ambiguous features. If a feature is ambiguous, the locus is assigned as the unique loci of the feature set.
+#' @param perCell If true, the feature counts are scaled based on the library size of features from that locus in that cell. If false, it is scaled based on the library size of features in that locus from all cells matching cellGroupingVariable
+#' @param cellGroupingVariable If perCell is FALSE, the library size is calculated by taking the sum of features from that locus across all cells where this metadata variable matches the current cell
+#' @param stripNumbersFromLocus If true, numeric values will be stripped from all locus strings 
+#' @return A modified Seurat object.
+#' @export
+PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featurePrefix = 'Mamu-', delimiter = '*', ambiguousFeatureDelim = ',', perCell = TRUE, cellGroupingVariable = 'DatasetId', stripNumbersFromLocus = TRUE) {
+  seuratObj <- .AssignLocusToMhcFeatures(seuratObj, sourceAssayName = sourceAssayName, featurePrefix = featurePrefix, delimiter = delimiter, ambiguousFeatureDelim = ambiguousFeatureDelim, stripNumbersFromLocus = stripNumbersFromLocus)
 
   dat <- Seurat::GetAssayData(seuratObj, assay = sourceAssayName, slot = 'counts')
   margin <- 2
@@ -243,7 +247,6 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
       }
     }
   }
-  
 
   for (locus in sort(unique(seuratObj[[sourceAssayName]]@meta.features$locus))) {
     print(paste0('Normalizing locus: ', locus))
