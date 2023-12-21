@@ -13,7 +13,8 @@ AppendNimbleCounts(
   duplicateFeatureSuffix = ".Nimble",
   normalizeData = TRUE,
   performDietSeurat = TRUE,
-  assayForLibrarySize = "RNA"
+  assayForLibrarySize = "RNA",
+  maxLibrarySizeRatio = 0.01
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ AppendNimbleCounts(
 \item{performDietSeurat}{If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is true out of caution.}
 
 \item{assayForLibrarySize}{If normalizeData is true, then this is the assay used for librarySize when normalizing. If assayForLibrarySize equals targetAssayName, Seurat::NormalizeData is used.}
+
+\item{maxLibrarySizeRatio}{If normalizeData is true, then this is passed to CellMembrane::LogNormalizeUsingAlternateAssay}
 }
 \value{
 A modified Seurat object.

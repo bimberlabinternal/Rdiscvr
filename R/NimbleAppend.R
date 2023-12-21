@@ -13,9 +13,10 @@
 #' @param normalizeData If true, data will be normalized after appending/creating the assay. This will default to CellMembrane::LogNormalizeUsingAlternateAssay; however, if assayForLibrarySize equals targetAssayName then Seurat::NormalizeData is used.
 #' @param performDietSeurat If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is true out of caution.
 #' @param assayForLibrarySize If normalizeData is true, then this is the assay used for librarySize when normalizing. If assayForLibrarySize equals targetAssayName, Seurat::NormalizeData is used.
+#' @param maxLibrarySizeRatio If normalizeData is true, then this is passed to CellMembrane::LogNormalizeUsingAlternateAssay
 #' @return A modified Seurat object.
 #' @export
-AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = TRUE, assayForLibrarySize = 'RNA') {
+AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.01) {
   if (!file.exists(nimbleFile)) {
     stop(paste0("Nimble file not found: ", nimbleFile))
   }
@@ -161,9 +162,130 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
     if (targetAssayName == assayForLibrarySize) {
       seuratObject <- Seurat::NormalizeData(seuratObject, assay = targetAssayName, verbose = FALSE)
     } else {
-      seuratObject <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObject, assay = targetAssayName, assayForLibrarySize = assayForLibrarySize)
+      seuratObject <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObject, assay = targetAssayName, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio)
     }
   }
   
   return(seuratObject)
+}
+
+
+#' @title PerformMhcNormalization
+#' @description This is a fairly specific normalization step for MHC data. It will divide the raw counts for each feature by the sum of counts in that cell from that locus (e.g., MHC-A, MHC-B, MHC-E, MHC-I, DPA, DPB)
+#'
+#' @param seuratObject A Seurat object
+#' @param sourceAssayName The assay to normalize
+#' @param featurePrefix This prefix is stripped from the start of all feature names
+#' @param delimiter Used to split the locus from allele designation
+#' @param ambiguousFeatureDelim This character is used to split feature names in the case of ambiguous features. If a feature is ambiguous, the locus is assigned as the unique loci of the feature set.
+#' @param perCell If true, the feature counts are scaled based on the library size of features from that locus in that cell. If false, it is scaled based on the library size of features in that locus from all cells matching cellGroupingVariable
+#' @param cellGroupingVariable If perCell is FALSE, the library size is calculated by taking the sum of features from that locus across all cells where this metadata variable matches the current cell
+#' @param stripNumbersFromLocus If true, numeric values will be stripped from all locus strings 
+#' @return A modified Seurat object.
+#' @export
+PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featurePrefix = 'Mamu-', delimiter = '*', ambiguousFeatureDelim = ',', perCell = TRUE, cellGroupingVariable = 'DatasetId', stripNumbersFromLocus = TRUE) {
+  seuratObj[[sourceAssayName]]@meta.features$locus <- NA
+
+  for (featName in rownames(seuratObj[[sourceAssayName]])) {
+    feats <- unlist(strsplit(x = featName, split = ambiguousFeatureDelim))
+    loci <- c()
+    for (feat in feats){
+      qs <- paste0('^', featurePrefix)
+      if (!grepl(x = feat, pattern = qs)) {
+        warning(paste0('Feature lacks prefix: ', feat))
+      }
+
+      locus <- gsub(x = feat, pattern = featurePrefix, replacement = '')
+      if (!grepl(x = locus, pattern = delimiter, fixed = TRUE)) {
+        warning(paste0('Feature lacks delimiter: ', feat))
+      }
+
+      locus <- unlist(strsplit(x = locus, split = delimiter, fixed = TRUE))[1]
+      if (stripNumbersFromLocus) {
+        locus <- gsub(x = locus, pattern = '[0-9]+.*$', replacement = '')
+      }
+      
+      loci <- unique(c(loci, locus))
+    }
+
+    if (length(loci) > 1) {
+        warning(paste0('Feature matched multi loci: ', featName, ', ', paste0(loci, collapse = ',')))
+    }
+
+    seuratObj[[sourceAssayName]]@meta.features$locus[rownames(seuratObj[[sourceAssayName]]) == feat] <- paste0(loci, collapse = ',')
+  }
+
+  dat <- Seurat::GetAssayData(seuratObj, assay = sourceAssayName, slot = 'counts')
+  margin <- 2
+
+  if (!perCell) {
+    if (!cellGroupingVariable %in% names(seuratObj@meta.data)) {
+      stop(paste0('The cellGroupingVariable of ', cellGroupingVariable, ' was not present seuratObj@meta.data'))
+    }
+    
+    if (any(is.na(seuratObj[[cellGroupingVariable]]))) {
+      stop(paste0('The cellGroupingVariable cannot have NAs in it: ', cellGroupingVariable))
+    }
+    
+    librarySizeData <- NULL
+    for (locus in sort(unique(seuratObj[[sourceAssayName]]@meta.features$locus))) {
+      groupNames <- unique(seuratObj@meta.data[[cellGroupingVariable]])
+      for (gn in groupNames) {
+        scale.factor <- sum(seuratObj@meta.data[[cellGroupingVariable]] == gn)  # the number of cells in the group
+        librarySize <- sum(dat[seuratObj[[sourceAssayName]]@meta.features$locus == locus, colnames(seuratObj)[seuratObj@meta.data[[cellGroupingVariable]] == gn], drop = TRUE])
+        
+        toAdd <- data.frame(locus = locus, groupName = gn, librarySize = librarySize, scale.factor = scale.factor)
+        if (all(is.null(librarySizeData))) {
+          librarySizeData <- toAdd
+        } else {
+          librarySizeData <- rbind(librarySizeData, toAdd)
+        }
+      }
+    }
+  }
+  
+
+  for (locus in sort(unique(seuratObj[[sourceAssayName]]@meta.features$locus))) {
+    print(paste0('Normalizing locus: ', locus))
+    librarySizes <- c()
+    toNormalize <- dat[seuratObj[[sourceAssayName]]@meta.features$locus == locus,,drop = FALSE]
+    ncells <- dim(x = toNormalize)[margin]
+
+    for (i in seq_len(length.out = ncells)) {
+      x <- toNormalize[, i]
+      if (perCell) {
+        librarySize <- sum(x)
+        scale.factor <- 1
+      } else {
+        groupName <- seuratObj@meta.data[[cellGroupingVariable]][i]
+        scale.factor <- librarySizeData$scale.factor[librarySizeData$locus == locus & librarySizeData$groupName == groupName]
+        librarySize <- librarySizeData$librarySize[librarySizeData$locus == locus & librarySizeData$groupName == groupName]
+      }
+      
+      librarySizes <- c(librarySizes, librarySize)
+
+      if (librarySize == 0) {
+        xnorm <- 0
+      } else {
+        xnorm <- x / librarySize * scale.factor
+      }
+
+      toNormalize[, i] <- xnorm
+    }
+    
+    print(paste0('Total features: ', nrow(toNormalize)))
+    print(paste0('Mean  library size: ', mean(librarySizes), ', min: ', min(librarySizes), ', max: ', max(librarySizes)))
+    
+    print(ggplot(data.frame(x = as.numeric(toNormalize)), aes(x = x)) +
+      geom_density() +
+      egg::theme_presentation(base_size = 12) +
+      labs(x = 'Normalized Value', y = 'Density') +
+      ggtitle(paste0('Normalized Data: ', locus)))
+
+    dat[seuratObj[[sourceAssayName]]@meta.features$locus == locus] <- toNormalize
+  }
+
+  seuratObj <- Seurat::SetAssayData(seuratObj, assay = assayToNormalize, slot = 'data', new.data = toNormalize)
+
+  return(seuratObj)
 }
