@@ -10,11 +10,12 @@
 #' @param targetAssayName The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.
 #' @param renameConflictingFeatures If true, when appending to an existing assay, any conflicting feature names will be renamed, appending the value of duplicateFeatureSuffix
 #' @param duplicateFeatureSuffix If renameConflictingFeatures is true, this string will be appended to duplicated feature names
-#' @param normalizeData If true, Seurat::NormalizeData will be run after appending/creating the assay
+#' @param normalizeData If true, data will be normalized after appending/creating the assay. This will default to CellMembrane::LogNormalizeUsingAlternateAssay; however, if assayForLibrarySize equals targetAssayName then Seurat::NormalizeData is used.
 #' @param performDietSeurat If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is true out of caution.
+#' @param assayForLibrarySize If normalizeData is true, then this is the assay used for librarySize when normalizing. If assayForLibrarySize equals targetAssayName, Seurat::NormalizeData is used.
 #' @return A modified Seurat object.
 #' @export
-AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = TRUE) {
+AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = TRUE, assayForLibrarySize = 'RNA') {
   if (!file.exists(nimbleFile)) {
     stop(paste0("Nimble file not found: ", nimbleFile))
   }
@@ -157,7 +158,11 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   }
 
   if (normalizeData) {
-    seuratObject <- Seurat::NormalizeData(seuratObject, assay = targetAssayName, verbose = FALSE)
+    if (targetAssayName == assayForLibrarySize) {
+      seuratObject <- Seurat::NormalizeData(seuratObject, assay = targetAssayName, verbose = FALSE)
+    } else {
+      seuratObject <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObject, assay = targetAssayName, assayForLibrarySize = assayForLibrarySize)
+    }
   }
   
   return(seuratObject)
