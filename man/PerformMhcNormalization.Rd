@@ -9,7 +9,10 @@ PerformMhcNormalization(
   sourceAssayName = "MHC",
   featurePrefix = "Mamu-",
   delimiter = "*",
-  ambiguousFeatureDelim = ","
+  ambiguousFeatureDelim = ",",
+  perCell = TRUE,
+  cellGroupingVariable = "DatasetId",
+  stripNumbersFromLocus = TRUE
 )
 }
 \arguments{
@@ -20,6 +23,12 @@ PerformMhcNormalization(
 \item{delimiter}{Used to split the locus from allele designation}
 
 \item{ambiguousFeatureDelim}{This character is used to split feature names in the case of ambiguous features. If a feature is ambiguous, the locus is assigned as the unique loci of the feature set.}
+
+\item{perCell}{If true, the feature counts are scaled based on the library size of features from that locus in that cell. If false, it is scaled based on the library size of features in that locus from all cells matching cellGroupingVariable}
+
+\item{cellGroupingVariable}{If perCell is FALSE, the library size is calculated by taking the sum of features from that locus across all cells where this metadata variable matches the current cell}
+
+\item{stripNumbersFromLocus}{If true, numeric values will be stripped from all locus strings}
 
 \item{seuratObject}{A Seurat object}
 }
