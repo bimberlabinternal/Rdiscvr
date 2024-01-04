@@ -13,7 +13,10 @@ DownloadAndAppendNimble(
   ensureSamplesShareAllGenomes = TRUE,
   dropAmbiguousFeatures = TRUE,
   reuseExistingDownloads = FALSE,
-  performDietSeurat = TRUE
+  performDietSeurat = TRUE,
+  normalizeData = TRUE,
+  assayForLibrarySize = "RNA",
+  maxLibrarySizeRatio = 0.05
 )
 }
 \arguments{
@@ -34,6 +37,12 @@ DownloadAndAppendNimble(
 \item{reuseExistingDownloads}{If true, any pre-existing downloaded nimble TSVs will be re-used}
 
 \item{performDietSeurat}{If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is true out of caution.}
+
+\item{normalizeData}{Passed directly to AppendNimbleCounts()}
+
+\item{assayForLibrarySize}{Passed directly to AppendNimbleCounts()}
+
+\item{maxLibrarySizeRatio}{Passed directly to AppendNimbleCounts()}
 }
 \value{
 A modified Seurat object.

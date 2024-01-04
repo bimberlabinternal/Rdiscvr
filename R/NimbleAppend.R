@@ -16,7 +16,7 @@
 #' @param maxLibrarySizeRatio If normalizeData is true, then this is passed to CellMembrane::LogNormalizeUsingAlternateAssay
 #' @return A modified Seurat object.
 #' @export
-AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.01) {
+AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05) {
   if (!file.exists(nimbleFile)) {
     stop(paste0("Nimble file not found: ", nimbleFile))
   }

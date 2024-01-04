@@ -21,9 +21,12 @@ utils::globalVariables(
 #' @param dropAmbiguousFeatures If true, any ambiguous feature (identified as containing a comma)
 #' @param reuseExistingDownloads If true, any pre-existing downloaded nimble TSVs will be re-used
 #' @param performDietSeurat If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is true out of caution.
+#' @param normalizeData Passed directly to AppendNimbleCounts()
+#' @param assayForLibrarySize Passed directly to AppendNimbleCounts()
+#' @param maxLibrarySizeRatio Passed directly to AppendNimbleCounts()
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE, reuseExistingDownloads = FALSE, performDietSeurat = TRUE) {
+DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, dropAmbiguousFeatures = TRUE, reuseExistingDownloads = FALSE, performDietSeurat = TRUE, normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05) {
   # Ensure we have a DatasetId column
   if (is.null(seuratObject@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
@@ -92,7 +95,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   write.table(df, outFile, sep="\t", col.names=F, row.names=F, quote=F)
 
   print(paste0('Appending counts to ', targetAssayName))
-  seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, targetAssayName = targetAssayName, nimbleFile=outFile, dropAmbiguousFeatures = dropAmbiguousFeatures, performDietSeurat = FALSE)
+  seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, targetAssayName = targetAssayName, nimbleFile=outFile, dropAmbiguousFeatures = dropAmbiguousFeatures, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio)
   unlink(outFile)
 
   return(seuratObject)

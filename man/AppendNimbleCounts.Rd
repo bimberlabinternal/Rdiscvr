@@ -14,7 +14,7 @@ AppendNimbleCounts(
   normalizeData = TRUE,
   performDietSeurat = TRUE,
   assayForLibrarySize = "RNA",
-  maxLibrarySizeRatio = 0.01
+  maxLibrarySizeRatio = 0.05
 )
 }
 \arguments{
