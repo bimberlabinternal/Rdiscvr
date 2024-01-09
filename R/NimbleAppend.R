@@ -150,7 +150,6 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
 
     seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts'), m)))
 
-    print('adding 1')
     names(fs) <- rownames(seuratObject@assays[[targetAssayName]])
     seuratObject@assays[[targetAssayName]] <- Seurat::AddMetaData(seuratObject@assays[[targetAssayName]], metadata = fs, col.name = 'FeatureSource')
 
