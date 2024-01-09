@@ -215,7 +215,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
 #' @title PerformMhcNormalization
 #' @description This is a fairly specific normalization step for MHC data. It will divide the raw counts for each feature by the sum of counts in that cell from that locus (e.g., MHC-A, MHC-B, MHC-E, MHC-I, DPA, DPB)
 #'
-#' @param seuratObject A Seurat object
+#' @param seuratObj A Seurat object
 #' @param sourceAssayName The assay to normalize
 #' @param featurePrefix This prefix is stripped from the start of all feature names
 #' @param delimiter Used to split the locus from allele designation
@@ -298,7 +298,7 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
     dat[seuratObj[[sourceAssayName]]@meta.features$locus == locus] <- toNormalize
   }
 
-  seuratObj <- Seurat::SetAssayData(seuratObj, assay = assayToNormalize, slot = 'data', new.data = toNormalize)
+  seuratObj <- Seurat::SetAssayData(seuratObj, assay = sourceAssayName, slot = 'data', new.data = toNormalize)
 
   return(seuratObj)
 }

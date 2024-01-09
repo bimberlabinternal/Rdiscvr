@@ -16,6 +16,8 @@ PerformMhcNormalization(
 )
 }
 \arguments{
+\item{seuratObj}{A Seurat object}
+
 \item{sourceAssayName}{The assay to normalize}
 
 \item{featurePrefix}{This prefix is stripped from the start of all feature names}
@@ -29,8 +31,6 @@ PerformMhcNormalization(
 \item{cellGroupingVariable}{If perCell is FALSE, the library size is calculated by taking the sum of features from that locus across all cells where this metadata variable matches the current cell}
 
 \item{stripNumbersFromLocus}{If true, numeric values will be stripped from all locus strings}
-
-\item{seuratObject}{A Seurat object}
 }
 \value{
 A modified Seurat object.
