@@ -134,7 +134,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
     }
 
     # Append nimble matrix to seurat count matrix
-    existingBarcodes <- colnames(seuratObject@assays[[targetAssayName]]@counts)
+    existingBarcodes <- colnames(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts'))
     if (sum(colnames(m) != existingBarcodes) > 0) {
       stop('cellbarcodes do not match on matrices')
     }
@@ -148,13 +148,13 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
 
     fs <- c(fs, rep('Nimble', nrow(m)))
 
-    seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(seuratObject@assays[[targetAssayName]]@counts, m)))
+    seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts'), m)))
 
     print('adding 1')
     names(fs) <- rownames(seuratObject@assays[[targetAssayName]])
     seuratObject@assays[[targetAssayName]] <- Seurat::AddMetaData(seuratObject@assays[[targetAssayName]], metadata = fs, col.name = 'FeatureSource')
 
-    if (sum(colnames(seuratObject@assays[[targetAssayName]]@counts) != existingBarcodes) > 0) {
+    if (sum(colnames(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts')) != existingBarcodes) > 0) {
       stop('cellbarcodes do not match on matrices after assay replacement')
     }
   } else {
