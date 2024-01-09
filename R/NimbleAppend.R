@@ -22,13 +22,15 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   }
   
   # Read file and construct df
-  df <- tryCatch({
-    return(read.table(nimbleFile, sep="\t", header=FALSE))
+  df <- NULL
+  tryCatch({
+    df <- read.table(nimbleFile, sep="\t", header=FALSE)
   }, error = function(e){
     if (conditionMessage(e) != 'no lines available in input') {
       stop(e)
     } else {
       print(paste0('No lines in nimble file: ', nimbleFile))
+      df <- data.frame(V1 = character(), V2 = character(), V3 = character())
     }
   })
 
