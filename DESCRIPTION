@@ -24,7 +24,9 @@ Imports:
     RIRA,
     htmltools,
     ggplot2,
-    magrittr
+    magrittr,
+    egg,
+    ggplot2
 Suggests:
     devtools,
     testthat (>= 2.1.0)

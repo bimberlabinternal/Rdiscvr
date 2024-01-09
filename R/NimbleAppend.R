@@ -224,6 +224,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
 #' @param cellGroupingVariable If perCell is FALSE, the library size is calculated by taking the sum of features from that locus across all cells where this metadata variable matches the current cell
 #' @param stripNumbersFromLocus If true, numeric values will be stripped from all locus strings 
 #' @return A modified Seurat object.
+#' @import ggplot2
 #' @export
 PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featurePrefix = 'Mamu-', delimiter = '*', ambiguousFeatureDelim = ',', perCell = TRUE, cellGroupingVariable = 'DatasetId', stripNumbersFromLocus = TRUE) {
   seuratObj <- .AssignLocusToMhcFeatures(seuratObj, sourceAssayName = sourceAssayName, featurePrefix = featurePrefix, delimiter = delimiter, ambiguousFeatureDelim = ambiguousFeatureDelim, stripNumbersFromLocus = stripNumbersFromLocus)
