@@ -22,8 +22,16 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   }
   
   # Read file and construct df
-  df <- read.table(nimbleFile, sep="\t", header=FALSE)
-  
+  df <- tryCatch({
+    return(read.table(nimbleFile, sep="\t", header=FALSE))
+  }, error = function(e){
+    if (conditionMessage(e) != 'no lines available in input') {
+      stop(e)
+    } else {
+      print(paste0('No lines in nimble file: ', nimbleFile))
+    }
+  })
+
   if (sum(df$V1 == "") > 0) {
     stop("The nimble data contains blank feature names. This should not occur.")
   }
