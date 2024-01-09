@@ -22,13 +22,15 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   }
   
   # Read file and construct df
-  df <- tryCatch({
-    return(read.table(nimbleFile, sep="\t", header=FALSE))
+  df <- NULL
+  tryCatch({
+    df <- read.table(nimbleFile, sep="\t", header=FALSE)
   }, error = function(e){
     if (conditionMessage(e) != 'no lines available in input') {
       stop(e)
     } else {
       print(paste0('No lines in nimble file: ', nimbleFile))
+      df <- data.frame(V1 = character(), V2 = character(), V3 = character())
     }
   })
 
@@ -134,7 +136,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
     }
 
     # Append nimble matrix to seurat count matrix
-    existingBarcodes <- colnames(seuratObject@assays[[targetAssayName]]@counts)
+    existingBarcodes <- colnames(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts'))
     if (sum(colnames(m) != existingBarcodes) > 0) {
       stop('cellbarcodes do not match on matrices')
     }
@@ -148,13 +150,12 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
 
     fs <- c(fs, rep('Nimble', nrow(m)))
 
-    seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(seuratObject@assays[[targetAssayName]]@counts, m)))
+    seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts'), m)))
 
-    print('adding 1')
     names(fs) <- rownames(seuratObject@assays[[targetAssayName]])
     seuratObject@assays[[targetAssayName]] <- Seurat::AddMetaData(seuratObject@assays[[targetAssayName]], metadata = fs, col.name = 'FeatureSource')
 
-    if (sum(colnames(seuratObject@assays[[targetAssayName]]@counts) != existingBarcodes) > 0) {
+    if (sum(colnames(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts')) != existingBarcodes) > 0) {
       stop('cellbarcodes do not match on matrices after assay replacement')
     }
   } else {
@@ -214,7 +215,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
 #' @title PerformMhcNormalization
 #' @description This is a fairly specific normalization step for MHC data. It will divide the raw counts for each feature by the sum of counts in that cell from that locus (e.g., MHC-A, MHC-B, MHC-E, MHC-I, DPA, DPB)
 #'
-#' @param seuratObject A Seurat object
+#' @param seuratObj A Seurat object
 #' @param sourceAssayName The assay to normalize
 #' @param featurePrefix This prefix is stripped from the start of all feature names
 #' @param delimiter Used to split the locus from allele designation
@@ -223,6 +224,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
 #' @param cellGroupingVariable If perCell is FALSE, the library size is calculated by taking the sum of features from that locus across all cells where this metadata variable matches the current cell
 #' @param stripNumbersFromLocus If true, numeric values will be stripped from all locus strings 
 #' @return A modified Seurat object.
+#' @import ggplot2
 #' @export
 PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featurePrefix = 'Mamu-', delimiter = '*', ambiguousFeatureDelim = ',', perCell = TRUE, cellGroupingVariable = 'DatasetId', stripNumbersFromLocus = TRUE) {
   seuratObj <- .AssignLocusToMhcFeatures(seuratObj, sourceAssayName = sourceAssayName, featurePrefix = featurePrefix, delimiter = delimiter, ambiguousFeatureDelim = ambiguousFeatureDelim, stripNumbersFromLocus = stripNumbersFromLocus)
@@ -296,7 +298,7 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
     dat[seuratObj[[sourceAssayName]]@meta.features$locus == locus] <- toNormalize
   }
 
-  seuratObj <- Seurat::SetAssayData(seuratObj, assay = assayToNormalize, slot = 'data', new.data = toNormalize)
+  seuratObj <- Seurat::SetAssayData(seuratObj, assay = sourceAssayName, slot = 'data', new.data = toNormalize)
 
   return(seuratObj)
 }
