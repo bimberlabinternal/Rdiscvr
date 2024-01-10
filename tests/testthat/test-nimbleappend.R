@@ -13,6 +13,15 @@ test_that("Nimble Append deletes blank feature names when appending", {
   expect_equal(unique(seuratObj@assays$Nimble@meta.features$FeatureSource), c('Nimble'))
 })
 
+test_that("Nimble Append works with empty input", {
+  seuratObj <- Seurat::UpdateSeuratObject(readRDS("../testdata/nimbleTest.rds"))
+  fn <- tempfile(fileext = '.txt')
+  file.create(fn)
+  seuratObj <- AppendNimbleCounts(seuratObj, fn, targetAssayName = 'Nimble')
+  unlink(fn)
+  expect_false('Nimble' %in% names(seuratObj@assays))
+})
+
 test_that("Nimble Append deletes all barcodes not in Seurat when appending", {
   seuratObj <- Seurat::UpdateSeuratObject(readRDS("../testdata/nimbleTest.rds"))
   nimbleExclusiveBarcodes <- c("12345_CCAGCGAAGTCCGTAT", "12345_CCAGCGAAGTCCGTAC")
