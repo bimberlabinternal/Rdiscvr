@@ -30,9 +30,13 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
       stop(e)
     } else {
       print(paste0('No lines in nimble file: ', nimbleFile))
-      df <- data.frame(V1 = character(), V2 = character(), V3 = character())
     }
   })
+
+  # Indicates no data in TSV
+  if (all(is.null(df))){
+    return(seuratObject)
+  }
 
   if (sum(df$V1 == "") > 0) {
     stop("The nimble data contains blank feature names. This should not occur.")
