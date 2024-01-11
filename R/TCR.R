@@ -505,29 +505,37 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA') {
 
   ad <- Seurat::GetAssayData(seuratObj, slot = 'data', assay = assayName)
 
+  testGeneGt0 <- function(ad, featureName, defaultValue = FALSE){
+    if (!featureName %in% rownames(ad)){
+      return(defaultValue)
+    }
+
+    return(as.numeric(ad[featureName,]) > 0)
+  }
+
   # LOC711031 = TRDC
-  seuratObj$IsGammaDelta <- !is.na(seuratObj$TRD) | as.numeric(ad['LOC711031',]) > 0
+  seuratObj$IsGammaDelta <- !is.na(seuratObj$TRD) | testGeneGt0(ad, 'LOC711031')
   print(DimPlot(seuratObj, group.by = 'IsGammaDelta'))
 
-  seuratObj$HasCD3 <- as.numeric(ad['CD3D',]) > 0 | as.numeric(ad['CD3E',]) > 0 | as.numeric(ad['CD3G',]) > 0
+  seuratObj$HasCD3 <- testGeneGt0(ad, 'CD3D') | testGeneGt0(ad, 'CD3E') | testGeneGt0(ad, 'CD3G')
   print(DimPlot(seuratObj, group.by = 'HasCD3'))
 
-  seuratObj$HasTCRConstant <- as.numeric(ad['LOC711031',]) > 0 |
-    as.numeric(ad['LOC720538',]) > 0 |
-    as.numeric(ad['LOC705095',]) |
-    as.numeric(ad["LOC710951", ]) > 0 |
-    as.numeric(ad["LOC114677140",]) > 0
+  seuratObj$HasTCRConstant <- testGeneGt0(ad, 'LOC711031') |
+    testGeneGt0(ad, 'LOC720538') |
+    testGeneGt0(ad, 'LOC705095') |
+    testGeneGt0(ad, 'LOC710951') |
+    testGeneGt0(ad, 'LOC114677140')
 
   seuratObj$IsNKCell <- !seuratObj$HasCDR3Data & !seuratObj$HasCD3 & !seuratObj$HasTCRConstant
   print(DimPlot(seuratObj, group.by = 'IsNKCell'))
 
-  seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | as.numeric(ad['LOC720538',]) > 0 | as.numeric(ad['LOC705095',])
+  seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | testGeneGt0(ad, 'LOC720538') | testGeneGt0(ad, 'LOC705095')
   print(DimPlot(seuratObj, group.by = 'HasGammaChain'))
 
   # As above, allow either TCR data or constant chaine expression:
   seuratObj$IsAlphaBeta <- FALSE
   seuratObj$IsAlphaBeta[!is.na(seuratObj$TRA) | !is.na(seuratObj$TRB)] <- TRUE
-  seuratObj$IsAlphaBeta[as.numeric(ad["LOC710951", ]) > 0 | as.numeric(ad["LOC114677140",]) > 0] <- TRUE
+  seuratObj$IsAlphaBeta[testGeneGt0(ad, 'LOC710951') | testGeneGt0(ad, 'LOC114677140')] <- TRUE
   print(DimPlot(seuratObj, group.by = 'IsAlphaBeta'))
   
   seuratObj$TNK_Type <- NA
