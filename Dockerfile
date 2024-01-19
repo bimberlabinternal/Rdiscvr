@@ -15,8 +15,7 @@ RUN echo "local({r <- getOption('repos') ;r['CRAN'] = 'https://packagemanager.rs
         wget \
         git \
     && python3 -m pip install --upgrade pip \
-    #  NOTE: seaborn added for: https://github.com/scverse/scanpy/issues/2680
-    && pip3 install umap-learn phate scanpy fastcluster seaborn==0.12.2 \
+    && pip3 install umap-learn phate scanpy \
     && mkdir /conga \
     && cd /conga \
     && git clone https://github.com/phbradley/conga.git \
@@ -47,8 +46,6 @@ RUN --mount=type=secret,id=GITHUB_PAT \
     && echo "GH: $GITHUB_PAT" \
     && Rscript -e "BiocManager::install(ask = F, upgrade = 'always');" \
     && Rscript -e "devtools::install_deps(pkg = '.', dependencies = TRUE, upgrade = 'always');" \
-    # Due to Matrix/SeuratObject: https://github.com/mojaveazure/seurat-object/issues/166
-    && Rscript -e "install.packages('SeuratObject', ask = FALSE, force = TRUE, type = 'source', repos = 'https://cloud.r-project.org')" \
     && R CMD build . \
     && R CMD INSTALL --build *.tar.gz \
     && rm -Rf /tmp/downloaded_packages/ /tmp/*.rds
