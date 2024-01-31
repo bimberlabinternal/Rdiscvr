@@ -79,7 +79,8 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
     print('Error pivoting input data, results saved to: debug.nimble.txt')
     print(conditionMessage(e))
     traceback()
-    stop('Error preparing nimble data')
+    e$message <- paste0('Error pivoting nimble data. target assay: ', targetAssayName)
+    stop(e)
   })
 
   appendToExistingAssay <- targetAssayName %in% names(seuratObject@assays)

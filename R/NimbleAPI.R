@@ -168,7 +168,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   }
 }
 
-.mergeNimbleFiles <- function(fileComponents, enforceUniqueFeatureNames=TRUE) {
+.mergeNimbleFiles <- function(fileComponents, enforceUniqueFeatureNames = TRUE, enforceCellBarcodeFormat = TRUE) {
   df <- NULL
   
   for (datasetId in names(fileComponents)) {
@@ -217,47 +217,32 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
         }
       }
 
+      if (enforceCellBarcodeFormat) {
+        suspiciousRows <- !grepl(nimbleTable$V3, pattern = '^[ATGCN]+$')
+        if (sum(suspiciousRows) > 0) {
+          fn <- paste0('suspiciousCellBarcodes.', datasetId, '.txt')
+          badRows <- nimbleTable[suspiciousRows,]
+          badRows$RowNumber <- 1:nrow(nimbleTable)[suspiciousRows]
+          write.table(badRows, file = fn, sep = '\t', row.names = FALSE, quote = FALSE)
+          stop(paste0('The dataset', datasetId, ' had suspicious cell barcodes. Rows written to: ', fn))
+        }
+      }
+
       if (nrow(nimbleTable) > 0) {
         nimbleTable$V3 <- paste0(datasetId, "_", nimbleTable$V3)
       }
 
-      # NOTE: this could occur if a job was restarted after a failure. Prior versions of nimble used append instead of overwrite for the output.
-      # TODO: remove this eventually
-      nimbleTableGrouped <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2), InputRows = n())
-      if (sum(nimbleTableGrouped$InputRows > 1) > 0) {
-        warning(paste0('There were duplicate rows from the same cell-barcode/feature in the input for dataset. This could occur if one job overwrote an existing input: ', datasetId))
-        print(paste0('Rows: ', nrow(nimbleTable)))
-        print(paste0('Unique Rows: ', nrow(unique(nimbleTable))))
-
-        # The rationale is that if the full dataframe is an even multiple of the unique rows, this was likely re-writting over the input file
-        if (nrow(nimbleTable) %% nrow(unique(nimbleTable)) == 0) {
-          print('Keeping unique rows')
-          nimbleTable <- unique(nimbleTable)
-        }
-      }
-
-      # TODO: this should also be removed eventually, since this nimble bug was fixed. This code exists to allow legacy files to be processed:
+      # Note: this was an old nimble bug that has been fixed, but retain this check:
       if (sum(nimbleTable$V1 == "") > 0) {
-        warning("The nimble data contains blank feature names. This should not occur. They will be removed")
-        nimbleTable <- nimbleTable[nimbleTable$V1 != "",]
-        nimbleTable <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2))
-        nimbleTable <- nimbleTable[c('V1', 'V2', 'V3')]
+        stop(paste0("The nimble data contains blank feature names. This should not occur. Dataset Id: ", datasetId))
       }
 
       if (sum(grepl(nimbleTable$V1, pattern = "^,")) > 0) {
-        warning("The nimble data contains features with leading commas. This should not occur. They will be removed")
-        nimbleTable$V1 <- as.character(nimbleTable$V1)
-        nimbleTable$V1 <- gsub(nimbleTable$V1, pattern = "^,", replacement = "")
-        nimbleTable <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2))
-        nimbleTable <- nimbleTable[c('V1', 'V2', 'V3')]
+        stop(paste0("The nimble data contains features with leading commas. This should not occur. Dataset Id: ", datasetId))
       }
 
       if (sum(grepl(nimbleTable$V1, pattern = ",$")) > 0) {
-        warning("The nimble data contains features with trailing commas. This should not occur. They will be removed")
-        nimbleTable$V1 <- as.character(nimbleTable$V1)
-        nimbleTable$V1 <- gsub(nimbleTable$V1, pattern = ",$", replacement = "")
-        nimbleTable <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2))
-        nimbleTable <- nimbleTable[c('V1', 'V2', 'V3')]
+        stop(paste0("The nimble data contains features with trailing commas. This should not occur. Dataset Id: ", datasetId))
       }
 
       nimbleTableGrouped <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2), InputRows = n())
@@ -265,6 +250,17 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
         stop(paste0('There were duplicate rows from the same cell-barcode/feature in the input for dataset. This could occur if one job appended to the input file: ', datasetId))
       }
       nimbleTable <- nimbleTable[c('V1', 'V2', 'V3')]
+
+      if (enforceCellBarcodeFormat) {
+        suspiciousRows <- !grepl(nimbleTable$V3, pattern = '^[0-9]+_[ATGCN]+$')
+        if (sum(suspiciousRows) > 0) {
+          fn <- paste0('suspiciousCellBarcodes.', datasetId, '.txt')
+          badRows <- nimbleTable[suspiciousRows,]
+          badRows$RowNumber <- 1:nrow(nimbleTable)[suspiciousRows]
+          write.table(badRows, file = fn, sep = '\t', row.names = FALSE, quote = FALSE)
+          stop(paste0('The dataset', datasetId, ' had suspicious cell barcodes. Rows written to: ', fn))
+        }
+      }
 
       if (is.null(df)) {
         df <- nimbleTable
