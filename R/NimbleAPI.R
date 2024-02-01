@@ -221,8 +221,8 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
         suspiciousRows <- !grepl(nimbleTable$V3, pattern = '^[ATGCN]+$')
         if (sum(suspiciousRows) > 0) {
           fn <- paste0('suspiciousCellBarcodes.', datasetId, '.txt')
+          nimbleTable$RowNumber <- 1:nrow(nimbleTable)
           badRows <- nimbleTable[suspiciousRows,]
-          badRows$RowNumber <- 1:nrow(nimbleTable)[suspiciousRows]
           write.table(badRows, file = fn, sep = '\t', row.names = FALSE, quote = FALSE)
           stop(paste0('The dataset', datasetId, ' had suspicious cell barcodes. Rows written to: ', fn))
         }
