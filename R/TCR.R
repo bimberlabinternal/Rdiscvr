@@ -674,6 +674,7 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
   }
   groupingFields <- groupingFields[groupingFields != xFacetField]
   dat <- dat %>% tidyr::unite(col = 'GroupField', {{groupingFields}}, remove = FALSE)
+  dat$GroupField <- naturalsort::naturalfactor(dat$GroupField)
 
   dat$IsActiveLabel <- ifelse(dat$IsActive, yes = 'Activated', no = 'Not Activated')
 
