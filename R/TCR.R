@@ -648,12 +648,6 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
   colorSteps <- max(min(length(unique(dat$Label[dat$Label != 'Low Freq'])), 9), 3)
   getPalette <- colorRampPalette(brewer.pal(colorSteps, 'Set1'))
 
-  cols <- getPalette(length(unique(dat$Label[dat$Label != 'Low Freq'])))
-  if ('Low Freq' %in% dat$Label) {
-    cols <- c('#ECECEC', cols)
-  }
-  names(cols) <- levels(dat$Label)
-
   patternValues <- c('stripe', 'none')
   names(patternValues) <- c('Yes', 'No')
 
@@ -661,6 +655,12 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
   if ('Low Freq' %in% dat$Label) {
     dat$Label <- forcats::fct_relevel(dat$Label, 'Low Freq', after = 0)
   }
+
+  cols <- getPalette(length(unique(dat$Label[dat$Label != 'Low Freq'])))
+  if ('Low Freq' %in% dat$Label) {
+    cols <- c('#ECECEC', cols)
+  }
+  names(cols) <- levels(dat$Label)
 
   # Prune fields, as possible:
   for (idx in length(groupingFields):1) {
@@ -692,7 +692,7 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
         legend.position = 'none',
         axis.text.x = element_text(angle = 45, hjust = 1)
       ) +
-      ggtitle(subjectId)
+      ggtitle(paste0(subjectId, ': ', chain))
 
   if (!is.null(outFile)) {
     dat$Chain <- chain
