@@ -10,7 +10,7 @@ MakeClonotypePlot(
   subjectId,
   chain,
   xFacetField = "Population",
-  groupingFields = c("SampleDate", "Stim", "Population", "AssayType"),
+  groupingFields = c("Stim", "Population", "SampleDate", "AssayType"),
   threshold = 0.5,
   activationFieldName = "TandNK_ActivationCore_UCell"
 )
