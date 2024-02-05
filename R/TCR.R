@@ -587,10 +587,8 @@ SummarizeTNK_Activation <- function(seuratObj, outFile, xFacetField = 'Populatio
   for (subjectId in sort(unique(seuratObj$SubjectId))) {
     for (chain in c('TRA', 'TRB')) {
       outFileTemp <- tempfile()
-      MakeClonotypePlot(seuratObj, outFile = outFileTemp, subjectId = subjectId, chain = chain, threshold = threshold, activationFieldName = activationFieldName, groupingFields = groupingFields, xFacetField = xFacetField)
-      dat <- read.table(outFileTemp, header = TRUE)
-      dat$Chain <- chain
-      dat$SubjectId <- subjectId
+      print(MakeClonotypePlot(seuratObj, outFile = outFileTemp, subjectId = subjectId, chain = chain, threshold = threshold, activationFieldName = activationFieldName, groupingFields = groupingFields, xFacetField = xFacetField))
+      dat <- read.table(outFileTemp, header = TRUE, sep = '\t')
       unlink(outFileTemp)
 
       if (all(is.null(results))) {
@@ -617,37 +615,30 @@ SummarizeTNK_Activation <- function(seuratObj, outFile, xFacetField = 'Populatio
 #' @importFrom magrittr %>%
 #' @return The plot object
 #' @export
-MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFacetField = 'Population', groupingFields = c('SampleDate', 'Stim', 'Population', 'AssayType'), threshold = 0.5, activationFieldName = 'TandNK_ActivationCore_UCell') {
+MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFacetField = 'Population', groupingFields = c('Stim', 'Population', 'SampleDate', 'AssayType'), threshold = 0.5, activationFieldName = 'TandNK_ActivationCore_UCell') {
   dat <- seuratObj@meta.data %>%
     filter(SubjectId == subjectId) %>%
     mutate(IsActive = !!sym(activationFieldName) >= threshold)
 
   dat$CellBarcode <- rownames(dat)
+  dat$CDR3 <- dat[[chain]]
 
-  dat <- dat[!is.na(dat[[chain]]),]
-
-  # Prune fields, as possible:
-  for (idx in length(groupingFields):1) {
-    if (length(unique(dat[[groupingFields[idx]]])) == 1) {
-      groupingFields <- groupingFields[groupingFields != groupingFields[idx]]
-    }
-  }
-
+  dat <- dat[!is.na(dat$CDR3),]
   dat <- dat %>%
     group_by(across(all_of(c(groupingFields, 'IsActive')))) %>%
     mutate(TotalCells = n_distinct(CellBarcode))
 
   dat <- dat %>% group_by(across(all_of(groupingFields))) %>% mutate(TotalForGroup = sum(TotalCells))
 
-  dat <- dat %>% group_by(across(all_of(c(groupingFields, 'IsActive', 'TotalCells', 'TotalForGroup', chain)))) %>%
+  dat <- dat %>% group_by(across(all_of(c(groupingFields, 'IsActive', 'TotalCells', 'TotalForGroup', 'CDR3')))) %>%
     summarise(Count = n())
 
   dat$Fraction <- dat$Count / dat$TotalForGroup
-  dat$Label <- as.character(dat[[chain]])
+  dat$Label <- as.character(dat[['CDR3']])
   dat$Label[dat$Fraction < 0.005] <- 'Low Freq'
 
   dat <- dat %>%
-    group_by(across(all_of(c(groupingFields, chain)))) %>%
+    group_by(across(all_of(c(groupingFields, 'CDR3')))) %>%
     mutate(TotalSubset = n_distinct(IsActive))
 
   dat$IsShared <- dat$TotalSubset > 1
@@ -671,6 +662,13 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
     dat$Label <- forcats::fct_relevel(dat$Label, 'Low Freq', after = 0)
   }
 
+  # Prune fields, as possible:
+  for (idx in length(groupingFields):1) {
+    if (length(unique(dat[[groupingFields[idx]]])) == 1) {
+      groupingFields <- groupingFields[groupingFields != groupingFields[idx]]
+    }
+  }
+  groupingFields <- groupingFields[groupingFields != xFacetField]
   dat <- dat %>% tidyr::unite(col = 'GroupField', {{groupingFields}})
 
   dat$IsActiveLabel <- ifelse(dat$IsActive, yes = 'Activated', no = 'Not Activated')
@@ -697,6 +695,9 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
       ggtitle(subjectId)
 
   if (!is.null(outFile)) {
+    dat$Chain <- chain
+    dat$SubjectId <- subjectId
+
     write.table(dat, sep = '\t', quote = F, row.names = F, file = outFile)
   }
 
