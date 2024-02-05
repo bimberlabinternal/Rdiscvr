@@ -8,7 +8,7 @@ SummarizeTNK_Activation(
   seuratObj,
   outFile,
   xFacetField = "Population",
-  groupingFields = c("SampleDate", "Stim", "Population", "AssayType"),
+  groupingFields = c("Stim", "Population", "SampleDate", "AssayType"),
   activationFieldName = "TandNK_Activation_UCell",
   threshold = 0.5
 )

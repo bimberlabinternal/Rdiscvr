@@ -12,7 +12,8 @@ MakeClonotypePlot(
   xFacetField = "Population",
   groupingFields = c("Stim", "Population", "SampleDate", "AssayType"),
   threshold = 0.5,
-  activationFieldName = "TandNK_ActivationCore_UCell"
+  activationFieldName = "TandNK_ActivationCore_UCell",
+  lowFreqThreshold = 0.005
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ MakeClonotypePlot(
 \item{threshold}{The minimum value to consider a cell activated}
 
 \item{activationFieldName}{The name of the field holding the score to be used to determine activation state}
+
+\item{lowFreqThreshold}{Any clone not appearing above this threshold will be marked as low. frequency}
 }
 \value{
 The plot object

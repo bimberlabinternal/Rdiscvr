@@ -566,14 +566,13 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA') {
 #' @importFrom magrittr %>%
 #' @return A modified Seurat object.
 #' @export
-SummarizeTNK_Activation <- function(seuratObj, outFile, xFacetField = 'Population', groupingFields = c('SampleDate', 'Stim', 'Population', 'AssayType'), activationFieldName = 'TandNK_Activation_UCell', threshold = 0.5) {
+SummarizeTNK_Activation <- function(seuratObj, outFile, xFacetField = 'Population', groupingFields = c('Stim', 'Population', 'SampleDate', 'AssayType'), activationFieldName = 'TandNK_Activation_UCell', threshold = 0.5) {
   seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
 
   if (!'HasCDR3Data' %in% names(seuratObj@meta.data)) {
     stop('This seurat object appears to be missing TCR data. See RDiscvr::DownloadAndAppendTcrClonotypes')
   }
 
-  seuratObj <- ClassifyTNKByExpression(seuratObj)
   seuratObj$IsActive <- seuratObj[[activationFieldName]] >= threshold
 
   PA <- FeaturePlot(seuratObj, features = activationFieldName, min.cutoff = 'q02', max.cutoff = 'q98') +
@@ -612,10 +611,11 @@ SummarizeTNK_Activation <- function(seuratObj, outFile, xFacetField = 'Populatio
 #' @param groupingFields The set of fields used for grouping data
 #' @param threshold The minimum value to consider a cell activated
 #' @param activationFieldName The name of the field holding the score to be used to determine activation state
+#' @param lowFreqThreshold Any clone not appearing above this threshold will be marked as low. frequency
 #' @importFrom magrittr %>%
 #' @return The plot object
 #' @export
-MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFacetField = 'Population', groupingFields = c('Stim', 'Population', 'SampleDate', 'AssayType'), threshold = 0.5, activationFieldName = 'TandNK_ActivationCore_UCell') {
+MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFacetField = 'Population', groupingFields = c('Stim', 'Population', 'SampleDate', 'AssayType'), threshold = 0.5, activationFieldName = 'TandNK_ActivationCore_UCell', lowFreqThreshold = 0.005) {
   dat <- seuratObj@meta.data %>%
     filter(SubjectId == subjectId) %>%
     mutate(IsActive = !!sym(activationFieldName) >= threshold)
@@ -628,14 +628,17 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
     group_by(across(all_of(c(groupingFields, 'IsActive')))) %>%
     mutate(TotalCells = n_distinct(CellBarcode))
 
-  dat <- dat %>% group_by(across(all_of(groupingFields))) %>% mutate(TotalForGroup = sum(TotalCells))
+  dat <- dat %>% group_by(across(all_of(groupingFields))) %>%
+    mutate(TotalForGroup = n_distinct(CellBarcode))
 
   dat <- dat %>% group_by(across(all_of(c(groupingFields, 'IsActive', 'TotalCells', 'TotalForGroup', 'CDR3')))) %>%
     summarise(Count = n())
 
   dat$Fraction <- dat$Count / dat$TotalForGroup
   dat$Label <- as.character(dat[['CDR3']])
-  dat$Label[dat$Fraction < 0.005] <- 'Low Freq'
+  toKeep <- dat$Label[dat$Fraction > lowFreqThreshold]
+  dat$Label[!dat$Label %in% toKeep] <- 'Low Freq'
+  rm(toKeep)
 
   dat <- dat %>%
     group_by(across(all_of(c(groupingFields, 'CDR3')))) %>%
@@ -669,7 +672,7 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
     }
   }
   groupingFields <- groupingFields[groupingFields != xFacetField]
-  dat <- dat %>% tidyr::unite(col = 'GroupField', {{groupingFields}})
+  dat <- dat %>% tidyr::unite(col = 'GroupField', {{groupingFields}}, remove = FALSE)
 
   dat$IsActiveLabel <- ifelse(dat$IsActive, yes = 'Activated', no = 'Not Activated')
 
@@ -686,6 +689,7 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
       ggpattern::scale_pattern_manual(values = patternValues) +
       wrap_by(xFacetField) +
       scale_fill_manual(values = cols) +
+      scale_y_continuous(labels = scales::percent) +
       labs(y = 'Fraction of Cells', x = '', fill = 'Clone') +
       theme_classic(base_size = 14) +
       theme(
