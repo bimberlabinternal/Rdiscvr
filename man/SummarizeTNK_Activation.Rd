@@ -18,6 +18,8 @@ SummarizeTNK_Activation(
 
 \item{outFile}{The output file path to which results will be written}
 
+\item{xFacetField}{Passed to facet_grid}
+
 \item{groupingFields}{The set of fields used for grouping data}
 
 \item{activationFieldName}{The name of the field holding the score to be used to determine activation state}

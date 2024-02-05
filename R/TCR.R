@@ -560,6 +560,7 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA') {
 #' @description Generates a summary plot of clonotype data
 #' @param seuratObj A Seurat object
 #' @param outFile The output file path to which results will be written
+#' @param xFacetField Passed to facet_grid
 #' @param groupingFields The set of fields used for grouping data
 #' @param activationFieldName The name of the field holding the score to be used to determine activation state
 #' @param threshold The minimum value to consider a cell activated

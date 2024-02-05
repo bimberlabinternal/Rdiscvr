@@ -28,7 +28,8 @@ Imports:
     egg,
     ggplot2,
     ggpattern,
-    forcats
+    forcats,
+    scales
 Suggests:
     devtools,
     testthat (>= 2.1.0)
