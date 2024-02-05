@@ -26,7 +26,10 @@ Imports:
     ggplot2,
     magrittr,
     egg,
-    ggplot2
+    ggplot2,
+    ggpattern,
+    forcats,
+    scales
 Suggests:
     devtools,
     testthat (>= 2.1.0)

@@ -8,9 +8,9 @@ QueryAndApplyCdnaMetadata(
   seuratObj,
   fieldSelect = c("rowid", "sortid/population", "sortid/sampleid/subjectid",
     "sortid/sampleid/sampledate", "sortid/sampleid/stim", "sortid/sampleid/tissue",
-    "plateid", "workbook/workbookid"),
+    "plateid", "workbook/workbookid", "sortid/sampleid/assaytype"),
   fieldNames = c("cDNA_ID", "Population", "SubjectId", "SampleDate", "Stim", "Tissue",
-    "PlateId", "WorkbookId"),
+    "PlateId", "WorkbookId", "AssayType"),
   overwriteExisting = TRUE
 )
 }

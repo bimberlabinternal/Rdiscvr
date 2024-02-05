@@ -555,3 +555,156 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA') {
 
   return(seuratObj)
 }
+
+#' @title MakeClonotypePlot
+#' @description Generates a summary plot of clonotype data
+#' @param seuratObj A Seurat object
+#' @param outFile The output file path to which results will be written
+#' @param xFacetField Passed to facet_grid
+#' @param groupingFields The set of fields used for grouping data
+#' @param activationFieldName The name of the field holding the score to be used to determine activation state
+#' @param threshold The minimum value to consider a cell activated
+#' @importFrom magrittr %>%
+#' @return A modified Seurat object.
+#' @export
+SummarizeTNK_Activation <- function(seuratObj, outFile, xFacetField = 'Population', groupingFields = c('Stim', 'Population', 'SampleDate', 'AssayType'), activationFieldName = 'TandNK_Activation_UCell', threshold = 0.5) {
+  seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
+
+  if (!'HasCDR3Data' %in% names(seuratObj@meta.data)) {
+    stop('This seurat object appears to be missing TCR data. See RDiscvr::DownloadAndAppendTcrClonotypes')
+  }
+
+  seuratObj$IsActive <- seuratObj[[activationFieldName]] >= threshold
+
+  PA <- FeaturePlot(seuratObj, features = activationFieldName, min.cutoff = 'q02', max.cutoff = 'q98') +
+    scale_color_gradientn(colors = c("navy", "cadetblue2", "gold", "red")) +
+    ggtitle('TCR Signaling Score') +
+    labs(x = 'UMAP_1', y = 'UMAP_2')
+  print(PA)
+
+  print('Summarizing T Cell activation by subject:')
+  results <- NULL
+  for (subjectId in sort(unique(seuratObj$SubjectId))) {
+    for (chain in c('TRA', 'TRB')) {
+      outFileTemp <- tempfile()
+      print(MakeClonotypePlot(seuratObj, outFile = outFileTemp, subjectId = subjectId, chain = chain, threshold = threshold, activationFieldName = activationFieldName, groupingFields = groupingFields, xFacetField = xFacetField))
+      dat <- read.table(outFileTemp, header = TRUE, sep = '\t')
+      unlink(outFileTemp)
+
+      if (all(is.null(results))) {
+        results <- dat
+      } else {
+        results <- rbind(results, dat)
+      }
+    }
+
+    write.table(results, file = outFile, quote = FALSE, sep = '\t')
+  }
+}
+
+#' @title MakeClonotypePlot
+#' @description Generates a summary plot of clonotype data
+#' @param seuratObj A Seurat object
+#' @param subjectId The subject Id to show
+#' @param outFile An optional file where a TSV of the data will be written
+#' @param chain The chain (i.e. TRA, TRB, TRG, TRD)
+#' @param xFacetField Passed to facet_grid
+#' @param groupingFields The set of fields used for grouping data
+#' @param threshold The minimum value to consider a cell activated
+#' @param activationFieldName The name of the field holding the score to be used to determine activation state
+#' @param lowFreqThreshold Any clone not appearing above this threshold will be marked as low. frequency
+#' @importFrom magrittr %>%
+#' @return The plot object
+#' @export
+MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFacetField = 'Population', groupingFields = c('Stim', 'Population', 'SampleDate', 'AssayType'), threshold = 0.5, activationFieldName = 'TandNK_ActivationCore_UCell', lowFreqThreshold = 0.005) {
+  dat <- seuratObj@meta.data %>%
+    filter(SubjectId == subjectId) %>%
+    mutate(IsActive = !!sym(activationFieldName) >= threshold)
+
+  dat$CellBarcode <- rownames(dat)
+  dat$CDR3 <- dat[[chain]]
+
+  dat <- dat[!is.na(dat$CDR3),]
+  dat <- dat %>%
+    group_by(across(all_of(c(groupingFields, 'IsActive')))) %>%
+    mutate(TotalCells = n_distinct(CellBarcode))
+
+  dat <- dat %>% group_by(across(all_of(groupingFields))) %>%
+    mutate(TotalForGroup = n_distinct(CellBarcode))
+
+  dat <- dat %>% group_by(across(all_of(c(groupingFields, 'IsActive', 'TotalCells', 'TotalForGroup', 'CDR3')))) %>%
+    summarise(Count = n())
+
+  dat$Fraction <- dat$Count / dat$TotalForGroup
+  dat$Label <- as.character(dat[['CDR3']])
+  toKeep <- dat$Label[dat$Fraction > lowFreqThreshold]
+  dat$Label[!dat$Label %in% toKeep] <- 'Low Freq'
+  rm(toKeep)
+
+  dat <- dat %>%
+    group_by(across(all_of(c(groupingFields, 'CDR3')))) %>%
+    mutate(TotalSubset = n_distinct(IsActive))
+
+  dat$IsShared <- dat$TotalSubset > 1
+  dat$IsShared[dat$Label == 'Low Freq'] <- FALSE
+  dat$IsShared <- ifelse(dat$IsShared, yes = 'Yes', no = 'No')
+
+  colorSteps <- max(min(length(unique(dat$Label[dat$Label != 'Low Freq'])), 9), 3)
+  getPalette <- colorRampPalette(brewer.pal(colorSteps, 'Set1'))
+
+  patternValues <- c('stripe', 'none')
+  names(patternValues) <- c('Yes', 'No')
+
+  dat$Label <- forcats::fct_reorder(dat$Label, desc(dat$Fraction))
+  if ('Low Freq' %in% dat$Label) {
+    dat$Label <- forcats::fct_relevel(dat$Label, 'Low Freq', after = 0)
+  }
+
+  cols <- getPalette(length(unique(dat$Label[dat$Label != 'Low Freq'])))
+  if ('Low Freq' %in% dat$Label) {
+    cols <- c('#ECECEC', cols)
+  }
+  names(cols) <- levels(dat$Label)
+
+  # Prune fields, as possible:
+  for (idx in length(groupingFields):1) {
+    if (length(unique(dat[[groupingFields[idx]]])) == 1) {
+      groupingFields <- groupingFields[groupingFields != groupingFields[idx]]
+    }
+  }
+  groupingFields <- groupingFields[groupingFields != xFacetField]
+  dat <- dat %>% tidyr::unite(col = 'GroupField', {{groupingFields}}, remove = FALSE)
+
+  dat$IsActiveLabel <- ifelse(dat$IsActive, yes = 'Activated', no = 'Not Activated')
+
+  wrap_by <- function(xFacetField) {
+    facet_grid(vars(IsActiveLabel), vars(!!xFacetField), scales = 'free_y')
+  }
+
+  PT <- ggplot(dat, aes(x = GroupField, y = Fraction, fill = Label, pattern = IsShared)) +
+      ggpattern::geom_col_pattern(pattern_fill = "black", color = 'black',
+                                  pattern_density = 0.2,
+                                  pattern_spacing = 0.05,
+                                  pattern_key_scale_factor = 0.6
+      ) +
+      ggpattern::scale_pattern_manual(values = patternValues) +
+      wrap_by(xFacetField) +
+      scale_fill_manual(values = cols) +
+      scale_y_continuous(labels = scales::percent) +
+      labs(y = 'Fraction of Cells', x = '', fill = 'Clone') +
+      theme_classic(base_size = 14) +
+      theme(
+        legend.position = 'none',
+        axis.text.x = element_text(angle = 45, hjust = 1)
+      ) +
+      ggtitle(paste0(subjectId, ': ', chain))
+
+  if (!is.null(outFile)) {
+    dat$Chain <- chain
+    dat$SubjectId <- subjectId
+
+    write.table(dat, sep = '\t', quote = F, row.names = F, file = outFile)
+  }
+
+  PT
+}
