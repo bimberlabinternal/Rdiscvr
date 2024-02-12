@@ -667,12 +667,21 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
   names(cols) <- levels(dat$Label)
 
   # Prune fields, as possible:
+  groupingFieldsOrig <- groupingFields
   for (idx in length(groupingFields):1) {
     if (length(unique(dat[[groupingFields[idx]]])) == 1) {
+      print(paste0('Dropping group field with single value: ', groupingFields[idx]))
       groupingFields <- groupingFields[groupingFields != groupingFields[idx]]
     }
   }
+
   groupingFields <- groupingFields[groupingFields != xFacetField]
+
+  # Restore fields if there is just one group:
+  if (length(groupingFields) == 0) {
+    groupingFields <- groupingFieldsOrig
+  }
+
   dat <- dat %>% tidyr::unite(col = 'GroupField', {{groupingFields}}, remove = FALSE)
   dat$GroupField <- naturalsort::naturalfactor(dat$GroupField)
 
