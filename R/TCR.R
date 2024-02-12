@@ -650,7 +650,7 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
   dat$IsShared <- ifelse(dat$IsShared, yes = 'Yes', no = 'No')
 
   colorSteps <- max(min(length(unique(dat$Label[dat$Label != 'Low Freq'])), 9), 3)
-  getPalette <- colorRampPalette(brewer.pal(colorSteps, 'Set1'))
+  getPalette <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(colorSteps, 'Set1'))
 
   patternValues <- c('stripe', 'none')
   names(patternValues) <- c('Yes', 'No')

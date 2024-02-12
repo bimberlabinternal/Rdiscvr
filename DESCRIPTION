@@ -29,7 +29,9 @@ Imports:
     ggplot2,
     ggpattern,
     forcats,
-    scales
+    scales,
+    RColorBrewer,
+    grDevices
 Suggests:
     devtools,
     testthat (>= 2.1.0)
