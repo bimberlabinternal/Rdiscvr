@@ -713,7 +713,7 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
     dat$Chain <- chain
     dat$SubjectId <- subjectId
 
-    write.table(dat, sep = '\t', quote = F, row.names = F, file = outFile)
+    write.table(dat, sep = '\t', quote = FALSE, row.names = FALSE, file = outFile)
   }
 
   PT

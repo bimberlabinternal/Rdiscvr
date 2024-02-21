@@ -217,6 +217,9 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
         }
       }
 
+      # strip hyphens
+      nimbleTable$V3 <- gsub(nimbleTable$V3, pattern = '-[0-9]$', replacement = '')
+
       if (enforceCellBarcodeFormat) {
         suspiciousRows <- !grepl(nimbleTable$V3, pattern = '^[ATGCN]+$')
         if (sum(suspiciousRows) > 0) {
