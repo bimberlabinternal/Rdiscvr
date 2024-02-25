@@ -497,20 +497,22 @@ RunCoNGA <- function(seuratObj,
 #' @description Classify T and NK By Expression and TCR clonotype, using best available evidence of ground-truth
 #' @param seuratObj The seurat object
 #' @param assayName The name of the RNA assay
+#' @param constantRegionCountThreshold Any cell with a TCR constant region raw count above this threshold is considered positive for that gene
+#' @param includeConstantRegionExpression RNA expression of the constant region genes may be leaky. If includeConstantRegionExpression is true, any cell with expression of any constant region gene above constantRegionCountThreshold is considered positive for TCR expression and therefore not an NK cell.
 #' @export
-ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA') {
+ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegionCountThreshold = 1.5, includeConstantRegionExpression = FALSE) {
   if (!'HasCDR3Data' %in% names(seuratObj@meta.data)) {
     stop('This seurat object appears to be missing TCR data. See RDiscvr::DownloadAndAppendTcrClonotypes')
   }
 
-  ad <- Seurat::GetAssayData(seuratObj, slot = 'data', assay = assayName)
+  ad <- Seurat::GetAssayData(seuratObj, slot = 'counts', assay = assayName)
 
-  testGeneGt0 <- function(ad, featureName, defaultValue = FALSE){
+  testGeneGt0 <- function(ad, featureName, defaultValue = FALSE, threshold = 0){
     if (!featureName %in% rownames(ad)){
       return(defaultValue)
     }
 
-    return(as.numeric(ad[featureName,]) > 0)
+    return(as.numeric(ad[featureName,]) > threshold)
   }
 
   # LOC711031 = TRDC
@@ -520,13 +522,15 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA') {
   seuratObj$HasCD3 <- testGeneGt0(ad, 'CD3D') | testGeneGt0(ad, 'CD3E') | testGeneGt0(ad, 'CD3G')
   print(DimPlot(seuratObj, group.by = 'HasCD3'))
 
-  seuratObj$HasTCRConstant <- testGeneGt0(ad, 'LOC711031') |
-    testGeneGt0(ad, 'LOC720538') |
-    testGeneGt0(ad, 'LOC705095') |
-    testGeneGt0(ad, 'LOC710951') |
-    testGeneGt0(ad, 'LOC114677140')
+  seuratObj$HasTCRConstant <- testGeneGt0(ad, 'LOC711031', threshold = constantRegionCountThreshold) |
+    testGeneGt0(ad, 'LOC720538', threshold = constantRegionCountThreshold) |
+    testGeneGt0(ad, 'LOC705095', threshold = constantRegionCountThreshold) |
+    testGeneGt0(ad, 'LOC710951', threshold = constantRegionCountThreshold) |
+    testGeneGt0(ad, 'LOC114677140', threshold = constantRegionCountThreshold)
 
-  seuratObj$IsNKCell <- !seuratObj$HasCDR3Data & !seuratObj$HasCD3 & !seuratObj$HasTCRConstant
+  print(DimPlot(seuratObj, group.by = 'HasTCRConstant'))
+
+  seuratObj$IsNKCell <- !seuratObj$HasCDR3Data & !seuratObj$HasCD3 & (!includeConstantRegionExpression | !seuratObj$HasTCRConstant)
   print(DimPlot(seuratObj, group.by = 'IsNKCell'))
 
   seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | testGeneGt0(ad, 'LOC720538') | testGeneGt0(ad, 'LOC705095')

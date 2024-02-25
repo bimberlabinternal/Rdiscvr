@@ -4,12 +4,21 @@
 \alias{ClassifyTNKByExpression}
 \title{Classify T and NK By Expression}
 \usage{
-ClassifyTNKByExpression(seuratObj, assayName = "RNA")
+ClassifyTNKByExpression(
+  seuratObj,
+  assayName = "RNA",
+  constantRegionCountThreshold = 1.5,
+  includeConstantRegionExpression = FALSE
+)
 }
 \arguments{
 \item{seuratObj}{The seurat object}
 
 \item{assayName}{The name of the RNA assay}
+
+\item{constantRegionCountThreshold}{Any cell with a TCR constant region raw count above this threshold is considered positive for that gene}
+
+\item{includeConstantRegionExpression}{RNA expression of the constant region genes may be leaky. If includeConstantRegionExpression is true, any cell with expression of any constant region gene above constantRegionCountThreshold is considered positive for TCR expression and therefore not an NK cell.}
 }
 \description{
 Classify T and NK By Expression and TCR clonotype, using best available evidence of ground-truth
