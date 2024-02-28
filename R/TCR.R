@@ -692,7 +692,7 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
   dat$IsActiveLabel <- ifelse(dat$IsActive, yes = 'Activated', no = 'Not Activated')
 
   wrap_by <- function(xFacetField) {
-    facet_grid(vars(IsActiveLabel), vars(!!xFacetField), scales = 'free_y')
+    facet_grid(vars(IsActiveLabel), vars(!!sym(xFacetField)), scales = 'free_y')
   }
 
   PT <- ggplot(dat, aes(x = GroupField, y = Fraction, fill = Label, pattern = IsShared)) +
