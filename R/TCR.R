@@ -516,7 +516,14 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegion
   }
 
   # LOC711031 = TRDC
-  seuratObj$IsGammaDelta <- !is.na(seuratObj$TRD) | testGeneGt0(ad, 'LOC711031')
+  if (includeConstantRegionExpression){
+    seuratObj$IsGammaDelta <- !is.na(seuratObj$TRD) | testGeneGt0(ad, 'LOC711031')
+    seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | testGeneGt0(ad, 'LOC720538') | testGeneGt0(ad, 'LOC705095')
+  } else {
+    seuratObj$IsGammaDelta <- !is.na(seuratObj$TRD)
+    seuratObj$HasGammaChain <- !is.na(seuratObj$TRG)
+  }
+  print(DimPlot(seuratObj, group.by = 'HasGammaChain'))
   print(DimPlot(seuratObj, group.by = 'IsGammaDelta'))
 
   seuratObj$HasCD3 <- testGeneGt0(ad, 'CD3D') | testGeneGt0(ad, 'CD3E') | testGeneGt0(ad, 'CD3G')
@@ -533,13 +540,11 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegion
   seuratObj$IsNKCell <- !seuratObj$HasCDR3Data & !seuratObj$HasCD3 & (!includeConstantRegionExpression | !seuratObj$HasTCRConstant)
   print(DimPlot(seuratObj, group.by = 'IsNKCell'))
 
-  seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | testGeneGt0(ad, 'LOC720538') | testGeneGt0(ad, 'LOC705095')
-  print(DimPlot(seuratObj, group.by = 'HasGammaChain'))
 
   # As above, allow either TCR data or constant chaine expression:
   seuratObj$IsAlphaBeta <- FALSE
   seuratObj$IsAlphaBeta[!is.na(seuratObj$TRA) | !is.na(seuratObj$TRB)] <- TRUE
-  seuratObj$IsAlphaBeta[testGeneGt0(ad, 'LOC710951') | testGeneGt0(ad, 'LOC114677140')] <- TRUE
+  seuratObj$IsAlphaBeta[includeConstantRegionExpression & (testGeneGt0(ad, 'LOC710951') | testGeneGt0(ad, 'LOC114677140'))] <- TRUE
   print(DimPlot(seuratObj, group.by = 'IsAlphaBeta'))
   
   seuratObj$TNK_Type <- NA
