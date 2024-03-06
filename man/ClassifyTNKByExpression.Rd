@@ -8,7 +8,8 @@ ClassifyTNKByExpression(
   seuratObj,
   assayName = "RNA",
   constantRegionCountThreshold = 1.5,
-  includeConstantRegionExpression = FALSE
+  includeConstantRegionExpression = FALSE,
+  includeDeltaConstantRegionExpression = TRUE
 )
 }
 \arguments{
@@ -18,7 +19,9 @@ ClassifyTNKByExpression(
 
 \item{constantRegionCountThreshold}{Any cell with a TCR constant region raw count above this threshold is considered positive for that gene}
 
-\item{includeConstantRegionExpression}{RNA expression of the constant region genes may be leaky. If includeConstantRegionExpression is true, any cell with expression of any constant region gene above constantRegionCountThreshold is considered positive for TCR expression and therefore not an NK cell.}
+\item{includeConstantRegionExpression}{If includeConstantRegionExpression is true, RNA expression of TRA/B/G constant regions will be considered in the classification. This is disabled by default because we find expression of these genes may be leaky and not necessarily linked to a functional TCR}
+
+\item{includeDeltaConstantRegionExpression}{Similar to includeConstantRegionExpression, but applies to the delta constant region alone}
 }
 \description{
 Classify T and NK By Expression and TCR clonotype, using best available evidence of ground-truth

@@ -498,9 +498,10 @@ RunCoNGA <- function(seuratObj,
 #' @param seuratObj The seurat object
 #' @param assayName The name of the RNA assay
 #' @param constantRegionCountThreshold Any cell with a TCR constant region raw count above this threshold is considered positive for that gene
-#' @param includeConstantRegionExpression RNA expression of the constant region genes may be leaky. If includeConstantRegionExpression is true, any cell with expression of any constant region gene above constantRegionCountThreshold is considered positive for TCR expression and therefore not an NK cell.
+#' @param includeConstantRegionExpression If includeConstantRegionExpression is true, RNA expression of TRA/B/G constant regions will be considered in the classification. This is disabled by default because we find expression of these genes may be leaky and not necessarily linked to a functional TCR
+#' @param includeDeltaConstantRegionExpression Similar to includeConstantRegionExpression, but applies to the delta constant region alone
 #' @export
-ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegionCountThreshold = 1.5, includeConstantRegionExpression = FALSE) {
+ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegionCountThreshold = 1.5, includeConstantRegionExpression = FALSE, includeDeltaConstantRegionExpression = TRUE) {
   if (!'HasCDR3Data' %in% names(seuratObj@meta.data)) {
     stop('This seurat object appears to be missing TCR data. See RDiscvr::DownloadAndAppendTcrClonotypes')
   }
@@ -516,7 +517,7 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegion
   }
 
   # LOC711031 = TRDC
-  seuratObj$IsGammaDelta <- !is.na(seuratObj$TRD) | testGeneGt0(ad, 'LOC711031')
+  seuratObj$IsGammaDelta <- !is.na(seuratObj$TRD) | (includeDeltaConstantRegionExpression & testGeneGt0(ad, 'LOC711031'))
   print(DimPlot(seuratObj, group.by = 'IsGammaDelta'))
 
   seuratObj$HasCD3 <- testGeneGt0(ad, 'CD3D') | testGeneGt0(ad, 'CD3E') | testGeneGt0(ad, 'CD3G')
@@ -533,13 +534,15 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegion
   seuratObj$IsNKCell <- !seuratObj$HasCDR3Data & !seuratObj$HasCD3 & (!includeConstantRegionExpression | !seuratObj$HasTCRConstant)
   print(DimPlot(seuratObj, group.by = 'IsNKCell'))
 
-  seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | testGeneGt0(ad, 'LOC720538') | testGeneGt0(ad, 'LOC705095')
+  seuratObj$HasGammaChain <- !is.na(seuratObj$TRG) | (includeConstantRegionExpression & (testGeneGt0(ad, 'LOC720538') | testGeneGt0(ad, 'LOC705095')))
   print(DimPlot(seuratObj, group.by = 'HasGammaChain'))
 
   # As above, allow either TCR data or constant chaine expression:
   seuratObj$IsAlphaBeta <- FALSE
   seuratObj$IsAlphaBeta[!is.na(seuratObj$TRA) | !is.na(seuratObj$TRB)] <- TRUE
-  seuratObj$IsAlphaBeta[testGeneGt0(ad, 'LOC710951') | testGeneGt0(ad, 'LOC114677140')] <- TRUE
+  if (includeConstantRegionExpression) {
+    seuratObj$IsAlphaBeta[testGeneGt0(ad, 'LOC710951') | testGeneGt0(ad, 'LOC114677140')] <- TRUE
+  }
   print(DimPlot(seuratObj, group.by = 'IsAlphaBeta'))
   
   seuratObj$TNK_Type <- NA
