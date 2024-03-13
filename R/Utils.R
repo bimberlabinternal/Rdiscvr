@@ -252,3 +252,36 @@ DownloadMetadataForSeuratObject <- function(outputFileId, outFile, overwrite = T
 
 	return(NULL)
 }
+
+
+#' @title GenerateSRATable
+#' @description Returns a table with SRA-related information for a given set of cDNA_IDs
+#' @param cDNA_IDs A vector of integer cDNA_IDs
+#' @export
+#'
+#' @import Rlabkey
+GenerateSRATable <- function(cDNA_IDs) {
+	if (any(is.na(cDNA_IDs))) {
+		stop('Cannot provide NA cDNA IDs')
+	}
+
+	# Avoid factors:
+	cDNA_IDs <- as.integer(as.character(cDNA_IDs))
+
+	if (any(is.na(cDNA_IDs))) {
+		stop('Non-numeric cDNA IDs provided')
+	}
+
+	dat <- labkey.selectRows(
+		baseUrl=.getBaseUrl(),
+		folderPath=.getLabKeyDefaultFolder(),
+		schemaName="singlecell",
+		queryName="cdna_libraries",
+		colSelect="rowid,sortId/sampleId/subjectId,sortId/sampleId/sampledate,sortId/sampleId/stim,sortId/sampleId/assayType,sortId/sampleId/tissue,sortId/population,sortId/hto,sortId/hto/adaptersequence,readsetId/sraRuns,tcrReadsetId/sraRuns,hashingReadsetId/sraRuns,citeseqReadsetId/sraRuns",
+		colFilter=makeFilter(c("rowid", "IN", paste0(cDNA_IDs, collapse = ';'))),
+		colNameOpt="rname"
+	)
+	names(dat) <- c('cDNA_ID', 'SubjectId', 'SampleDate', 'Stim', 'AssayType', 'Tissue', 'Population', 'HTO', 'HTO Sequence', 'GEX SRA', 'VDJ SRA', 'Hashing SRA', 'CITE-seq SRA')
+
+	return(dat)
+}
