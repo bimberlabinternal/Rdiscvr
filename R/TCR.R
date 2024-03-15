@@ -153,6 +153,11 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
   pct2 <- round(nrow(tcrIntersect) / length(gexBarcodes) * 100, 2)
 
   print(paste0('Barcodes with clonotypes: ', origRows, ', intersecting with GEX data (total ', length(gexBarcodes),'): ', nrow(tcrIntersect), " (", pct, "% of TCR / ", pct2, "% of GEX)"))
+  print(paste0('Fraction of TCR records with a TRA: ', round(sum(!is.na(tcr$TRA)) / nrow(tcr), 2)))
+  print(paste0('Fraction of TCR records with a TRB: ', round(sum(!is.na(tcr$TRB)) / nrow(tcr), 2)))
+  print(paste0('Fraction of TCR records with a TRG: ', round(sum(!is.na(tcr$TRG)) / nrow(tcr), 2)))
+  print(paste0('Fraction of TCR records with a TRD: ', round(sum(!is.na(tcr$TRD)) / nrow(tcr), 2)))
+
   if (nrow(tcrIntersect) == 0) {
     print('no barcodes shared')
     print(paste0('first GEX barcodes:'))
