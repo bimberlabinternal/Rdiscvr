@@ -623,7 +623,7 @@ SummarizeTNK_Activation <- function(seuratObj, outFile, xFacetField = 'Populatio
 #' @importFrom magrittr %>%
 #' @return The plot object
 #' @export
-MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFacetField = 'Population', groupingFields = c('Stim', 'Population', 'SampleDate', 'AssayType'), threshold = 0.5, activationFieldName = 'TandNK_ActivationCore_UCell', lowFreqThreshold = 0.005) {
+MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFacetField = 'Population', groupingFields = c('Stim', 'Population', 'Tissue', 'SampleDate', 'AssayType'), threshold = 0.5, activationFieldName = 'TandNK_ActivationCore_UCell', lowFreqThreshold = 0.005) {
   dat <- seuratObj@meta.data %>%
     filter(SubjectId == subjectId) %>%
     mutate(IsActive = !!sym(activationFieldName) >= threshold)
