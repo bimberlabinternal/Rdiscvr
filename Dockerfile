@@ -1,41 +1,4 @@
-FROM ghcr.io/bimberlab/cellhashr:latest
-
-# NOTE: inkscape and librsvg2-bin installed for CoNGA
-RUN echo "local({r <- getOption('repos') ;r['CRAN'] = 'https://packagemanager.rstudio.com/cran/__linux__/focal/latest';options(repos = r);rm(r)})" >> ~/.Rprofile \
-    && apt-get update -y \
-    && apt-get upgrade -y \
-    && apt-get install -y \
-        libhdf5-dev \
-        libpython3-dev \
-        python3-pip \
-        inkscape \
-        librsvg2-bin \
-        locales \
-        locales-all \
-        wget \
-        git \
-    && python3 -m pip install --upgrade pip \
-    && pip3 install umap-learn phate scanpy \
-    && mkdir /conga \
-    && cd /conga \
-    && git clone https://github.com/phbradley/conga.git \
-    && cd conga/tcrdist_cpp \
-    && make \
-    && cd ../ \
-    && pip3 install -e . \
-    && cd / \
-    # Clean up:
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip3 cache purge \
-    # This is to avoid the numba 'cannot cache function' error, such as: https://github.com/numba/numba/issues/5566
-    && mkdir /numba_cache && chmod -R 777 /numba_cache \
-    && mkdir /mpl_cache && chmod -R 777 /mpl_cache
-
-ENV RETICULATE_PYTHON=/usr/bin/python3
-ENV NUMBA_CACHE_DIR=/numba_cache
-ENV MPLCONFIGDIR=/mpl_cache
-ENV CONGA_PNG_TO_SVG_UTILITY=inkscape
+FROM ghcr.io/bimberlabinternal/discvr-base:latest
 
 ADD . /RDiscvr
 
@@ -43,7 +6,6 @@ ADD . /RDiscvr
 RUN --mount=type=secret,id=GITHUB_PAT \
     cd /RDiscvr \
     && export GITHUB_PAT="$(cat /run/secrets/GITHUB_PAT)" \
-    && echo "GH: $GITHUB_PAT" \
     && Rscript -e "BiocManager::install(ask = F, upgrade = 'always');" \
     && Rscript -e "devtools::install_deps(pkg = '.', dependencies = TRUE, upgrade = 'always');" \
     && R CMD build . \
