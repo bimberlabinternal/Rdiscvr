@@ -122,6 +122,11 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
     paste(sort(unique(x)), collapse=',')
   })
 
+  if ('cDNA_ID' %in% names(rows) && any(grepl(rows$cDNA_ID, pattern = ','))){
+    dups <- sort(unique(grepl(rows$cDNA_ID, pattern = ',')))
+    stop(paste0('The data contained rows matching multiple cDNA_IDs: ', paste0(dups, collapse = '; ')))
+  }
+
   origBarcodes <- colnames(seuratObj)
   hasHTO <- !all(is.na(rows[htoLabel]))
   if (hasHTO) {
@@ -225,9 +230,8 @@ QueryAndApplyMetadataUsingCDNA <- function(seuratObj,
 
   #spike in readset, since we need this to join dataframes
   fieldSelect <- tolower(fieldSelect)
-  rowIdAdded <- F
   if (!('cdna_id' %in% fieldSelect)) {
-    rowIdAdded <- T
+    print('Missing rowid/cDNA_ID to the field select')
     fieldSelect <- c('rowid', fieldSelect)
     fieldNames <- c('cDNA_ID', fieldNames)
   }
