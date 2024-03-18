@@ -1,0 +1,260 @@
+
+#' @title ApplyPC475Metadata
+#' @description Applies standard metadata related to PC475 / BMGF HIV Reservoirs project
+#'
+#' @param seuratObj A Seurat object.
+#' @param errorIfUnknownIdsFound If true, the function will fail if the seurat object contains unknown IDs
+#' @param reApplyMetadata If true, QueryAndApplyCdnaMetadata will be re-run
+#' @return A modified Seurat object.
+#' @export
+ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMetadata = TRUE) {
+  if (reApplyMetadata) {
+    seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
+  }
+
+  metadata <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/587",
+    schemaName="lists",
+    queryName="PC475",
+    colNameOpt="rname",
+    colSelect = 'libraryid,label,timepoint,wpi,LibraryId/sortId/sampleId/subjectId,Nx_pVL,SIV_RNA,SIV_DNA,CAVL_SampleName',
+  )
+  names(metadata) <- c('cDNA_ID', 'TimepointLabel', 'Timepoint', 'WPI', 'SubjectId', 'Nx_pVL', 'SIV_RNA', 'SIV_DNA', 'CAVL_SampleName')
+
+  metadata$TimepointLabel <- naturalsort::naturalfactor(metadata$TimepointLabel)
+  metadata$Timepoint <- naturalsort::naturalfactor(metadata$Timepoint)
+
+  metadata2 <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber",
+    schemaName="laboratory",
+    queryName="project_usage",
+    colNameOpt="rname",
+    colSelect = 'subjectid,groupname',
+    colFilter = makeFilter(c('project', 'EQUALS', 'PC475 / HIV Cure'))
+  )
+  names(metadata2) <- c('SubjectId', 'PC475_Group')
+
+  metadata <- merge(metadata, metadata2, by = 'SubjectId', all.x = T)
+  metadata <- metadata[names(metadata) != 'SubjectId']
+
+  if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
+    stop('There were cDNA_IDs in the seurat object missing from the metadata')
+  }
+  
+  toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
+  toAdd$SortOrder <- 1:nrow(toAdd)
+  toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
+  toAdd <- arrange(toAdd, SortOrder)
+  rownames(toAdd) <- toAdd$CellBarcode
+  toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+
+  seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+
+  return(seuratObj)
+}
+
+#' @title ApplyTBMetadata
+#' @description Applies standard metadata related to TB projects
+#'
+#' @param seuratObj A Seurat object.
+#' @param errorIfUnknownIdsFound If true, the function will fail if the seurat object contains unknown IDs
+#' @param reApplyMetadata If true, QueryAndApplyCdnaMetadata will be re-run
+#' @return A modified Seurat object.
+#' @export
+ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMetadata = TRUE) {
+  if (reApplyMetadata) {
+    seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
+  }
+
+  metadata <- .GetTbMetadata()
+
+  if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
+    stop('There were cDNA_IDs in the seurat object missing from the metadata')
+  }
+
+  toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
+  toAdd$SortOrder <- 1:nrow(toAdd)
+  toAdd <- merge(toAdd, metadata, by = 'cDNA_ID', all.x = TRUE)
+  toAdd <- arrange(toAdd, SortOrder)
+  rownames(toAdd) <- toAdd$CellBarcode
+  toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+
+  seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+
+  seuratObj$Tissue <- naturalsort::naturalfactor(seuratObj$Tissue)
+
+  return(seuratObj)
+}
+
+.GetTbMetadata <- function() {
+  cDNA <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/627",
+    schemaName="lists",
+    queryName="TB_cDNA_Libraries",
+    colSelect="cDNA_ID,SampleType,TimepointLabel,cDNA_ID/sortid/sampleid/subjectid",
+    colNameOpt="rname"
+  )
+  names(cDNA) <- c('cDNA_ID', 'SampleType', 'TimepointLabel', 'SubjectId')
+
+  metadata <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/627",
+    schemaName="lists",
+    queryName="TB_Studies",
+    colSelect="subjectid,study,vaccine,challenge,ChallengeType,NecropsyDate,PID,PathScore,LungPathScore,ChallengeDate,R_Caudal_Lung_1_Disease",
+    colNameOpt="rname"
+  )
+  names(metadata) <- c('SubjectId', 'TB_Study', 'Vaccine', 'Challenge', 'ChallengeType', 'NecropsyDate', 'PID', 'PathScore', 'LungPathScore', 'ChallengeDate', 'R_Caudal_Lung_1_Disease')
+
+  #Round to week:
+  metadata$Timepoint <- metadata$PID
+  metadata$Timepoint[!is.na(metadata$Timepoint)] <- round(metadata$Timepoint[!is.na(metadata$Timepoint)]/7, 0)*7
+  metadata$Timepoint[!is.na(metadata$Timepoint)] <- paste0('Day ', metadata$Timepoint[!is.na(metadata$Timepoint)])
+  metadata$Timepoint <- naturalsort::naturalfactor(metadata$Timepoint)
+
+  metadata$Group <- as.character(metadata$Vaccine)
+  if ('Mock-challenged' %in% metadata$Challenge) {
+    metadata$Group[metadata$Challenge == 'Mock-challenged'] <- paste0(metadata$Vaccine[metadata$Challenge == 'Mock-challenged'], '-Mock')
+  }
+  metadata$Group <- naturalsort::naturalfactor(metadata$Group)
+
+  # Establish order:
+  expectedOrder <- c(
+    'Unvaccinated-Mock',
+    'IV-BCG-Mock',
+    'RhCMV-TB/9Ag-Mock',
+    
+    'RhCMV/Gag',
+    'RhCMV-Malaria',
+    
+    'Unvaccinated',
+    
+    'BCG (adult)',
+    'BCG (at birth)',
+    'BCG (at birth) / RhCMV-TB/6Ag',
+    'IV-BCG',
+    
+    '∆pp71 RhCMV-TB/6Ag',
+    'RhCMV-TB/6Ag',
+    'RhCMV-TB/9Ag'
+  )
+  
+  for (l in rev(expectedOrder)) {
+    if (l %in% unique(metadata$Group)) {
+      metadata$Group <- forcats::fct_relevel(metadata$Group, l, after = 0)
+    }
+  }
+  
+  cDNA <- merge(cDNA, metadata, by = 'SubjectId', all.x = T)
+  
+  return(cDNA)
+}
+
+
+
+#' @title ApplyMalariaMetadata
+#' @description Applies standard metadata related to the Wilder Malaria study
+#'
+#' @param seuratObj A Seurat object.
+#' @param errorIfUnknownIdsFound If true, the function will fail if the seurat object contains unknown IDs
+#' @param reApplyMetadata If true, QueryAndApplyCdnaMetadata will be re-run
+#' @return A modified Seurat object.
+#' @export
+ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMetadata = TRUE) {
+  if (reApplyMetadata) {
+    seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
+  }
+  
+  metadata <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/1172",
+    schemaName="lists",
+    queryName="MalariaAnimals",
+    colNameOpt="rname",
+    colSelect = 'subjectid,sex,groupname,mmr,d0,mmr_date,cvac1,cvac2,cvac3,challengedate,PreExposureDate,Protection',
+  )
+  names(metadata) <- c('SubjectId', 'Sex', 'GroupName', 'MMR', 'D0', 'MMR_Date', 'CVac1', 'CVac2', 'CVac3', 'ChallengeDate', 'PreExposureDate', 'Protection')
+  
+  metadata2 <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/1172",
+    schemaName="lists",
+    queryName="MalariaSamples",
+    colNameOpt="rname",
+    colSelect = 'libraryid,timepointlabel,LibraryId/sortId/sampleId/subjectId'
+  )
+  names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'SubjectId')
+  
+  metadata <- merge(metadata, metadata2, by = 'SubjectId', all.x = T)
+  metadata <- metadata[names(metadata) != 'SubjectId']
+  
+  if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
+    stop('There were cDNA_IDs in the seurat object missing from the metadata')
+  }
+  
+  toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
+  toAdd$SortOrder <- 1:nrow(toAdd)
+  toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
+  toAdd <- arrange(toAdd, SortOrder)
+  rownames(toAdd) <- toAdd$CellBarcode
+  toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+  
+  seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  
+  return(seuratObj)
+}
+
+#' @title ApplyPC531Metadata
+#' @description Applies standard metadata related to PC531
+#'
+#' @param seuratObj A Seurat object.
+#' @param errorIfUnknownIdsFound If true, the function will fail if the seurat object contains unknown IDs
+#' @param reApplyMetadata If true, QueryAndApplyCdnaMetadata will be re-run
+#' @return A modified Seurat object.
+#' @export
+ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMetadata = TRUE) {
+  if (reApplyMetadata) {
+    seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
+  }
+  
+  metadata <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/1297",
+    schemaName="lists",
+    queryName="PC531_Subjects",
+    colNameOpt="rname",
+    colSelect = 'subjectid,VaccinationDate,ChallengeDate,Outcome',
+  )
+  names(metadata) <- c('SubjectId', 'VaccinationDate', 'ChallengeDate', 'Outcome')
+  
+  metadata2 <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/1297",
+    schemaName="lists",
+    queryName="PC531",
+    colNameOpt="rname",
+    colSelect = 'cDNA_ID,Label,DPV,DPC,cDNA_ID/sortId/sampleId/subjectId'
+  )
+  names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'DPV', 'DPC', 'SubjectId')
+  
+  metadata <- merge(metadata, metadata2, by = 'SubjectId', all.x = T)
+  metadata <- metadata[names(metadata) != 'SubjectId']
+  
+  if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
+    stop('There were cDNA_IDs in the seurat object missing from the metadata')
+  }
+  
+  toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
+  toAdd$SortOrder <- 1:nrow(toAdd)
+  toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
+  toAdd <- arrange(toAdd, SortOrder)
+  rownames(toAdd) <- toAdd$CellBarcode
+  toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+  
+  seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  
+  return(seuratObj)
+}
