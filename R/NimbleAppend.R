@@ -55,7 +55,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   ambigFeatRows <- grepl(",", df$V1)
   if (sum(ambigFeatRows) > 0) {
     if (dropAmbiguousFeatures) {
-      print(paste0('Dropping ', sum(ambigFeatRows), ' ambiguous features. (', sum(ambigFeatRows),' of ', nrow(df), ')'))
+      print(paste0('Dropping ', sum(ambigFeatRows), ' rows with ambiguous features. (', sum(ambigFeatRows),' of ', nrow(df), ')'))
       x <- df$V1[ambigFeatRows]
 
       # For the purposes of reporting only, collapse highly ambiguous results
