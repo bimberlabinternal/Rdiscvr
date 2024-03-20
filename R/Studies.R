@@ -94,10 +94,10 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     folderPath="/Labs/Bimber/627",
     schemaName="lists",
     queryName="TB_cDNA_Libraries",
-    colSelect="cDNA_ID,SampleType,TimepointLabel,cDNA_ID/sortid/sampleid/subjectid",
+    colSelect="cDNA_ID,SampleType,TimepointLabel,CFU_Homogenate,CFU_Tissue,cDNA_ID/sortid/sampleid/subjectid",
     colNameOpt="rname"
   )
-  names(cDNA) <- c('cDNA_ID', 'SampleType', 'TimepointLabel', 'SubjectId')
+  names(cDNA) <- c('cDNA_ID', 'SampleType', 'TimepointLabel', 'CFU_Homogenate', 'CFU_Tissue', 'SubjectId')
 
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
@@ -108,6 +108,15 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     colNameOpt="rname"
   )
   names(metadata) <- c('SubjectId', 'TB_Study', 'Vaccine', 'Challenge', 'ChallengeType', 'NecropsyDate', 'PID', 'PathScore', 'LungPathScore', 'ChallengeDate', 'R_Caudal_Lung_1_Disease')
+
+  # CFU_Tissue_Rescaled
+  cDNA$CFU_Homogenate[is.na(cDNA$CFU_Homogenate)] <- 0
+  cDNA$CFU_Homogenate <- as.numeric(cDNA$CFU_Homogenate)
+  cDNA$CFU_Homogenate_Rescaled <- scales::rescale(asinh(cDNA$CFU_Homogenate + 1), to = c(0,1))
+
+  cDNA$CFU_Tissue[is.na(cDNA$CFU_Tissue)] <- 0
+  cDNA$CFU_Tissue <- as.numeric(cDNA$CFU_Tissue)
+  cDNA$CFU_Tissue_Rescaled <- scales::rescale(asinh(cDNA$CFU_Tissue + 1), to = c(0,1))
 
   #Round to week:
   metadata$Timepoint <- metadata$PID
