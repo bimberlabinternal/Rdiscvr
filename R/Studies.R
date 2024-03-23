@@ -40,7 +40,8 @@ ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   metadata <- metadata[names(metadata) != 'SubjectId']
 
   if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
-    stop('There were cDNA_IDs in the seurat object missing from the metadata')
+    missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
+    stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
   
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
@@ -71,7 +72,8 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   metadata <- .GetTbMetadata()
 
   if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
-    stop('There were cDNA_IDs in the seurat object missing from the metadata')
+    missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
+    stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
 
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
@@ -201,7 +203,8 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   metadata <- metadata[names(metadata) != 'SubjectId']
   
   if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
-    stop('There were cDNA_IDs in the seurat object missing from the metadata')
+    missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
+    stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
   
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
@@ -253,7 +256,8 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   metadata <- metadata[names(metadata) != 'SubjectId']
   
   if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
-    stop('There were cDNA_IDs in the seurat object missing from the metadata')
+    missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
+    stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
   
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
