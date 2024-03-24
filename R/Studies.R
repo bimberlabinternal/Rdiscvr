@@ -52,6 +52,7 @@ ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
 
   return(seuratObj)
 }
@@ -84,6 +85,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
 
   seuratObj$Tissue <- naturalsort::naturalfactor(seuratObj$Tissue)
 
@@ -215,6 +217,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
   
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
   
   return(seuratObj)
 }
@@ -268,6 +271,18 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
   
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
   
+  return(seuratObj)
+}
+
+.SetFieldsToUnknown <- function(seuratObj, fieldNames) {
+  for (fieldName in fieldNames) {
+    sel <- is.na(seuratObj@meta.data[[fieldName]])
+    if (any(sel)) {
+      seuratObj@meta.data[[fieldName]][sel] <- 'Unknown'
+    }
+  }
+
   return(seuratObj)
 }
