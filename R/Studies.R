@@ -9,7 +9,7 @@
 #' @export
 ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMetadata = TRUE) {
   if (reApplyMetadata) {
-    seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
+    seuratObj <- .ApplyMetadata(seuratObj)
   }
 
   metadata <- labkey.selectRows(
@@ -67,7 +67,7 @@ ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
 #' @export
 ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMetadata = TRUE) {
   if (reApplyMetadata) {
-    seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
+    seuratObj <- .ApplyMetadata(seuratObj)
   }
 
   metadata <- .GetTbMetadata()
@@ -178,7 +178,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
 #' @export
 ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMetadata = TRUE) {
   if (reApplyMetadata) {
-    seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
+    seuratObj <- .ApplyMetadata(seuratObj)
   }
   
   metadata <- labkey.selectRows(
@@ -232,7 +232,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
 #' @export
 ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMetadata = TRUE) {
   if (reApplyMetadata) {
-    seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
+    seuratObj <- .ApplyMetadata(seuratObj)
   }
   
   metadata <- labkey.selectRows(
@@ -282,6 +282,18 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     if (any(sel)) {
       seuratObj@meta.data[[fieldName]][sel] <- 'Unknown'
     }
+  }
+
+  return(seuratObj)
+}
+
+.ApplyMetadata <- function(seuratObj) {
+  if ('BarcodePrefix' %in% names(seuratObj@meta.data)) {
+    seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
+  } else if ('cDNA_ID' %in% names(seuratObj@meta.data)) {
+    seuratObj <- QueryAndApplyMetadataUsingCDNA(seuratObj)
+  } else {
+    stop('Unable to find either BarcodePrefix or cDNA_ID in meta.data')
   }
 
   return(seuratObj)
