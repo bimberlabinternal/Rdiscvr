@@ -6,11 +6,11 @@
 \usage{
 QueryAndApplyMetadataUsingCDNA(
   seuratObj,
-  fieldSelect = c("sortid/population", "sortid/sampleid/subjectid",
+  fieldSelect = c("rowid", "sortid/population", "sortid/sampleid/subjectid",
     "sortid/sampleid/sampledate", "sortid/sampleid/stim", "sortid/sampleid/tissue",
     "plateid", "workbook/workbookid"),
-  fieldNames = c("Population", "SubjectId", "SampleDate", "Stim", "Tissue", "PlateId",
-    "WorkbookId"),
+  fieldNames = c("cDNA_ID", "Population", "SubjectId", "SampleDate", "Stim", "Tissue",
+    "PlateId", "WorkbookId"),
   overwriteExisting = TRUE
 )
 }
