@@ -230,7 +230,7 @@ QueryAndApplyMetadataUsingCDNA <- function(seuratObj,
 
   #spike in readset, since we need this to join dataframes
   fieldSelect <- tolower(fieldSelect)
-  if (!('cdna_id' %in% fieldSelect)) {
+  if (!('rowid' %in% fieldSelect)) {
     print('Missing rowid/cDNA_ID to the field select')
     fieldSelect <- c('rowid', fieldSelect)
     fieldNames <- c('cDNA_ID', fieldNames)
