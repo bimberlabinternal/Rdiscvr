@@ -241,9 +241,9 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     schemaName="lists",
     queryName="PC531_Subjects",
     colNameOpt="rname",
-    colSelect = 'subjectid,VaccinationDate,ChallengeDate,Outcome',
+    colSelect = 'subjectid,VaccinationDate,ChallengeDate,Outcome,VaccineType',
   )
-  names(metadata) <- c('SubjectId', 'VaccinationDate', 'ChallengeDate', 'Outcome')
+  names(metadata) <- c('SubjectId', 'VaccinationDate', 'ChallengeDate', 'Outcome', 'VaccineType')
   
   metadata2 <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
