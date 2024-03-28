@@ -122,11 +122,29 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   cDNA$CFU_Tissue <- as.numeric(cDNA$CFU_Tissue)
   cDNA$CFU_Tissue_Rescaled <- scales::rescale(asinh(cDNA$CFU_Tissue + 1), to = c(0,1))
 
+  metadata$IsMockChallenged <- metadata$Challenge == 'Mock-challenged'
+
   #Round to week:
   metadata$Timepoint <- metadata$PID
   metadata$Timepoint[!is.na(metadata$Timepoint)] <- round(metadata$Timepoint[!is.na(metadata$Timepoint)]/7, 0)*7
   metadata$Timepoint[!is.na(metadata$Timepoint)] <- paste0('Day ', metadata$Timepoint[!is.na(metadata$Timepoint)])
+
+  # NOTE: make a simpler timepoint/mock field that lumps Mock-challenged samples into a different timepoint level
+  metadata$Timepoint[metadata$IsMockChallenged] <- paste0('Mock / ', metadata$Vaccine[metadata$IsMockChallenged])
+  if ('Mock / Unvaccinated' %in% metadata$Timepoint) {
+    metadata$Timepoint[metadata$Timepoint == 'Mock / Unvaccinated'] <- 'Mock'
+  }
+
+  # And then place the Mocks first:
   metadata$Timepoint <- naturalsort::naturalfactor(metadata$Timepoint)
+  mocks <- grep(metadata$Timepoint, pattern = '^Mock', value = TRUE)
+  if (length(mocks) > 0) {
+    for (l in rev(mocks)) {
+      if (l %in% unique(metadata$Timepoint)) {
+        metadata$Timepoint <- forcats::fct_relevel(metadata$Timepoint, l, after = 0)
+      }
+    }
+  }
 
   metadata$Group <- as.character(metadata$Vaccine)
   if ('Mock-challenged' %in% metadata$Challenge) {
