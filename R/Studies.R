@@ -259,9 +259,9 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     schemaName="lists",
     queryName="PC531_Subjects",
     colNameOpt="rname",
-    colSelect = 'subjectid,VaccinationDate,ChallengeDate,Outcome,VaccineType',
+    colSelect = 'subjectid,VaccinationDate,InfectionDate,Outcome,VaccineType',
   )
-  names(metadata) <- c('SubjectId', 'VaccinationDate', 'ChallengeDate', 'Outcome', 'VaccineType')
+  names(metadata) <- c('SubjectId', 'VaccinationDate', 'InfectionDate', 'Outcome', 'VaccineType')
   
   metadata2 <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
@@ -269,9 +269,9 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     schemaName="lists",
     queryName="PC531",
     colNameOpt="rname",
-    colSelect = 'cDNA_ID,Label,DPV,DPC,cDNA_ID/sortId/sampleId/subjectId'
+    colSelect = 'cDNA_ID,Label,DPV,PID,cDNA_ID/sortId/sampleId/subjectId,pvl'
   )
-  names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'DPV', 'DPC', 'SubjectId')
+  names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'DPV', 'PID', 'SubjectId', 'PVL')
   
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.x = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
