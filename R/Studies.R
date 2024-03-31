@@ -219,7 +219,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   )
   names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'SubjectId')
   
-  metadata <- merge(metadata, metadata2, by = 'SubjectId', all.x = T)
+  metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
   
   if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
@@ -273,14 +273,19 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   )
   names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'DPV', 'PID', 'SubjectId', 'PVL')
   
-  metadata <- merge(metadata, metadata2, by = 'SubjectId', all.x = T)
+  metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
   
   if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
     missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
     stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
-  
+
+  if (any(duplicated(metadata$cDNA_ID))) {
+    dups <- metadata$cDNA_ID[duplicated(metadata$cDNA_ID)]
+    stop(paste0('There were duplicated cDNA_IDs in the metadata: ', paste0(dups, collapse = ',')))
+  }
+
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
   toAdd$SortOrder <- 1:nrow(toAdd)
   toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
