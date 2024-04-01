@@ -303,7 +303,9 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   for (fieldName in fieldNames) {
     sel <- is.na(seuratObj@meta.data[[fieldName]])
     if (any(sel)) {
-      seuratObj@meta.data[[fieldName]][sel] <- 'Unknown'
+      if (is.character(seuratObj@meta.data[[fieldName]])) {
+        seuratObj@meta.data[[fieldName]][sel] <- 'Unknown'
+      }
     }
   }
 
