@@ -299,6 +299,52 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   return(seuratObj)
 }
 
+#' @title ApplyAcuteNxMetadata
+#' @description Applies standard metadata related to the PPG/AcuteNx project
+#'
+#' @param seuratObj A Seurat object.
+#' @param errorIfUnknownIdsFound If true, the function will fail if the seurat object contains unknown IDs
+#' @param reApplyMetadata If true, QueryAndApplyCdnaMetadata will be re-run
+#' @return A modified Seurat object.
+#' @export
+ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMetadata = TRUE) {
+  if (reApplyMetadata) {
+    seuratObj <- .ApplyMetadata(seuratObj)
+  }
+
+  metadata <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/1297",
+    schemaName="lists",
+    queryName="AcuteNx_Subjects",
+    colNameOpt="rname",
+    colSelect="SubjectId,NxTimepoint,NxPVL,NxDate,InfectionDate,Dose,Route,Cohort"
+  )
+  names(metadata) <- c('SubjectId', 'NxTimepoint', 'NxPVL', 'NxDate', 'InfectionDate', 'Dose', 'Route', 'PcCohort')
+
+  #if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
+  #  missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
+  #  stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
+  #}
+
+  #if (any(duplicated(metadata$cDNA_ID))) {
+  #  dups <- metadata$cDNA_ID[duplicated(metadata$cDNA_ID)]
+  #  stop(paste0('There were duplicated cDNA_IDs in the metadata: ', paste0(dups, collapse = ',')))
+  #}
+
+  toAdd <- data.frame(SubjectId = seuratObj$SubjectId, CellBarcode = colnames(seuratObj))
+  toAdd$SortOrder <- 1:nrow(toAdd)
+  toAdd <- merge(toAdd, metadata, by.x = 'SubjectId', all.x = TRUE)
+  toAdd <- arrange(toAdd, SortOrder)
+  rownames(toAdd) <- toAdd$CellBarcode
+  toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+
+  seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
+
+  return(seuratObj)
+}
+
 .SetFieldsToUnknown <- function(seuratObj, fieldNames) {
   for (fieldName in fieldNames) {
     sel <- is.na(seuratObj@meta.data[[fieldName]])
