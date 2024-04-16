@@ -233,10 +233,15 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
-  
+
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
-  
+
+  seuratObj$TimepointLabel <- naturalsort::naturalfactor(seuratObj$TimepointLabel)
+  seuratObj$TimepointLabel <- forcats::fct_relevel(seuratObj$TimepointLabel, 'Chall_05', after = Inf)
+
+  seuratObj$GroupName <- naturalsort::naturalfactor(seuratObj$GroupName)
+
   return(seuratObj)
 }
 
