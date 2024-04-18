@@ -123,7 +123,7 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
   })
 
   if ('cDNA_ID' %in% names(rows) && any(grepl(rows$cDNA_ID, pattern = ','))){
-    dups <- sort(unique(grepl(rows$cDNA_ID, pattern = ',')))
+    dups <- sort(unique(grep(rows$cDNA_ID, pattern = ',', value = TRUE)))
     stop(paste0('The data contained rows matching multiple cDNA_IDs: ', paste0(dups, collapse = '; ')))
   }
 
