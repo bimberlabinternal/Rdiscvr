@@ -39,7 +39,11 @@ ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.x = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
 
-  if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
+  if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
+    if (any(is.na(seuratObj$cDNA_ID))) {
+      stop('There were missing cDNA_IDs in the seurat object')
+    }
+
     missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
     stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
@@ -72,7 +76,11 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
 
   metadata <- .GetTbMetadata()
 
-  if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
+  if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
+    if (any(is.na(seuratObj$cDNA_ID))) {
+      stop('There were missing cDNA_IDs in the seurat object')
+    }
+
     missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
     stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
@@ -178,6 +186,8 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
       metadata$Group <- forcats::fct_relevel(metadata$Group, l, after = 0)
     }
   }
+
+  # TODO: make a field that is group + timepoint
   
   cDNA <- merge(cDNA, metadata, by = 'SubjectId', all.x = T)
   
@@ -221,8 +231,12 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
-  
-  if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
+
+  if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
+    if (any(is.na(seuratObj$cDNA_ID))) {
+      stop('There were missing cDNA_IDs in the seurat object')
+    }
+
     missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
     stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
@@ -281,7 +295,10 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
   
-  if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
+  if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
+    if (any(is.na(seuratObj$cDNA_ID))) {
+      stop('There were missing cDNA_IDs in the seurat object')
+    }
     missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
     stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
@@ -327,15 +344,19 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   )
   names(metadata) <- c('SubjectId', 'NxTimepoint', 'NxPVL', 'NxDate', 'InfectionDate', 'Dose', 'Route', 'PcCohort')
 
-  #if (errorIfUnknownIdsFound && !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID)) {
-  #  missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
-  #  stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
-  #}
+  if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
+    if (any(is.na(seuratObj$cDNA_ID))) {
+      stop('There were missing cDNA_IDs in the seurat object')
+    }
 
-  #if (any(duplicated(metadata$cDNA_ID))) {
-  #  dups <- metadata$cDNA_ID[duplicated(metadata$cDNA_ID)]
-  #  stop(paste0('There were duplicated cDNA_IDs in the metadata: ', paste0(dups, collapse = ',')))
-  #}
+    missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
+    stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
+  }
+
+  if (any(duplicated(metadata$cDNA_ID))) {
+   dups <- metadata$cDNA_ID[duplicated(metadata$cDNA_ID)]
+   stop(paste0('There were duplicated cDNA_IDs in the metadata: ', paste0(dups, collapse = ',')))
+  }
 
   toAdd <- data.frame(SubjectId = seuratObj$SubjectId, CellBarcode = colnames(seuratObj))
   toAdd$SortOrder <- 1:nrow(toAdd)
