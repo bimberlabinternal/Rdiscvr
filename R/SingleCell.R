@@ -140,7 +140,7 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
       seuratObj$HTO.Classification <- NA
     }
 
-    df <- data.frame(HTO = as.character(seuratObj$HTO), BarcodePrefix = as.character(seuratObj$BarcodePrefix), Barcode = origBarcodes, SortOrder = 1:length(origBarcodes))
+    df <- data.frame(HTO = as.character(seuratObj$HTO), BarcodePrefix = as.character(seuratObj$BarcodePrefix), Barcode = origBarcodes, SortOrder = seq_along(origBarcodes))
 
     #Allow for libraries that have a non-null HTO, but have only a single per library (which is effectively the same as not being hashed):
     rows2 <- rows %>% dplyr::group_by(BarcodePrefix) %>% dplyr::summarise(Total = dplyr::n_distinct(HTO)) %>% dplyr::filter(Total == 1)
@@ -156,7 +156,7 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
     names(df) <- c(htoLabel, 'BarcodePrefix', 'Barcode', 'SortOrder')
     df <- merge(df, rows, by = c(htoLabel, 'BarcodePrefix'), all.x = T)
   } else {
-    df <- data.frame(HTO = NA, BarcodePrefix = as.character(seuratObj$BarcodePrefix), Barcode = origBarcodes, SortOrder = 1:length(origBarcodes))
+    df <- data.frame(HTO = NA, BarcodePrefix = as.character(seuratObj$BarcodePrefix), Barcode = origBarcodes, SortOrder = seq_along(origBarcodes))
     names(df) <- c(htoLabel, 'BarcodePrefix', 'Barcode', 'SortOrder')
     df <- merge(df, rows, by = c('BarcodePrefix'), all.x = T)
   }
@@ -178,7 +178,7 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
   df[sapply(df, is.character)] <- lapply(df[sapply(df, is.character)], as.factor)
 
   #now apply the result:
-  for (idx in 1:length(fieldSelect)) {
+  for (idx in seq_along(fieldSelect)) {
     fieldName <- fieldNames[idx]
     if (readsetAdded && fieldName == readsetLabel) {
       next
