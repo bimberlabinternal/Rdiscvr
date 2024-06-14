@@ -9,7 +9,8 @@ ClassifyTNKByExpression(
   assayName = "RNA",
   constantRegionCountThreshold = 1.5,
   includeConstantRegionExpression = FALSE,
-  includeDeltaConstantRegionExpression = TRUE
+  includeDeltaConstantRegionExpression = TRUE,
+  collapseGOnlyToGD = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ ClassifyTNKByExpression(
 \item{includeConstantRegionExpression}{If includeConstantRegionExpression is true, RNA expression of TRA/B/G constant regions will be considered in the classification. This is disabled by default because we find expression of these genes may be leaky and not necessarily linked to a functional TCR}
 
 \item{includeDeltaConstantRegionExpression}{Similar to includeConstantRegionExpression, but applies to the delta constant region alone}
+
+\item{collapseGOnlyToGD}{By default, cells with gamma-chain alone are reported as a separate category (since A/B T cells can encode a gamma-chain). If TRUE, these will be collapsed into the Gamma/Delta category.}
 }
 \description{
 Classify T and NK By Expression and TCR clonotype, using best available evidence of ground-truth

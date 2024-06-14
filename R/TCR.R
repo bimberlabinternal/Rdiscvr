@@ -505,8 +505,9 @@ RunCoNGA <- function(seuratObj,
 #' @param constantRegionCountThreshold Any cell with a TCR constant region raw count above this threshold is considered positive for that gene
 #' @param includeConstantRegionExpression If includeConstantRegionExpression is true, RNA expression of TRA/B/G constant regions will be considered in the classification. This is disabled by default because we find expression of these genes may be leaky and not necessarily linked to a functional TCR
 #' @param includeDeltaConstantRegionExpression Similar to includeConstantRegionExpression, but applies to the delta constant region alone
+#' @param collapseGOnlyToGD By default, cells with gamma-chain alone are reported as a separate category (since A/B T cells can encode a gamma-chain). If TRUE, these will be collapsed into the Gamma/Delta category.
 #' @export
-ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegionCountThreshold = 1.5, includeConstantRegionExpression = FALSE, includeDeltaConstantRegionExpression = TRUE) {
+ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegionCountThreshold = 1.5, includeConstantRegionExpression = FALSE, includeDeltaConstantRegionExpression = TRUE, collapseGOnlyToGD = FALSE) {
   if (!'HasCDR3Data' %in% names(seuratObj@meta.data)) {
     stop('This seurat object appears to be missing TCR data. See RDiscvr::DownloadAndAppendTcrClonotypes')
   }
@@ -557,7 +558,11 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegion
   seuratObj$TNK_Type[(seuratObj$IsNKCell + seuratObj$IsAlphaBeta + seuratObj$IsGammaDelta) > 1] <- 'Ambiguous'
 
   # This allows a cell with a gamma chain, but not evidence of A/B to be called as gamma/delta
-  seuratObj$TNK_Type[is.na(seuratObj$TNK_Type) & seuratObj$HasGammaChain] <-'Gamma Chain-Only'
+  if (collapseGOnlyToGD) {
+    seuratObj$TNK_Type[is.na(seuratObj$TNK_Type) & seuratObj$HasGammaChain] <-'Gamma/Delta'
+  } else {
+    seuratObj$TNK_Type[is.na(seuratObj$TNK_Type) & seuratObj$HasGammaChain] <-'Gamma Chain-Only'
+  }
 
   seuratObj$TNK_Type[is.na(seuratObj$TNK_Type)] <- 'Unknown'
   seuratObj$TNK_Type <- naturalsort::naturalfactor(seuratObj$TNK_Type)
