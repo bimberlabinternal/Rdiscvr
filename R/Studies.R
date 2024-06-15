@@ -49,7 +49,7 @@ ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   }
   
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
-  toAdd$SortOrder <- 1:nrow(toAdd)
+  toAdd$SortOrder <- seq_len(nrow(toAdd))
   toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
@@ -86,7 +86,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   }
 
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
-  toAdd$SortOrder <- 1:nrow(toAdd)
+  toAdd$SortOrder <- seq_len(nrow(toAdd))
   toAdd <- merge(toAdd, metadata, by = 'cDNA_ID', all.x = TRUE)
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
@@ -242,7 +242,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   }
   
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
-  toAdd$SortOrder <- 1:nrow(toAdd)
+  toAdd$SortOrder <- seq_len(nrow(toAdd))
   toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
@@ -309,7 +309,7 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   }
 
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
-  toAdd$SortOrder <- 1:nrow(toAdd)
+  toAdd$SortOrder <- seq_len(nrow(toAdd))
   toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
@@ -359,13 +359,15 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   }
 
   toAdd <- data.frame(SubjectId = seuratObj$SubjectId, CellBarcode = colnames(seuratObj))
-  toAdd$SortOrder <- 1:nrow(toAdd)
+  toAdd$SortOrder <- seq_len(nrow(toAdd))
   toAdd <- merge(toAdd, metadata, by.x = 'SubjectId', all.x = TRUE)
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  seuratObj$SampleType <- ifelse(seuratObj$SampleDate < seuratObj$NxDate, yes = 'Pre-infection', no = 'Necropsy')
+
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
 
   return(seuratObj)

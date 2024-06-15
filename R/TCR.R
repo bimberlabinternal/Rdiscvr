@@ -168,7 +168,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
 
   tcr <- tcrIntersect
 
-  merged <- merge(data.frame(barcode = gexBarcodes, sortOrder = 1:length(gexBarcodes)), tcr, by = c('barcode'), all.x = T)
+  merged <- merge(data.frame(barcode = gexBarcodes, sortOrder = seq_along(gexBarcodes)), tcr, by = c('barcode'), all.x = T)
   rownames(merged) <- merged$barcode
   merged <- dplyr::arrange(merged, sortOrder)
   merged <- merged[colnames(merged) != 'sortOrder']
