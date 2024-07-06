@@ -344,14 +344,19 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   )
   names(metadata) <- c('SubjectId', 'NxTimepoint', 'NxPVL', 'NxDate', 'InfectionDate', 'Dose', 'Route', 'PcCohort')
 
-  if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
-    if (any(is.na(seuratObj$cDNA_ID))) {
-      stop('There were missing cDNA_IDs in the seurat object')
-    }
-
-    missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
-    stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
+  if (errorIfUnknownIdsFound && any(is.na(seuratObj$cDNA_ID))) {
+    stop('There were blank cDNA_IDs in the seurat object')
   }
+
+  # TODO: restore this after cDNA_IDs added to metadata
+  # if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
+  #   if (any(is.na(seuratObj$cDNA_ID))) {
+  #     stop('There were missing cDNA_IDs in the seurat object')
+  #   }
+  #
+  #   missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
+  #   stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
+  # }
 
   if (any(duplicated(metadata$cDNA_ID))) {
    dups <- metadata$cDNA_ID[duplicated(metadata$cDNA_ID)]
