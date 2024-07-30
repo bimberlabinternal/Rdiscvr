@@ -116,10 +116,10 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     folderPath="/Labs/Bimber/627",
     schemaName="lists",
     queryName="TB_Studies",
-    colSelect="subjectid,study,vaccine,challenge,ChallengeType,NecropsyDate,PID,PathScore,LungPathScore,ChallengeDate,R_Caudal_Lung_1_Disease",
+    colSelect="subjectid,study,vaccine,challenge,ChallengeType,NecropsyDate,PID,PathScore,LungPathScore,ChallengeDate,R_Caudal_Lung_1_Disease,LeftLungPathScore",
     colNameOpt="rname"
   )
-  names(metadata) <- c('SubjectId', 'TB_Study', 'Vaccine', 'Challenge', 'ChallengeType', 'NecropsyDate', 'PID', 'PathScore', 'LungPathScore', 'ChallengeDate', 'R_Caudal_Lung_1_Disease')
+  names(metadata) <- c('SubjectId', 'TB_Study', 'Vaccine', 'Challenge', 'ChallengeType', 'NecropsyDate', 'PID', 'PathScore', 'LungPathScore', 'ChallengeDate', 'R_Caudal_Lung_1_Disease', 'LeftLungPathScore')
 
   # CFU_Tissue_Rescaled
   cDNA$CFU_Homogenate[is.na(cDNA$CFU_Homogenate)] <- 0
