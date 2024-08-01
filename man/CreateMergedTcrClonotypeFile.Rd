@@ -10,7 +10,7 @@ CreateMergedTcrClonotypeFile(
   overwriteTcrTable = F,
   downloadPath = tempdir(),
   allowMissing = FALSE,
-  cellRangerType = "filtered_contig_annotations.csv",
+  cellRangerType = "all_contig_annotations_combined.csv",
   dropConflictingVJSegments = TRUE
 )
 }
@@ -25,7 +25,7 @@ CreateMergedTcrClonotypeFile(
 
 \item{allowMissing}{If true, samples missing data will be skipped. Otherwise, the function will fail.}
 
-\item{cellRangerType}{The type of cellranger data to download. Either all_contig_annotations.csv or filtered_contig_annotations.csv}
+\item{cellRangerType}{The type of cellranger data to download. all_contig_annotations_combined is a special case for data processed by prime-seq, which merged the a/b and g/d calls}
 
 \item{dropConflictingVJSegments}{If true, any TRB rows with a TRA/D V/J segments will as dropped, as are TRA rows with TRB/G segments}
 }

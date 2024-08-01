@@ -15,10 +15,11 @@ utils::globalVariables(
 #' @param dropExisting If true, any existing clonotype data will be replaced
 #' @param overwriteTcrTable If true, any existing table(s) of TCR clones will be overwritten and re-downloaded
 #' @param allowMissing If true, samples missing data will be skipped. Otherwise, the function will fail.
+#' @param dropConflictingVJSegments If true, any TRB rows with a TRA/D V/J segments will as dropped, as are TRA rows with TRB/G segments
 #' @importFrom magrittr %>%
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dropExisting = T, overwriteTcrTable = F, allowMissing = FALSE){
+DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dropExisting = T, overwriteTcrTable = F, allowMissing = FALSE, dropConflictingVJSegments = TRUE){
   if (all(is.null(seuratObject[['BarcodePrefix']]))){
     stop('Seurat object lacks BarcodePrefix column')
   }
@@ -46,7 +47,7 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
     }
 
     doDropExisting <- i == 1 && dropExisting
-    seuratObject <- .AppendTcrClonotypes(seuratObject, clonotypeFile, barcodePrefix = barcodePrefix, dropExisting = doDropExisting)
+    seuratObject <- .AppendTcrClonotypes(seuratObject, clonotypeFile, barcodePrefix = barcodePrefix, dropExisting = doDropExisting, dropConflictingVJSegments)
   }
 
   return(seuratObject)
@@ -59,10 +60,10 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
 #' @param overwriteTcrTable If true, any existing table(s) of TCR clones will be overwritten and re-downloaded
 #' @param downloadPath The output filepath for per-dataset files
 #' @param allowMissing If true, samples missing data will be skipped. Otherwise, the function will fail.
-#' @param cellRangerType The type of cellranger data to download. Either all_contig_annotations.csv or filtered_contig_annotations.csv
+#' @param cellRangerType The type of cellranger data to download. all_contig_annotations_combined is a special case for data processed by prime-seq, which merged the a/b and g/d calls. filtered_contig_annotations_combined.csv is a second option.
 #' @param dropConflictingVJSegments If true, any TRB rows with a TRA/D V/J segments will as dropped, as are TRA rows with TRB/G segments
 #' @export
-CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTable = F, downloadPath = tempdir(), allowMissing = FALSE, cellRangerType = 'filtered_contig_annotations.csv', dropConflictingVJSegments = TRUE){
+CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTable = F, downloadPath = tempdir(), allowMissing = FALSE, cellRangerType = 'all_contig_annotations_combined.csv', dropConflictingVJSegments = TRUE){
   if (all(is.null(seuratObj[['BarcodePrefix']]))){
     stop('Seurat object lacks BarcodePrefix column')
   }
@@ -97,29 +98,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
 
     # Check for TRA/B segments that dont match the chain:
     if (dropConflictingVJSegments) {
-      sel <- dat$chain == 'TRA' & grepl(dat$v_gene, pattern = 'BV|GV')
-      if (sum(sel) > 0) {
-        print(paste0('Dropping TRA rows with a BV/GV genes, total: ', sum(sel)))
-        dat <- dat[!sel,]
-      }
-
-      sel <- dat$chain == 'TRA' & grepl(dat$j_gene, pattern = 'BJ|GJ')
-      if (sum(sel) > 0) {
-        print(paste0('Dropping TRA rows with a BJ/GJ genes, total: ', sum(sel)))
-        dat <- dat[!sel,]
-      }
-
-      sel <- dat$chain == 'TRB' & grepl(dat$v_gene, pattern = 'AV|DV')
-      if (sum(sel) > 0) {
-        print(paste0('Dropping TRB rows with a AV/DV genes, total: ', sum(sel)))
-        dat <- dat[!sel,]
-      }
-
-      sel <- dat$chain == 'TRB' & grepl(dat$v_gene, pattern = 'AJ|DJ')
-      if (sum(sel) > 0) {
-        print(paste0('Dropping TRB rows with a AJ/DJ genes, total: ', sum(sel)))
-        dat <- dat[!sel,]
-      }
+      dat <- .DropConflictingVJSegments(dat)
     }
 
     write.table(dat,
@@ -132,8 +111,35 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
   }
 }
 
-.AppendTcrClonotypes <- function(seuratObject = NA, clonotypeFile = NA, barcodePrefix = NULL, dropExisting = F){
-  tcr <- .ProcessAndAggregateTcrClonotypes(clonotypeFile)
+.DropConflictingVJSegments <- function(dat) {
+  sel <- dat$chain == 'TRA' & grepl(dat$v_gene, pattern = 'BV|GV')
+  if (sum(sel) > 0) {
+    print(paste0('Dropping TRA rows with a BV/GV genes, total: ', sum(sel)))
+    dat <- dat[!sel,]
+  }
+
+  sel <- dat$chain == 'TRA' & grepl(dat$j_gene, pattern = 'BJ|GJ')
+  if (sum(sel) > 0) {
+    print(paste0('Dropping TRA rows with a BJ/GJ genes, total: ', sum(sel)))
+    dat <- dat[!sel,]
+  }
+
+  sel <- dat$chain == 'TRB' & grepl(dat$v_gene, pattern = 'AV|DV')
+  if (sum(sel) > 0) {
+    print(paste0('Dropping TRB rows with a AV/DV genes, total: ', sum(sel)))
+    dat <- dat[!sel,]
+  }
+
+  sel <- dat$chain == 'TRB' & grepl(dat$j_gene, pattern = 'AJ|DJ')
+  if (sum(sel) > 0) {
+    print(paste0('Dropping TRB rows with a AJ/DJ genes, total: ', sum(sel)))
+    dat <- dat[!sel,]
+  }
+
+  return(dat)
+}
+.AppendTcrClonotypes <- function(seuratObject = NA, clonotypeFile = NA, barcodePrefix = NULL, dropExisting = F, dropConflictingVJSegments = FALSE){
+  tcr <- .ProcessAndAggregateTcrClonotypes(clonotypeFile, dropConflictingVJSegments)
   if (!is.null(barcodePrefix)){
     tcr$barcode <- as.character(tcr$barcode)
     tcr$barcode <- paste0(barcodePrefix, '_', tcr$barcode)
@@ -265,7 +271,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
   return(rows$rowid[1])
 }
 
-.DownloadCellRangerClonotypes <- function(vLoupeId, outFile, overwrite = T, fileName = 'all_contig_annotations.csv') {
+.DownloadCellRangerClonotypes <- function(vLoupeId, outFile, overwrite = T, fileName = 'all_contig_annotations_combined.csv') {
   #The file will be in the same directory as the VLoupe file
   rows <- labkey.selectRows(
 		baseUrl=.getBaseUrl(),
@@ -313,7 +319,7 @@ utils::globalVariables(
 	add = TRUE
 )
 
-.ProcessTcrClonotypes <- function(clonotypeFile){
+.ProcessTcrClonotypes <- function(clonotypeFile, dropConflictingVJSegments = FALSE){
   tcr <- utils::read.table(clonotypeFile, header=T, sep = ',', fill = TRUE)
   tcr <- tcr[tcr$cdr3 != 'None' & tcr$cdr3 != '',]
 
@@ -322,6 +328,10 @@ utils::globalVariables(
 
   # Many TRDV genes can be used as either alpha or delta TCRs.  10x classifies and TRDV/TRAJ/TRAC clones as 'Multi'.  Re-classify these:
   tcr$chain[tcr$chain == 'Multi' & grepl(pattern = 'TRD', x = tcr$v_gene) & grepl(pattern = 'TRAJ', x = tcr$j_gene) & grepl(pattern = 'TRAC', x = tcr$c_gene)] <- c('TRA')
+
+  if (dropConflictingVJSegments) {
+    tcr <- .DropConflictingVJSegments(tcr)
+  }
 
   #Download named clonotypes and merge:
   # Add clone names:
@@ -375,8 +385,8 @@ utils::globalVariables(
 #' @import Rlabkey
 #' @importFrom dplyr %>% coalesce group_by summarise
 #' @importFrom naturalsort naturalsort
-.ProcessAndAggregateTcrClonotypes <- function(clonotypeFile){
-  tcr <- .ProcessTcrClonotypes(clonotypeFile)
+.ProcessAndAggregateTcrClonotypes <- function(clonotypeFile, dropConflictingVJSegments = FALSE){
+  tcr <- .ProcessTcrClonotypes(clonotypeFile, dropConflictingVJSegments = dropConflictingVJSegments)
 
   # Summarise, grouping by barcode
   tcr <- tcr %>% group_by(barcode) %>% summarise(
