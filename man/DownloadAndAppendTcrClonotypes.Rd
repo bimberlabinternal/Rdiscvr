@@ -9,7 +9,8 @@ DownloadAndAppendTcrClonotypes(
   outPath = tempdir(),
   dropExisting = T,
   overwriteTcrTable = F,
-  allowMissing = FALSE
+  allowMissing = FALSE,
+  dropConflictingVJSegments = TRUE
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ DownloadAndAppendTcrClonotypes(
 \item{overwriteTcrTable}{If true, any existing table(s) of TCR clones will be overwritten and re-downloaded}
 
 \item{allowMissing}{If true, samples missing data will be skipped. Otherwise, the function will fail.}
+
+\item{dropConflictingVJSegments}{If true, any TRB rows with a TRA/D V/J segments will as dropped, as are TRA rows with TRB/G segments}
 }
 \value{
 A modified Seurat object.
