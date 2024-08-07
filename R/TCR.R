@@ -32,6 +32,14 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
 
     vloupeId <- .FindMatchedVloupe(barcodePrefix)
     if (is.na(vloupeId)){
+      hasTcr <- .HasTcrLibrary(barcodePrefix)
+      if (is.null(hasTcr)) {
+        stop(paste0('Unable to determine if GEX library has a TCR library: ', barcodePrefix))
+      } else if (!hasTcr) {
+        message(paste0('GEX library lacks a TCR library, skipping: ', barcodePrefix))
+        next
+      }
+
       if (allowMissing) {
         warning(paste0('Unable to find VLoupe file for loupe file: ', barcodePrefix))
         next
@@ -51,6 +59,41 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
   }
 
   return(seuratObject)
+}
+
+.HasTcrLibrary <- function(loupeDataId) {
+  loupeRows <- suppressWarnings(labkey.selectRows(
+    baseUrl=.getBaseUrl(),
+    folderPath=.getLabKeyDefaultFolder(),
+    schemaName="sequenceanalysis",
+    queryName="outputfiles",
+    colSelect="readset",
+    colFilter=makeFilter(c("rowid", "EQUAL", loupeDataId)),
+    containerFilter=NULL,
+    colNameOpt="rname"
+  ))
+
+  if (nrow(loupeRows) == 0) {
+    return(NULL)
+  }
+
+  rs <- loupeRows$readset[1]
+  tcrRows <- suppressWarnings(labkey.selectRows(
+    baseUrl=.getBaseUrl(),
+    folderPath=.getLabKeyDefaultFolder(),
+    schemaName="singlecell",
+    queryName="cdna_libraries",
+    colSelect="tcrreadsetid",
+    colFilter=makeFilter(c("readsetId", "EQUAL", rs)),
+    containerFilter=NULL,
+    colNameOpt="rname"
+  ))
+
+  if (nrow(tcrRows) == 0) {
+    return(NULL)
+  }
+
+  return(length(unique(tcrRows$tcrreadsetid[!is.na(tcrRows$tcrreadsetid)])) > 0)
 }
 
 #' @title CreateMergedTcrClonotypeFile
@@ -297,6 +340,16 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
 
   remotePath <- rows[['dataid_webdavurlrelative']]
   remotePath <- paste0(dirname(remotePath), '/', fileName)
+
+  fe <- labkey.webdav.pathExists(
+    baseUrl=.getBaseUrl(),
+    folderPath=paste0(.getLabKeyDefaultFolder(),wb),
+    remoteFilePath = remotePath
+  )
+
+  if (!fe) {
+    stop(paste0('Remote file does not exist: ', remotePath))
+  }
 
   success <- labkey.webdav.get(
 		baseUrl=.getBaseUrl(),
