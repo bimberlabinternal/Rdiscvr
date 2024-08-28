@@ -18,12 +18,16 @@ ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     schemaName="lists",
     queryName="PC475",
     colNameOpt="rname",
-    colSelect = 'libraryid,label,timepoint,wpi,LibraryId/sortId/sampleId/subjectId,Nx_pVL,SIV_RNA,SIV_DNA,CAVL_SampleName',
+    colSelect = 'libraryid,label,timepoint,wpi,dpi,LibraryId/sortId/sampleId/subjectId,LibraryId/sortId/sampleId/sampledate,Nx_pVL,SIV_RNA,SIV_DNA,CAVL_SampleName,ART_Initiation,ART_Release,ChallengeDate',
   )
-  names(metadata) <- c('cDNA_ID', 'TimepointLabel', 'Timepoint', 'WPI', 'SubjectId', 'Nx_pVL', 'SIV_RNA', 'SIV_DNA', 'CAVL_SampleName')
+  names(metadata) <- c('cDNA_ID', 'TimepointLabel', 'Timepoint', 'WPI', 'DPI', 'SubjectId', 'SampleDate', 'Nx_pVL', 'SIV_RNA', 'SIV_DNA', 'CAVL_SampleName', 'ART_Initiation', 'ART_Release', 'ChallengeDate')
 
   metadata$TimepointLabel <- naturalsort::naturalfactor(metadata$TimepointLabel)
   metadata$Timepoint <- naturalsort::naturalfactor(metadata$Timepoint)
+
+  metadata$DaysPostArtInitiation <- as.integer(as.Date(metadata$SampleDate) - as.Date(metadata$ART_Initiation))
+  metadata$WeeksPostArtInitiation <- round(metadata$DaysPostArtInitiation / 7, 1)
+  metadata$DaysPostArtRelease <- as.integer(as.Date(metadata$SampleDate) - as.Date(metadata$ART_Release))
 
   metadata2 <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
@@ -31,13 +35,21 @@ ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     schemaName="laboratory",
     queryName="project_usage",
     colNameOpt="rname",
-    colSelect = 'subjectid,groupname',
-    colFilter = makeFilter(c('project', 'EQUALS', 'PC475 / HIV Cure'))
+    colSelect = 'subjectid,groupname,project',
+    colFilter = makeFilter(c('project', 'IN', 'PC475 / HIV Cure;PC567'))
   )
-  names(metadata2) <- c('SubjectId', 'PC475_Group')
+  names(metadata2) <- c('SubjectId', 'PC475_Group', 'project')
+  metadata2$PC475_Group[metadata2$project == 'PC567'] <- 'ART-Only'
+  metadata2 <- metadata2[names(metadata2) != 'project']
 
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.x = T)
-  metadata <- metadata[names(metadata) != 'SubjectId']
+  metadata <- metadata[! names(metadata) %in% c('SubjectId', 'SampleDate')]
+
+  metadata$ViremicCategory <- NA
+  metadata$ViremicCategory[is.na(metadata$ChallengeDate) & !is.na(metadata$ART_Initiation)] <- 'ART-Only'
+  metadata$ViremicCategory[!is.na(metadata$ChallengeDate) & metadata$Nx_pVL == 0] <- 'Aviremic'
+  metadata$ViremicCategory[!is.na(metadata$ChallengeDate) & metadata$Nx_pVL > 0] <- 'Viremic'
+  metadata$ViremicCategory[!is.na(metadata$ChallengeDate) & metadata$PC475_Group == 'ON-ART'] <- 'On-ART'
 
   if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
     if (any(is.na(seuratObj$cDNA_ID))) {
