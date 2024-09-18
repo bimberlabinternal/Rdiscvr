@@ -381,8 +381,10 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+  toAdd$NxDate <- as.Date(toAdd$NxDate)
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  seuratObj$SampleDate <- as.Date(seuratObj$SampleDate)
   seuratObj$SampleType <- ifelse(seuratObj$SampleDate < seuratObj$NxDate, yes = 'Pre-infection', no = 'Necropsy')
 
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
