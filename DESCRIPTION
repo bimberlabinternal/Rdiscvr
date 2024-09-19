@@ -38,7 +38,7 @@ Suggests:
 Remotes:
     bimberlab/cellhashR,
     bimberlabinternal/CellMembrane,
-    bimberlabinternal/RIRA,
+    bimberlab/RIRA,
     pengminshi/cFIT
 RoxygenNote: 7.3.1
 URL: https://github.com/BimberLabInternal/Rdiscvr
