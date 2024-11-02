@@ -11,6 +11,7 @@ ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   if (reApplyMetadata) {
     seuratObj <- .ApplyMetadata(seuratObj)
   }
+  seuratObj <- .AppendDemographics(seuratObj)
 
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
@@ -85,6 +86,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   if (reApplyMetadata) {
     seuratObj <- .ApplyMetadata(seuratObj)
   }
+  seuratObj <- .AppendDemographics(seuratObj)
 
   metadata <- .GetTbMetadata()
 
@@ -220,6 +222,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   if (reApplyMetadata) {
     seuratObj <- .ApplyMetadata(seuratObj)
   }
+  seuratObj <- .AppendDemographics(seuratObj)
   
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
@@ -283,6 +286,7 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   if (reApplyMetadata) {
     seuratObj <- .ApplyMetadata(seuratObj)
   }
+  seuratObj <- .AppendDemographics(seuratObj)
   
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
@@ -345,6 +349,7 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   if (reApplyMetadata) {
     seuratObj <- .ApplyMetadata(seuratObj)
   }
+  seuratObj <- .AppendDemographics(seuratObj)
 
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
@@ -415,4 +420,30 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   }
 
   return(seuratObj)
+}
+
+.AppendDemographics <- function(seuratObj) {
+    if (! 'SubjectId' %in% names(seuratObj@meta.data)) {
+      stop('Missing SubjectId column!')
+    }
+
+    dat <- labkey.selectRows(
+      baseUrl="https://prime-seq.ohsu.edu",
+      folderPath="/Internal/PMR",
+      schemaName="study",
+      queryName="Demographics",
+      colSelect="Id,gender,species,birth,death",
+      colFilter=makeFilter(c('Id', 'IN', paste0(unique(seuratObj$SubjectId), collapse = ';'))),
+      containerFilter=NULL,
+      colNameOpt="rname"
+    )
+    names(dat) <- c('SubjectId', 'Sex', 'Species', 'Birth', 'Death')
+
+    toAdd <- seuratObj@meta.data[,'SubjectId', drop = FALSE]
+    rownames(toAdd) <- rownames(seuratObj@meta.data)
+
+    toAdd <- merge(toAdd, dat, by = 'SubjectId', all.x = TRUE)
+    seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+
+    return(seuratObj)
 }
