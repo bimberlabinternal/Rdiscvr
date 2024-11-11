@@ -21,7 +21,6 @@ jobs:
       matrix:
         config:
           #- { os: 24.04, r: 'devel', bioc: '3.21' } # Bioc 3.21 (devel) requires R 4.5
-          - { os: 24.04, r: 'next', bioc: '3.21' } # Needs R 4.5
           - { os: 24.04, r: '4.4', bioc: '3.20' }
           - { os: 22.04, r: '4.3', bioc: '3.18' }
 
