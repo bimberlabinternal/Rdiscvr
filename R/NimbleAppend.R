@@ -185,13 +185,18 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
 
   if (doPlot) {
     print('Plotting features')
-    feats <- rownames(seuratObject[[targetAssayName]])
-    if (length(feats) > maxFeaturesToPlot){
-        print(paste0('Too many features, will plot the first: ', maxFeaturesToPlot))
-        feats <- feats[1:maxFeaturesToPlot]
-    }
+    reductions <- intersect(names(seuratObj@reductions), c('umap', 'tsne', 'wnn'))
+    if (length(reductions) == 0){
+        print('No reductions, cannot plot')
+    } else {
+        feats <- rownames(seuratObject[[targetAssayName]])
+        if (length(feats) > maxFeaturesToPlot){
+            print(paste0('Too many features, will plot the first: ', maxFeaturesToPlot))
+            feats <- feats[1:maxFeaturesToPlot]
+        }
 
-    RIRA::PlotMarkerSeries(seuratObject, features = feats, title = targetAssayName)
+        RIRA::PlotMarkerSeries(seuratObject, reductions = reductions, features = feats, title = targetAssayName)
+    }
   }
   
   return(seuratObject)
