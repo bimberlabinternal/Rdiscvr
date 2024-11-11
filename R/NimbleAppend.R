@@ -191,7 +191,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
         feats <- feats[1:maxFeaturesToPlot]
     }
 
-    RIRA::PlotMarkerSeries(seuratObj, features = feats, title = targetAssayName)
+    RIRA::PlotMarkerSeries(seuratObject, features = feats, title = targetAssayName)
   }
   
   return(seuratObject)
