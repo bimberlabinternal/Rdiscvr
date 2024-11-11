@@ -185,7 +185,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
 
   if (doPlot) {
     print('Plotting features')
-    reductions <- intersect(names(seuratObj@reductions), c('umap', 'tsne', 'wnn'))
+    reductions <- intersect(names(seuratObject@reductions), c('umap', 'tsne', 'wnn'))
     if (length(reductions) == 0){
         print('No reductions, cannot plot')
     } else {
