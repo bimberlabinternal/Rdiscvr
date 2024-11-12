@@ -20,8 +20,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: 22.04, r: 'devel', bioc: 'devel'}
-          - {os: 22.04, r: '4.3', bioc: '3.18'}
+          #- { os: 24.04, r: 'devel', bioc: '3.21' } # Bioc 3.21 (devel) requires R 4.5
+          - { os: 24.04, r: '4.4', bioc: '3.20' }
+          - { os: 22.04, r: '4.3', bioc: '3.18' }
 
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
@@ -42,10 +43,13 @@ jobs:
       # libhdf5-dev added for cellmembrane/SeuratDisk
       # libsodium-dev installed for VISION
       # libharfbuzz-dev libfribidi-dev are added to fix textshaping install error
+      # libglpk-dev added due to igraph / bluster /scran error
+      # libudunits2-dev added due to units / ggpattern error
+      # libgdal-dev added for ggpattern / sf / gdal-config missing error
       - name: Install packages
         if: runner.os != 'Windows'
         run: |
-          sudo apt-get update && sudo apt-get install -yq python3-pip libpoppler-cpp-dev libmagick++-dev libhdf5-dev libsodium-dev libharfbuzz-dev libfribidi-dev
+          sudo apt-get update && sudo apt-get install -yq python3-pip libpoppler-cpp-dev libmagick++-dev libhdf5-dev libsodium-dev libharfbuzz-dev libfribidi-dev libglpk-dev libudunits2-dev libgdal-dev
           python3 -m pip install --upgrade pip
           python3 -m pip install --user wheel setuptools
 

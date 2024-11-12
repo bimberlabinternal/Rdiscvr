@@ -14,8 +14,8 @@
 #' @param performDietSeurat If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is true out of caution.
 #' @param assayForLibrarySize If normalizeData is true, then this is the assay used for librarySize when normalizing. If assayForLibrarySize equals targetAssayName, Seurat::NormalizeData is used.
 #' @param maxLibrarySizeRatio If normalizeData is true, then this is passed to CellMembrane::LogNormalizeUsingAlternateAssay
-# '@param doPlot If true, FeaturePlots will be generated for the appended features
-# '@param maxFeaturesToPlot If doPlot is true, this is the maximum number of features to plot
+#' @param doPlot If true, FeaturePlots will be generated for the appended features
+#' @param maxFeaturesToPlot If doPlot is true, this is the maximum number of features to plot
 #' @return A modified Seurat object.
 #' @export
 AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, doPlot = TRUE, maxFeaturesToPlot = 40) {
@@ -185,13 +185,18 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
 
   if (doPlot) {
     print('Plotting features')
-    feats <- rownames(seuratObject[[targetAssayName]])
-    if (length(feats) > maxFeaturesToPlot){
-        print(paste0('Too many features, will plot the first: ', maxFeaturesToPlot))
-        feats <- feats[1:maxFeaturesToPlot]
-    }
+    reductions <- intersect(names(seuratObject@reductions), c('umap', 'tsne', 'wnn'))
+    if (length(reductions) == 0){
+        print('No reductions, cannot plot')
+    } else {
+        feats <- rownames(seuratObject[[targetAssayName]])
+        if (length(feats) > maxFeaturesToPlot){
+            print(paste0('Too many features, will plot the first: ', maxFeaturesToPlot))
+            feats <- feats[1:maxFeaturesToPlot]
+        }
 
-    RIRA::PlotMarkerSeries(seuratObject, features = feats, title = targetAssayName)
+        RIRA::PlotMarkerSeries(seuratObject, reductions = reductions, features = feats, title = targetAssayName)
+    }
   }
   
   return(seuratObject)

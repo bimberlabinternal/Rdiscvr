@@ -39,6 +39,10 @@ AppendNimbleCounts(
 \item{assayForLibrarySize}{If normalizeData is true, then this is the assay used for librarySize when normalizing. If assayForLibrarySize equals targetAssayName, Seurat::NormalizeData is used.}
 
 \item{maxLibrarySizeRatio}{If normalizeData is true, then this is passed to CellMembrane::LogNormalizeUsingAlternateAssay}
+
+\item{doPlot}{If true, FeaturePlots will be generated for the appended features}
+
+\item{maxFeaturesToPlot}{If doPlot is true, this is the maximum number of features to plot}
 }
 \value{
 A modified Seurat object.
