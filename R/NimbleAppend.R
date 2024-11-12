@@ -6,7 +6,7 @@
 #'
 #' @param seuratObject A Seurat object.
 #' @param nimbleFile A nimble file, which is a TSV of feature counts created by nimble
-#' @param dropAmbiguousFeatures If true, any ambiguous features (defined as containing a comma) will be discarded
+#' @param maxAmbiguityAllowed If provided, any features representing more than ths value will be discarded. For example, 'Feat1,Feat2,Feat3' represents 3 features. maxAmbiguityAllowed=1 results in removal of all ambiguous features.
 #' @param targetAssayName The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.
 #' @param renameConflictingFeatures If true, when appending to an existing assay, any conflicting feature names will be renamed, appending the value of duplicateFeatureSuffix
 #' @param duplicateFeatureSuffix If renameConflictingFeatures is true, this string will be appended to duplicated feature names
@@ -18,7 +18,7 @@
 #' @param maxFeaturesToPlot If doPlot is true, this is the maximum number of features to plot
 #' @return A modified Seurat object.
 #' @export
-AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAmbiguousFeatures = TRUE, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, doPlot = TRUE, maxFeaturesToPlot = 40) {
+AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmbiguityAllowed = 0, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, doPlot = TRUE, maxFeaturesToPlot = 40) {
   if (!file.exists(nimbleFile)) {
     stop(paste0("Nimble file not found: ", nimbleFile))
   }
@@ -54,26 +54,43 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   }
 
   #Remove ambiguous features
-  ambigFeatRows <- grepl(",", df$V1)
+  totalHitsByRow <- sapply(df$V1, function(y){
+    return(length(unlist(strsplit(y, split = ','))))
+  })
+
+  if (is.na(maxAmbiguityAllowed) || is.null(maxAmbiguityAllowed)){
+    maxAmbiguityAllowed <- Inf
+  }
+  else if (maxAmbiguityAllowed == 0) {
+    maxAmbiguityAllowed <- 1
+  }
+
+  ambigFeatRows <- totalHitsByRow > maxAmbiguityAllowed
+
   if (sum(ambigFeatRows) > 0) {
-    if (dropAmbiguousFeatures) {
       print(paste0('Dropping ', sum(ambigFeatRows), ' rows with ambiguous features. (', sum(ambigFeatRows),' of ', nrow(df), ')'))
       x <- df$V1[ambigFeatRows]
-
-      # For the purposes of reporting only, collapse highly ambiguous results
-      totalHitsByRow <- sapply(x, function(y){
-        return(length(unlist(strsplit(y, split = ','))))
-      })
+      totalHitsByRow <- totalHitsByRow[ambigFeatRows]
       x[totalHitsByRow > 3] <- 'ManyHits'
 
       x <- sort(table(x), decreasing = T)
       x <- data.frame(Feature = names(x), Total = as.numeric(unname(x)))
       print(x)
       df <- df[!ambigFeatRows, , drop = F]
-    }
+
+      paste0('Distinct features after pruning: ', length(unique(df$V1)))
   }
 
   tryCatch({
+    # Group to ensure we have one value per combination:
+    d <- as.integer(df$V2)
+    if (any(is.na(d))){
+        stop(paste0('Non-integer count values found, were: ', paste0(df$V2[is.na(d)], collapse = ',')))
+    }
+    rm(d)
+
+    paste0('Distinct features: ', length(unique(df$V1)))
+
     df <- tidyr::pivot_wider(df, names_from=V3, values_from=V2, values_fill=0)
   }, error = function(e){
     write.table(df, file = 'debug.nimble.txt.gz', sep = '\t', quote = F, row.names = F)

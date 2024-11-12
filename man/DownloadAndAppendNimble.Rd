@@ -11,7 +11,7 @@ DownloadAndAppendNimble(
   enforceUniqueFeatureNames = TRUE,
   allowableGenomes = NULL,
   ensureSamplesShareAllGenomes = TRUE,
-  dropAmbiguousFeatures = TRUE,
+  maxAmbiguityAllowed = 1,
   reuseExistingDownloads = FALSE,
   performDietSeurat = FALSE,
   normalizeData = TRUE,
@@ -32,7 +32,7 @@ DownloadAndAppendNimble(
 
 \item{ensureSamplesShareAllGenomes}{If true, the function will fail unless all samples have data from the same set of genomes}
 
-\item{dropAmbiguousFeatures}{If true, any ambiguous feature (identified as containing a comma)}
+\item{maxAmbiguityAllowed}{If provided, any features representing more than ths value will be discarded. For example, 'Feat1,Feat2,Feat3' represents 3 features. maxAmbiguityAllowed=1 results in removal of all ambiguous features.}
 
 \item{reuseExistingDownloads}{If true, any pre-existing downloaded nimble TSVs will be re-used}
 

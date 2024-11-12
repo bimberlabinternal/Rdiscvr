@@ -8,7 +8,7 @@ AppendNimbleCounts(
   seuratObject,
   nimbleFile,
   targetAssayName,
-  dropAmbiguousFeatures = TRUE,
+  maxAmbiguityAllowed = 0,
   renameConflictingFeatures = TRUE,
   duplicateFeatureSuffix = ".Nimble",
   normalizeData = TRUE,
@@ -26,7 +26,7 @@ AppendNimbleCounts(
 
 \item{targetAssayName}{The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.}
 
-\item{dropAmbiguousFeatures}{If true, any ambiguous features (defined as containing a comma) will be discarded}
+\item{maxAmbiguityAllowed}{If provided, any features representing more than ths value will be discarded. For example, 'Feat1,Feat2,Feat3' represents 3 features. maxAmbiguityAllowed=1 results in removal of all ambiguous features.}
 
 \item{renameConflictingFeatures}{If true, when appending to an existing assay, any conflicting feature names will be renamed, appending the value of duplicateFeatureSuffix}
 
