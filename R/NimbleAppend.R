@@ -76,9 +76,9 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, dropAm
   tryCatch({
     df <- tidyr::pivot_wider(df, names_from=V3, values_from=V2, values_fill=0)
   }, error = function(e){
-    write.table(df, file = 'debug.nimble.txt', sep = '\t', quote = F, row.names = F)
+    write.table(df, file = 'debug.nimble.txt.gz', sep = '\t', quote = F, row.names = F)
 
-    print('Error pivoting input data, results saved to: debug.nimble.txt')
+    print(paste0('Error pivoting input data for assay:', targetAssayName, ', results saved to: debug.nimble.txt.gz'))
     print(conditionMessage(e))
     traceback()
     e$message <- paste0('Error pivoting nimble data. target assay: ', targetAssayName)
