@@ -68,7 +68,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
   ambigFeatRows <- totalHitsByRow > maxAmbiguityAllowed
 
   if (sum(ambigFeatRows) > 0) {
-      print(paste0('Dropping ', sum(ambigFeatRows), ' rows with ambiguous features. (', sum(ambigFeatRows),' of ', nrow(df), ')'))
+      print(paste0('Dropping ', sum(ambigFeatRows), ' rows with ambiguous features (>', maxAmbiguityAllowed, '), ', sum(ambigFeatRows),' of ', nrow(df)))
       x <- df$V1[ambigFeatRows]
       totalHitsByRow <- totalHitsByRow[ambigFeatRows]
       x[totalHitsByRow > 3] <- 'ManyHits'
@@ -80,6 +80,20 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
 
       paste0('Distinct features after pruning: ', length(unique(df$V1)))
   }
+
+    # Ensure consistent sorting of ambiguous features, and re-group if needed:
+    if (any(grepl(df$V1, pattern = ','))) {
+        print('Ensuring consistent feature sort within ambiguous features:')
+        df$V1 <- unlist(sapply(df$V1, function(y){
+          return(paste0(sort(unlist(strsplit(y, split = ','))), collapse = ','))
+        }))
+
+        df <- df %>%
+          group_by(V1, V3) %>%
+          summarize(V2 = sum(V2))
+
+      paste0('Distinct features after re-grouping: ', length(unique(df$V1)))
+    }
 
   tryCatch({
     # Group to ensure we have one value per combination:
