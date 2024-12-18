@@ -65,13 +65,13 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
   # resolve using deleted
   prefixNotFound <- prefixes[!prefixes %in% outputFiles$rowid]
   if (length(prefixNotFound) > 0) {
-    print('The following barcodePrefix values were not found, looking for deleted records: ', paste0(prefixNotFound, collapse = ','))
+    print(paste0('The following barcodePrefix values were not found, looking for deleted records: ', paste0(prefixNotFound, collapse = ';')))
     translatedRows <- labkey.selectRows(
       baseUrl=.getBaseUrl(),
       folderPath=.getLabKeyDefaultFolder(),
       schemaName="singlecell",
       queryName="singlecellDatasets",
-      colFilter = makeFilter(c("loupeFileId", "IN", prefixNotFound, collapse = ";")),
+      colFilter = makeFilter(c("loupeFileId", "IN", paste0(prefixNotFound, collapse = ";"))),
       colSelect="loupeFileId,readsetId",
       containerFilter=NULL,
       colNameOpt="rname"
@@ -79,7 +79,7 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
 
     if (nrow(translatedRows) > 0) {
       names(translatedRows) <- c('rowid', 'readset')
-      print(paste0('The following IDs were matched to deleted objects: ', paste0(translatedRows$loupefileid)))
+      print(paste0('The following IDs were matched to deleted objects: ', paste0(translatedRows$rowid)))
       outputFiles <- rbind(outputFiles, translatedRows)
       prefixNotFound <- prefixes[!prefixes %in% outputFiles$rowid]
     }
