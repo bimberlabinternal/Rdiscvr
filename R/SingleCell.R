@@ -79,7 +79,7 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
 
     if (nrow(translatedRows) > 0) {
       names(translatedRows) <- c('rowid', 'readset')
-      print(paste0('The following IDs were matched to deleted objects: ', paste0(translatedRows$rowid)))
+      print(paste0('The following IDs were matched to deleted objects: ', paste0(translatedRows$rowid, collapse = ';')))
       outputFiles <- rbind(outputFiles, translatedRows)
       prefixNotFound <- prefixes[!prefixes %in% outputFiles$rowid]
     }
