@@ -12,7 +12,7 @@ AppendNimbleCounts(
   renameConflictingFeatures = TRUE,
   duplicateFeatureSuffix = ".Nimble",
   normalizeData = TRUE,
-  performDietSeurat = TRUE,
+  performDietSeurat = (targetAssayName \%in\% names(seuratObject@assays)),
   assayForLibrarySize = "RNA",
   maxLibrarySizeRatio = 0.05,
   doPlot = TRUE,
@@ -34,7 +34,7 @@ AppendNimbleCounts(
 
 \item{normalizeData}{If true, data will be normalized after appending/creating the assay. This will default to CellMembrane::LogNormalizeUsingAlternateAssay; however, if assayForLibrarySize equals targetAssayName then Seurat::NormalizeData is used.}
 
-\item{performDietSeurat}{If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is true out of caution.}
+\item{performDietSeurat}{If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is to perform this if the targetAssay exists.}
 
 \item{assayForLibrarySize}{If normalizeData is true, then this is the assay used for librarySize when normalizing. If assayForLibrarySize equals targetAssayName, Seurat::NormalizeData is used.}
 

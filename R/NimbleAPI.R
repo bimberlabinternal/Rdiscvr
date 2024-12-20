@@ -26,13 +26,14 @@ utils::globalVariables(
 #' @param maxLibrarySizeRatio Passed directly to AppendNimbleCounts()
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = FALSE, normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05) {
+DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = (targetAssayName %in% names(seuratObject@assays)), normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05) {
   # Ensure we have a DatasetId column
   if (is.null(seuratObject@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
   }
 
   if (performDietSeurat) {
+    print('Running DietSeurat')
     seuratObject <- Seurat::DietSeurat(seuratObject)
   }
 
