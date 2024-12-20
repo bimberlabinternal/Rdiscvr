@@ -102,7 +102,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
 }
 
 .queryNimble <- function(loupeDataId, allowableGenomes=NULL) {
-  rows <- labkey.selectRows(
+  rows <- suppressWarnings(labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="sequenceanalysis",
@@ -112,17 +112,17 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
     colFilter=makeFilter(c("rowid", "EQUAL", loupeDataId)),
     containerFilter=NULL,
     colNameOpt="rname"
-  )
+  ))
   
   if (nrow(rows) == 0) {
-    translated <- .ResolveLoupeIdFromDeleted(loupeDataId, colSelect="readsetId", throwOnError = FALSE)
+    translated <- .ResolveLoupeIdFromDeleted(loupeDataId, throwOnError = FALSE)
     if (all(is.null(translated))) {
       print(paste0("Loupe File ID: ", loupeDataId, " not found"))
       return(NA)
     }
 
-    names(translated) <- names(rows)
-    rows <- translated
+    rows <- translated[,'readsetid',drop = FALSE]
+    names(rows) <- c('readset')
   }
   
   readset <- unique(rows[['readset']])

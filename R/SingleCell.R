@@ -66,7 +66,7 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
   prefixNotFound <- prefixes[!prefixes %in% outputFiles$rowid]
   if (length(prefixNotFound) > 0) {
     print(paste0('The following barcodePrefix values were not found, looking for deleted records: ', paste0(prefixNotFound, collapse = ';')))
-    translatedRows <- labkey.selectRows(
+    translatedRows <- suppressWarnings(labkey.selectRows(
       baseUrl=.getBaseUrl(),
       folderPath=.getLabKeyDefaultFolder(),
       schemaName="singlecell",
@@ -75,7 +75,7 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
       colSelect="loupeFileId,readsetId",
       containerFilter=NULL,
       colNameOpt="rname"
-    )
+    ))
 
     if (nrow(translatedRows) > 0) {
       names(translatedRows) <- c('rowid', 'readset')

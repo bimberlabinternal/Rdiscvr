@@ -228,21 +228,21 @@ DownloadMetadataForSeuratObject <- function(outputFileId, outFile, overwrite = T
 	}
 }
 
-.ResolveLoupeIdFromDeleted <- function(loupeId, colSelect = "loupeFileId,readsetId", throwOnError = FALSE) {
-	print('The following loupeIds were not found, looking for deleted records: ', loupeId)
-	translatedRows <- labkey.selectRows(
+.ResolveLoupeIdFromDeleted <- function(loupeId, throwOnError = FALSE) {
+	print(paste0('The following loupeId was not found, looking for deleted records: ', loupeId))
+	translatedRows <- suppressWarnings(labkey.selectRows(
 		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="singlecell",
 		queryName="singlecellDatasets",
 		colFilter = makeFilter(c("loupeFileId", "EQUALS", loupeId)),
-		colSelect=colSelect,
+		colSelect="loupeFileId,readsetId",
 		containerFilter=NULL,
 		colNameOpt="rname"
-	)
+	))
 
 	if (nrow(translatedRows) > 0) {
-		print(paste0('The following IDs were matched to deleted objects: ', paste0(translatedRows$loupefileid)))
+		print(paste0('The following ID was matched to a deleted object: ', paste0(translatedRows$loupefileid, collapse = ';')))
 		return(translatedRows)
 	}
 

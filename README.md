@@ -25,3 +25,4 @@ library(Rdiscvr)
     
 Rdiscvr::SetLabKeyDefaults(baseUrl = 'https://myserver.com', defaultFolder = 'Labs/Bimber')
 ```
+Also, interaction between RDiscvr and the LabKey server require authentication. You can setup a .netrc file [using these instructions](https://www.labkey.org/Documentation/wiki-page.view?name=netrc). 
