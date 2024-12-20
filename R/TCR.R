@@ -282,14 +282,34 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
   ))
 
   if (nrow(rows) == 0) {
-    translated <- .ResolveLoupeIdFromDeleted(loupeDataId, throwOnError = FALSE)
-    if (all(is.null(translated))) {
+    translatedRows <- .ResolveLoupeIdFromDeleted(loupeDataId, throwOnError = FALSE)
+    if (all(is.null(translatedRows))) {
       print(paste0("Loupe File ID: ", loupeDataId, " not found"))
       return(NA)
     }
 
-    rows <- translated[,'readsetid',drop = FALSE]
-    names(rows) <- c('readset_cdna_tcrreadsetid')
+    if (nrow(translatedRows) > 0) {
+      loupeDataId <- unique(translatedRows$loupefileid)
+      if (length(loupeDataId) > 1) {
+        loupeDataId <- max(loupeDataId)
+        print(paste0('more than one matching loupeDataId found, using most recent: ', loupeDataId))
+      }
+
+      rows <- suppressWarnings(labkey.selectRows(
+        baseUrl=.getBaseUrl(),
+        folderPath=.getLabKeyDefaultFolder(),
+        schemaName="singlecell",
+        queryName="singlecellDatasets",
+        colSelect="cDNAId/tcrReadsetId",
+        colFilter=makeFilter(
+          c("loupeFileId", "EQUAL", loupeDataId)
+        ),
+        containerFilter=NULL,
+        colNameOpt="rname"
+      ))
+
+      names(rows) <- 'readset_cdna_tcrreadsetid'
+    }
   }
 
   if (nrow(rows) != 1) {
@@ -315,7 +335,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
   )
 
   if (nrow(rows) > 1){
-    print(paste0('more than one matching VLoupe file found, using most recent: ', tcrReadsetId))
+    print(paste0('more than one matching VLoupe file found, using most recent for TCR readset: ', tcrReadsetId))
     rows <- rows[1,,drop = F]
   } else if (nrow(rows) == 0) {
     print(paste0('Vloupe file not found for TCR readset: ', tcrReadsetId))
