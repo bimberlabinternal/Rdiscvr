@@ -268,7 +268,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
 }
 
 .FindMatchedVloupe <- function(loupeDataId) {
-  rows <- labkey.selectRows(
+  rows <- suppressWarnings(labkey.selectRows(
 		baseUrl=.getBaseUrl(),
 		folderPath=.getLabKeyDefaultFolder(),
 		schemaName="sequenceanalysis",
@@ -279,7 +279,18 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
 		colFilter=makeFilter(c("rowid", "EQUAL", loupeDataId)),
 		containerFilter=NULL,
 		colNameOpt="rname"
-  )
+  ))
+
+  if (nrow(rows) == 0) {
+    translated <- .ResolveLoupeIdFromDeleted(loupeDataId, throwOnError = FALSE)
+    if (all(is.null(translated))) {
+      print(paste0("Loupe File ID: ", loupeDataId, " not found"))
+      return(NA)
+    }
+
+    rows <- translated[,'readsetid',drop = FALSE]
+    names(rows) <- c('readset_cdna_tcrreadsetid')
+  }
 
   if (nrow(rows) != 1) {
     return(NA)
