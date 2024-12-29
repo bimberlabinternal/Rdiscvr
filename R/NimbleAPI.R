@@ -48,7 +48,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
 
     if (is.null(nimbleToGenome)) {
       if (ensureSamplesShareAllGenomes) {
-        stop(paste0('Nimble file(s) not found for dataset: ', datasetId, ', for genome(s): ', paste0(allowableGenomes, collapse = ';')))
+        stop(paste0('Nimble file(s) not found for datasetId: ', datasetId, ', for genome(s): ', paste0(allowableGenomes, collapse = ';')))
       } else {
         print(paste0('Nimble file(s) not found for dataset: ', datasetId, ', skipping'))
         genomeToDataset[[datasetId]] <- integer()
@@ -134,7 +134,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   }
 
   filterClauses <- list(c("readset", "EQUAL", readset),
-                        c("category", "EQUAL", "Nimble Alignment")
+                        c("category", "EQUAL", "Nimble Results")
   )
   if (!is.null(allowableGenomes)) {
     filterClauses <- append(filterClauses, list(c("library_id", "IN", paste0(allowableGenomes, collapse = ';'))))
