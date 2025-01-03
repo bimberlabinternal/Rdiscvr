@@ -601,7 +601,7 @@ RunCoNGA <- function(seuratObj,
 #' @param includeDeltaConstantRegionExpression Similar to includeConstantRegionExpression, but applies to the delta constant region alone
 #' @param collapseGOnlyToGD By default, cells with gamma-chain alone are reported as a separate category (since A/B T cells can encode a gamma-chain). If TRUE, these will be collapsed into the Gamma/Delta category.
 #' @export
-ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegionCountThreshold = 1.5, includeConstantRegionExpression = FALSE, includeDeltaConstantRegionExpression = TRUE, collapseGOnlyToGD = FALSE) {
+ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegionCountThreshold = 1.5, includeConstantRegionExpression = FALSE, includeDeltaConstantRegionExpression = FALSE, collapseGOnlyToGD = FALSE) {
   if (!'HasCDR3Data' %in% names(seuratObj@meta.data)) {
     stop('This seurat object appears to be missing TCR data. See RDiscvr::DownloadAndAppendTcrClonotypes')
   }
@@ -646,7 +646,7 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegion
   print(DimPlot(seuratObj, group.by = 'IsAlphaBeta'))
   
   seuratObj$TNK_Type <- NA
-  seuratObj$TNK_Type[seuratObj$IsNKCell] <- 'NK'
+  seuratObj$TNK_Type[seuratObj$IsNKCell] <- 'NK (CD3-/TCR-)'
   seuratObj$TNK_Type[seuratObj$IsGammaDelta] <- 'Gamma/Delta'
   seuratObj$TNK_Type[seuratObj$IsAlphaBeta] <- 'Alpha/Beta'
   seuratObj$TNK_Type[(seuratObj$IsNKCell + seuratObj$IsAlphaBeta + seuratObj$IsGammaDelta) > 1] <- 'Ambiguous'
@@ -659,6 +659,7 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegion
   }
 
   seuratObj$TNK_Type[is.na(seuratObj$TNK_Type)] <- 'Unknown'
+  seuratObj$TNK_Type[seuratObj$TNK_Type == 'Unknown' & !seuratObj$HasCDR3Data] <- 'Other (TCR-)'
   seuratObj$TNK_Type <- naturalsort::naturalfactor(seuratObj$TNK_Type)
 
   print(DimPlot(seuratObj, group.by = 'TNK_Type'))

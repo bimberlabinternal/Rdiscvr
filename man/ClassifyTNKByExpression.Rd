@@ -9,7 +9,7 @@ ClassifyTNKByExpression(
   assayName = "RNA",
   constantRegionCountThreshold = 1.5,
   includeConstantRegionExpression = FALSE,
-  includeDeltaConstantRegionExpression = TRUE,
+  includeDeltaConstantRegionExpression = FALSE,
   collapseGOnlyToGD = FALSE
 )
 }
