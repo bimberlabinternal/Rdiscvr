@@ -26,12 +26,12 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
 
   i <- 0
   allPrefixes <- unique(unlist(seuratObject[['BarcodePrefix']]))
+  hasTcrs <- FALSE
   for (barcodePrefix in allPrefixes) {
     i <- i + 1
     print(paste0('Adding TCR clonotypes for prefix: ', barcodePrefix, '. ', i, ' of ', length(allPrefixes)))
 
     vloupeId <- .FindMatchedVloupe(barcodePrefix)
-    hasTcrs <- FALSE
     if (is.na(vloupeId)){
       hasTcr <- .HasTcrLibrary(barcodePrefix)
       if (is.null(hasTcr)) {
@@ -60,7 +60,7 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
     seuratObject <- .AppendTcrClonotypes(seuratObject, clonotypeFile, barcodePrefix = barcodePrefix, dropExisting = doDropExisting, dropConflictingVJSegments)
   }
 
-  if (!hasTcrs) {
+  if (hasTcrs == FALSE) {
     seuratObject$HasCDR3Data <- FALSE
   }
 
@@ -611,10 +611,11 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegion
   if (!'HasCDR3Data' %in% names(seuratObj@meta.data)) {
     # Note: this will error if data are missing, but not if TCR is not used
     seuratObj <- Rdiscvr::DownloadAndAppendTcrClonotypes(seuratObj, allowMissing = FALSE)
+  }
 
-    if (all(seuratObj$HasCDR3Data == FALSE)) {
-      return(seuratObj)
-    }
+  if (all(seuratObj$HasCDR3Data == FALSE)) {
+    print('None of the cells had CDR3 data, skipping')
+    return(seuratObj)
   }
 
   ad <- Seurat::GetAssayData(seuratObj, slot = 'counts', assay = assayName)
