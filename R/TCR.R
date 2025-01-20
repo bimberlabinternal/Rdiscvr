@@ -67,7 +67,7 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
   return(seuratObject)
 }
 
-.HasTcrLibrary <- function(loupeDataId) {
+.HasTcrLibrary <- function(loupeDataId, allowNonBlankStatus = FALSE) {
   loupeRows <- suppressWarnings(labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
@@ -89,17 +89,24 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="singlecell",
     queryName="cdna_libraries",
-    colSelect="tcrreadsetid",
+    colSelect="tcrreadsetid,tcrreadsetid/status",
     colFilter=makeFilter(c("readsetId", "EQUAL", rs)),
     containerFilter=NULL,
     colNameOpt="rname"
   ))
 
+  tcrRows <- tcrRows[!is.na(tcrRows$tcrreadsetid),]
+
   if (nrow(tcrRows) == 0) {
     return(NULL)
   }
 
-  return(length(unique(tcrRows$tcrreadsetid[!is.na(tcrRows$tcrreadsetid)])) > 0)
+  tcrRowsPassing <- tcrRows[is.na(tcrRows$tcrreadsetid_status),]
+  if (allowNonBlankStatus || nrow(tcrRowsPassing) > 0) {
+    return(TRUE)
+  }
+
+  return(FALSE)
 }
 
 #' @title CreateMergedTcrClonotypeFile
