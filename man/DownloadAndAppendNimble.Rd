@@ -16,7 +16,8 @@ DownloadAndAppendNimble(
   performDietSeurat = (targetAssayName \%in\% names(seuratObject@assays)),
   normalizeData = TRUE,
   assayForLibrarySize = "RNA",
-  maxLibrarySizeRatio = 0.05
+  maxLibrarySizeRatio = 0.05,
+  queryDatabaseForLineageUpdates = FALSE
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ DownloadAndAppendNimble(
 \item{assayForLibrarySize}{Passed directly to AppendNimbleCounts()}
 
 \item{maxLibrarySizeRatio}{Passed directly to AppendNimbleCounts()}
+
+\item{queryDatabaseForLineageUpdates}{If true, after downloading the raw nimble output, the code will query any feature not ending with 'g' against the database and replace that name with the current value of lineage.}
 }
 \value{
 A modified Seurat object.

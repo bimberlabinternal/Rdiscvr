@@ -24,9 +24,10 @@ utils::globalVariables(
 #' @param normalizeData Passed directly to AppendNimbleCounts()
 #' @param assayForLibrarySize Passed directly to AppendNimbleCounts()
 #' @param maxLibrarySizeRatio Passed directly to AppendNimbleCounts()
+#' @param queryDatabaseForLineageUpdates If true, after downloading the raw nimble output, the code will query any feature not ending with 'g' against the database and replace that name with the current value of lineage.
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = (targetAssayName %in% names(seuratObject@assays)), normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05) {
+DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = (targetAssayName %in% names(seuratObject@assays)), normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, queryDatabaseForLineageUpdates = FALSE) {
   # Ensure we have a DatasetId column
   if (is.null(seuratObject@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
@@ -89,7 +90,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   }
 
   print('Merging into single matrix')
-  df <- .mergeNimbleFiles(fileComponents=nimbleFileComponents, enforceUniqueFeatureNames)
+  df <- .mergeNimbleFiles(fileComponents=nimbleFileComponents, enforceUniqueFeatureNames, queryDatabaseForLineageUpdates = queryDatabaseForLineageUpdates)
   print(paste0('Total features: ', length(unique(df$V1))))
   
   outFile <- file.path(outPath, paste0("mergedNimbleCounts.tsv"))
@@ -169,7 +170,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   }
 }
 
-.mergeNimbleFiles <- function(fileComponents, enforceUniqueFeatureNames = TRUE, enforceCellBarcodeFormat = TRUE) {
+.mergeNimbleFiles <- function(fileComponents, enforceUniqueFeatureNames = TRUE, enforceCellBarcodeFormat = TRUE, queryDatabaseForLineageUpdates = FALSE) {
   df <- NULL
   
   for (datasetId in names(fileComponents)) {
@@ -249,6 +250,11 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
         stop(paste0("The nimble data contains features with trailing commas. This should not occur. Dataset Id: ", datasetId))
       }
 
+      if (queryDatabaseForLineageUpdates) {
+        genomeId <- unlist(strsplit(basename(nimbleFile), split = '\\.'))[4]
+        df <- .UpdateLineages(df, libraryId = genomeId)
+      }
+
       nimbleTableGrouped <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2), InputRows = n())
       if (sum(nimbleTableGrouped$InputRows > 1) > 0) {
         stop(paste0('There were duplicate rows from the same cell-barcode/feature in the input for dataset. This could occur if one job appended to the input file: ', datasetId))
@@ -283,6 +289,50 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
       }
     }
   }
+
+  return(df)
+}
+
+.UpdateLineages <- function(df, libraryId) {
+  print(paste0('Querying DB to update lineages for: ', libraryId))
+
+  feats <- unique(df$V1)
+  feats <- feats[!grepl(feats, pattern = 'g$')]
+  if (length(feats) == 0) {
+    return(df)
+  }
+
+  dat <- suppressWarnings(labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber",
+    schemaName="sequenceanalysis",
+    queryName="reference_library_members",
+    colSelect="ref_nt_id/name,ref_nt_id/lineage",
+    colSort="ref_nt_id/name",
+    colFilter=makeFilter(
+      c("library_id", "EQUALS", libraryId),
+      c("ref_nt_id/lineage", "NOT_MISSING", ''),
+      c("ref_nt_id/name", "IN", paste0(unique(df$V1), collapse = ';'))
+    ),
+    colNameOpt="rname"
+  ))
+  names(dat) <- c('name', 'lineage')
+
+  if (nrow(dat) == 0){
+    return(df)
+  }
+
+  print(paste0('Total features with updated lineages: ', nrow(dat)))
+  df$V1 <- as.character(df$V1)
+  for (idx in seq_along(dat$name)) {
+    df$V1[df$V1 == dat$name[idx]] <- dat$lineage[idx]
+  }
+
+  df <- df %>%
+    group_by(V1, V3) %>%
+    summarize(V2 = sum(V2))
+
+  print(paste0('Distinct features after re-grouping: ', length(unique(df$V1))))
 
   return(df)
 }
