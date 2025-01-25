@@ -312,7 +312,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
     colFilter=makeFilter(
       c("library_id", "EQUALS", libraryId),
       c("ref_nt_id/lineage", "NOT_MISSING", ''),
-      c("ref_nt_id/name", "IN", paste0(unique(df$V1), collapse = ';'))
+      c("ref_nt_id/name", "IN", paste0(feats, collapse = ';'))
     ),
     colNameOpt="rname"
   ))

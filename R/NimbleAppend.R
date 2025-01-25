@@ -81,19 +81,30 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
       paste0('Distinct features after pruning: ', length(unique(df$V1)))
   }
 
-    # Ensure consistent sorting of ambiguous features, and re-group if needed:
-    if (any(grepl(df$V1, pattern = ','))) {
-        print('Ensuring consistent feature sort within ambiguous features:')
-        df$V1 <- unlist(sapply(df$V1, function(y){
-          return(paste0(sort(unlist(strsplit(y, split = ','))), collapse = ','))
-        }))
+  # TODO: consider a percent filter on ambiguous classes...
 
-        df <- df %>%
-          group_by(V1, V3) %>%
-          summarize(V2 = sum(V2))
+  # Ensure consistent sorting of ambiguous features, and re-group if needed:
+  if (any(grepl(df$V1, pattern = ','))) {
+      print('Ensuring consistent feature sort within ambiguous features:')
+      df$V1 <- unlist(sapply(df$V1, function(y){
+        return(paste0(sort(unlist(strsplit(y, split = ','))), collapse = ','))
+      }))
 
-      paste0('Distinct features after re-grouping: ', length(unique(df$V1)))
-    }
+      df <- df %>%
+        group_by(V1, V3) %>%
+        summarize(V2 = sum(V2))
+
+    paste0('Distinct features after re-grouping: ', length(unique(df$V1)))
+  }
+
+  if (any(duplicated(df[c('V1','V3')]))) {
+    print(paste0('Duplicate cell/features found. Rows at start: ', nrow(df)))
+    df <- df %>%
+      group_by(V1, V3) %>%
+      summarize(V2 = sum(V2))
+
+    print(paste0('After re-grouping: ', nrow(df)))
+  }
 
   tryCatch({
     # Group to ensure we have one value per combination:
