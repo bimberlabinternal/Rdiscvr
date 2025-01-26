@@ -148,6 +148,10 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
   
   # Cast nimble df to matrix
   featureNames <- df$V1
+  if (any(duplicated(featureNames))) {
+    stop('Error, there were duplicate feature names')
+  }
+
   df <- subset(df, select=-(V1))
   m <- Reduce(methods::cbind2, lapply(df, Matrix::Matrix, sparse = TRUE))
   dimnames(m) <- list(featureNames, colnames(df))
@@ -210,6 +214,9 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
     }
   } else {
     # Add nimble as separate assay
+    if (any(duplicated(rownames(m)))) {
+      stop('Error: The count matrix had duplicate rownames')
+    }
     seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = m, min.features = 0, min.cells = 0)
 
     fs <- rep('Nimble', nrow(seuratObject@assays[[targetAssayName]]))
