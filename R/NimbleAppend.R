@@ -21,7 +21,7 @@
 #' @export
 AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmbiguityAllowed = 0, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = (targetAssayName %in% names(seuratObject@assays)), assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, doPlot = TRUE, maxFeaturesToPlot = 40, replaceExistingAssayData = TRUE) {
   if (!file.exists(nimbleFile)) {
-    stop(paste0("Nimble file not found: ", nimbleFile))
+    stop(paste0("Nimble file does not exist: ", nimbleFile))
   }
   
   # Read file and construct df

@@ -28,7 +28,7 @@ utils::globalVariables(
 #' @param replaceExistingAssayData If true, any existing data in the targetAssay will be deleted
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = (targetAssayName %in% names(seuratObject@assays)), normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, queryDatabaseForLineageUpdates = FALSE, replaceExistingAssayData = TRUE) {
+DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = FALSE, normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, queryDatabaseForLineageUpdates = FALSE, replaceExistingAssayData = TRUE) {
   # Ensure we have a DatasetId column
   if (is.null(seuratObject@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
@@ -252,7 +252,7 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
       }
 
       if (queryDatabaseForLineageUpdates) {
-        genomeId <- unlist(strsplit(basename(nimbleFile), split = '\\.'))[4]
+        genomeId <- unlist(strsplit(basename(fn), split = '\\.'))[4]
         df <- .UpdateLineages(df, libraryId = genomeId)
       }
 

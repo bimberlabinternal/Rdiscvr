@@ -13,7 +13,7 @@ DownloadAndAppendNimble(
   ensureSamplesShareAllGenomes = TRUE,
   maxAmbiguityAllowed = 1,
   reuseExistingDownloads = FALSE,
-  performDietSeurat = (targetAssayName \%in\% names(seuratObject@assays)),
+  performDietSeurat = FALSE,
   normalizeData = TRUE,
   assayForLibrarySize = "RNA",
   maxLibrarySizeRatio = 0.05,
