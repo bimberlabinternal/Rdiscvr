@@ -25,7 +25,7 @@ test_that("Nimble Append works with empty input", {
 test_that("Nimble Append deletes all barcodes not in Seurat when appending", {
   seuratObj <- Seurat::UpdateSeuratObject(readRDS("../testdata/nimbleTest.rds"))
   nimbleExclusiveBarcodes <- c("12345_CCAGCGAAGTCCGTAT", "12345_CCAGCGAAGTCCGTAC")
-  seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", targetAssayName = 'RNA', maxLibrarySizeRatio = 1)
+  seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", targetAssayName = 'RNA', maxLibrarySizeRatio = 1, replaceExistingAssayData = FALSE)
   expect_equal(nimbleExclusiveBarcodes %in% colnames(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')), c(FALSE, FALSE))
   
   expect_true('FeatureSource' %in% names(seuratObj@assays$RNA@meta.features))
@@ -35,7 +35,7 @@ test_that("Nimble Append deletes all barcodes not in Seurat when appending", {
 test_that("Nimble Append fills all barcodes in Seurat but not in Nimble when appending", {
   seuratObj <- Seurat::UpdateSeuratObject(readRDS("../testdata/nimbleTest.rds"))
   seuratExclusiveBarcode <- "12345_TAAAAAAAAAAAAAAA"
-  seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", targetAssayName = 'RNA', maxLibrarySizeRatio = 1)
+  seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", targetAssayName = 'RNA', maxLibrarySizeRatio = 1, replaceExistingAssayData = FALSE)
   nimbleFeatureCounts <- GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, seuratExclusiveBarcode][c('E', 'F', 'G', 'H')]
   expect_false(FALSE %in% (nimbleFeatureCounts == c(0, 0, 0, 0)))
 })
@@ -45,7 +45,7 @@ test_that("Nimble Append output Seurat object is valid when appending", {
   expectedBarcodes <- c("12345_AAAAAAAAAAAAAAAA", "12345_CAAAAAAAAAAAAAA", "12345_GAAAAAAAAAAAAAAA", "12345_TAAAAAAAAAAAAAAA")
   expectedFeatures <- c("A", "B", "C", "D", "E", "F", "G", "H")
   expectedValues <- list(c(1, 1, 1, 1, 1, 1, 1, 1), c(1, 1, 1, 1, 2, 2, 2, 2), c(1, 1, 1, 1, 4, 4, 4, 4), c(1, 1, 1, 1, 0, 0, 0, 0))
-  seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", targetAssayName = 'RNA', maxLibrarySizeRatio = 1)
+  seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", targetAssayName = 'RNA', maxLibrarySizeRatio = 1, replaceExistingAssayData = FALSE)
   expect_equal(colnames(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')), expectedBarcodes)
   expect_equal(rownames(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')), expectedFeatures)
   expect_false(FALSE %in% (GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[1]] == expectedValues[[1]]))
