@@ -16,9 +16,10 @@
 #' @param maxLibrarySizeRatio If normalizeData is true, then this is passed to CellMembrane::LogNormalizeUsingAlternateAssay
 #' @param doPlot If true, FeaturePlots will be generated for the appended features
 #' @param maxFeaturesToPlot If doPlot is true, this is the maximum number of features to plot
+#' @param replaceExistingAssayData If true, any existing data in the targetAssay will be deleted
 #' @return A modified Seurat object.
 #' @export
-AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmbiguityAllowed = 0, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = (targetAssayName %in% names(seuratObject@assays)), assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, doPlot = TRUE, maxFeaturesToPlot = 40) {
+AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmbiguityAllowed = 0, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = (targetAssayName %in% names(seuratObject@assays)), assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, doPlot = TRUE, maxFeaturesToPlot = 40, replaceExistingAssayData = TRUE) {
   if (!file.exists(nimbleFile)) {
     stop(paste0("Nimble file not found: ", nimbleFile))
   }
@@ -126,6 +127,11 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
     e$message <- paste0('Error pivoting nimble data. target assay: ', targetAssayName)
     stop(e)
   })
+
+  if (replaceExistingAssayData && targetAssayName %in% names(seuratObject@assays)) {
+    print('Replacing existing assay')
+    seuratObject@assays[[targetAssayName]] <- NULL
+  }
 
   appendToExistingAssay <- targetAssayName %in% names(seuratObject@assays)
 

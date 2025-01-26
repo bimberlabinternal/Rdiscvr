@@ -16,7 +16,8 @@ AppendNimbleCounts(
   assayForLibrarySize = "RNA",
   maxLibrarySizeRatio = 0.05,
   doPlot = TRUE,
-  maxFeaturesToPlot = 40
+  maxFeaturesToPlot = 40,
+  replaceExistingAssayData = TRUE
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ AppendNimbleCounts(
 \item{doPlot}{If true, FeaturePlots will be generated for the appended features}
 
 \item{maxFeaturesToPlot}{If doPlot is true, this is the maximum number of features to plot}
+
+\item{replaceExistingAssayData}{If true, any existing data in the targetAssay will be deleted}
 }
 \value{
 A modified Seurat object.
