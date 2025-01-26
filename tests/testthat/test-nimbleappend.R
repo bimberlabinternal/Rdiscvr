@@ -2,7 +2,7 @@ context("Nimble")
 
 test_that("Nimble Append detects missing input file", {
   seuratObj <- Seurat::UpdateSeuratObject(readRDS("../testdata/nimbleTest.rds"))
-  expect_error(AppendNimbleCounts(seuratObj, "../testdata/nonexistent.tsv", targetAssayName = 'RNA'), "Nimble file not found: ../testdata/nonexistent.tsv", fixed=TRUE)
+  expect_error(AppendNimbleCounts(seuratObj, "../testdata/nonexistent.tsv", targetAssayName = 'RNA'), "Nimble file does not exist: ../testdata/nonexistent.tsv", fixed=TRUE)
 })
 
 test_that("Nimble Append deletes blank feature names when appending", {
