@@ -95,10 +95,11 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
     colNameOpt="rname"
   ))
 
+  foundLibrary <- nrow(tcrRows) > 0
   tcrRows <- tcrRows[!is.na(tcrRows$tcrreadsetid),]
 
-  if (nrow(tcrRows) == 0) {
-    return(NULL)
+  if (foundLibrary && nrow(tcrRows) == 0) {
+    return(FALSE)
   }
 
   tcrRowsPassing <- tcrRows[is.na(tcrRows$tcrreadsetid_status),]
