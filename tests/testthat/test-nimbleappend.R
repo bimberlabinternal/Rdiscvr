@@ -105,8 +105,8 @@ test_that("Nimble Append output Seurat object is valid when creating new assay",
   expect_equal(colnames(GetAssayData(seuratObj, assay = 'Nimble', layer = 'counts')), expectedBarcodes)
   expect_equal(rownames(GetAssayData(seuratObj, assay = 'Nimble', layer = 'counts')), expectedFeatures)
   
-  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', layer = 'counts')[, expectedBarcodes[1]]), expectedValues[[1]])
-  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', layer = 'counts')[, expectedBarcodes[2]]), expectedValues[[2]])
-  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', layer = 'counts')[, expectedBarcodes[3]]), expectedValues[[3]])
-  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', layer = 'counts')[, expectedBarcodes[4]]), expectedValues[[4]])
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'Nimble', layer = 'counts')[, expectedBarcodes[1]]), expectedValues[[1]])
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'Nimble', layer = 'counts')[, expectedBarcodes[2]]), expectedValues[[2]])
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'Nimble', layer = 'counts')[, expectedBarcodes[3]]), expectedValues[[3]])
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'Nimble', layer = 'counts')[, expectedBarcodes[4]]), expectedValues[[4]])
 })
