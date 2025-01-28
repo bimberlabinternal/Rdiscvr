@@ -346,3 +346,189 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
 
   return(df)
 }
+
+.FindLibraryByName <- function(libraryName) {
+  dat <- labkey.selectRows(
+    baseUrl=.getBaseUrl(),
+    folderPath=.getLabKeyDefaultFolder(),
+    schemaName="sequenceanalysis",
+    queryName="reference_libraries",
+    colSelect="rowid",
+    colSort="name",
+    colFilter=makeFilter(c("name", "EQUAL", libraryName)),
+    containerFilter=NULL,
+    colNameOpt="rname"
+  )
+
+  if (nrow(dat) == 0) {
+    stop(paste0('Unable to find library: ', libraryName))
+  }
+
+  if (nrow(dat) > 1) {
+    stop(paste0('More than one library matched: ', libraryName))
+  }
+
+  return(dat$rowid[1])
+}
+
+#' @title PerformDefaultNimbleAppend
+#' @description This is designed to wrap a series of nimble download commands into one, along with some domain-specific logic for each type of data
+#'
+#' @param seuratObj A Seurat object.
+#' @param maxLibrarySizeRatio Passed directly to AppendNimbleCounts()
+#' @param assayForLibrarySize Passed directly to AppendNimbleCounts()
+#' @return A modified Seurat object.
+#' @export
+PerformDefaultNimbleAppend <- function(seuratObj, maxLibrarySizeRatio = 100, assayForLibrarySize = 'RNA') {
+  # MHC:
+  seuratObj <- DownloadAndAppendNimble(seuratObj,
+                                       allowableGenomes = .FindLibraryByName('Rhesus Macaque MHC'),
+                                       targetAssayName = 'MHC',
+                                       assayForLibrarySize = assayForLibrarySize,
+                                       normalizeData = FALSE,
+                                       maxLibrarySizeRatio = maxLibrarySizeRatio,
+                                       replaceExistingAssayData = TRUE,
+                                       featureRenameList = list(
+                                         'Mamu-E*01,Mamu-E*08' = 'Mamu-E*01/08'
+                                       )
+  )
+  seuratObj <- PerformMhcNormalization(seuratObj)
+  groupedMHC <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = 'MHC', slot = 'counts'), featureTransform = function(x){
+    return(seuratObj@assays$MHC@meta.features$locus[rownames(seuratObj@assays$MHC) == x])
+  })
+  groupedMHCData <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = 'MHC', slot = 'data'), featureTransform = function(x){
+    return(seuratObj@assays$MHC@meta.features$locus[rownames(seuratObj@assays$MHC) == x])
+  })
+  seuratObj[['MHC_Grouped']] <- Seurat::CreateAssayObject(groupedMHC, data = groupedMHCData)
+  
+  # KIR:
+  seuratObj <- DownloadAndAppendNimble(seuratObj,
+                                       allowableGenomes = .FindLibraryByName('Rhesus_KIR'),
+                                       targetAssayName = 'KIR',
+                                       assayForLibrarySize = assayForLibrarySize,
+                                       normalizeData = TRUE,
+                                       maxLibrarySizeRatio = maxLibrarySizeRatio,
+                                       replaceExistingAssayData = TRUE,
+                                       featureRenameList = NULL
+  )
+  seuratObj$KIR_Status <- .IterativeFeatureFiltering(seuratObj, features = rownames(seuratObj@assays$KIR), threshold = 0, maxAllowedClasses = 1, featureTransform = function(x){
+    return(dplyr::case_when(
+      grepl(x, pattern = 'KIR[0-9]DL') ~ 'Inhibitory KIR+',
+      grepl(x, pattern = 'KIR[0-9]DS') ~ 'Activating KIR+',
+      .default = NA
+    ))
+  })
+  print(sort(table(seuratObj$KIR_Status)))  
+
+  # NKG:
+  seuratObj <- DownloadAndAppendNimble(seuratObj,
+                                       allowableGenomes = .FindLibraryByName('RhesusSupplementalFeatures'),
+                                       targetAssayName = 'Nimble',
+                                       assayForLibrarySize = assayForLibrarySize,
+                                       normalizeData = TRUE,
+                                       maxLibrarySizeRatio = maxLibrarySizeRatio,
+                                       replaceExistingAssayData = TRUE,
+                                       featureRenameList = list(
+                                         'NKG2A-KLRC1' = 'NKG2A',
+                                         'NKG2C-KLRC2' = 'NKG2C/E',
+                                         'NKG2E-KLRC3' = 'NKG2C/E',
+                                         'NKG2C-KLRC2,NKG2E-KLRC3' = 'NKG2C/E',
+                                       )
+  )
+  seuratObj$NKG_Status <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E",  "NKG2D"), threshold = 0, maxAllowedClasses = 2, assayName = 'Nimble')
+  print(sort(table(seuratObj$NKG_Status)))
+
+  # Ig
+  seuratObj <- DownloadAndAppendNimble(seuratObj,
+                                       allowableGenomes = .FindLibraryByName('Rhesus_Ig'),
+                                       targetAssayName = 'Ig',
+                                       assayForLibrarySize = assayForLibrarySize,
+                                       normalizeData = TRUE,
+                                       maxLibrarySizeRatio = maxLibrarySizeRatio,
+                                       replaceExistingAssayData = TRUE,
+                                       featureRenameList = NULL
+  )
+  seuratObj$IsoType <- .IterativeFeatureFiltering(seuratObj, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 1)
+  print(sort(table(seuratObj$IsoType)))
+  
+  seuratObj$IsoTypeDetailed <- .IterativeFeatureFiltering(seuratObj, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 2)
+  print(sort(table(seuratObj$IsoTypeDetailed)))
+  
+  seuratObj$ClassSwitchedStatus <- .IterativeFeatureFiltering(seuratObj, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 1, threshold = 0.1, featureTransform = function(x){
+    return(dplyr::case_when(
+      grepl(x, pattern = 'IGHA|IGHG') ~ 'Class-switched',
+      grepl(x, pattern = 'IGHM|IGHD') ~ 'Not Class-switched',
+      .default = NA
+    ))
+  })
+  print(sort(table(seuratObj$ClassSwitchedStatus)))
+
+  return(seuratObj)
+}
+
+
+.RegroupCountMatrix <- function(mat, featureTransform) {
+  if (is.null(featureTransform)) {
+    return(mat)
+  }
+  
+  updatedRows <- sapply(rownames(mat), featureTransform)
+  if (any(is.na(updatedRows))) {
+    stop('NAs were produced by featureTransform')
+  }
+  
+  if (any(rownames(mat) != updatedRows)) {
+    print('Grouping matrix')
+    newMat <- NULL
+    for (val in unique(updatedRows)) {
+      toSelect <- names(updatedRows)[updatedRows == val]
+      m <- matrix(data = Matrix::colSums(mat[toSelect,,drop = FALSE]), nrow = 1)
+      rownames(m) <- val
+      newMat <- rbind(newMat, Seurat::as.sparse(m))
+    }
+    
+    return(newMat)
+  } else {
+    return(mat)
+  }
+}
+
+.IterativeFeatureFiltering <- function(seuratObj, assayName, features, threshold = 0.05, maxAllowedClasses = 3, featureTransform = NULL) {
+  countsMatrix <- Matrix::t(Seurat::FetchData(seuratObj, vars = paste0(seuratObj[[assayName]]@key, features)))
+  rownames(countsMatrix) <- gsub(rownames(countsMatrix), pattern = seuratObj[[assayName]]@key, replacement = '')
+
+  cellLabels <- rep(NA, ncol(countsMatrix))
+  names(cellLabels) <- colnames(countsMatrix)
+  
+  countsMatrix <- .RegroupCountMatrix(countsMatrix, featureTransform = featureTransform)
+
+  for (i in 1:ncol(countsMatrix)) {
+    v <- countsMatrix[, i]
+    repeat {
+      total_counts <- sum(v)
+      if (total_counts == 0)
+        break
+
+      threshold_counts <- total_counts * threshold
+      features_to_drop <- which(v < threshold_counts & v > 0)
+
+      if (length(features_to_drop) == 0)
+        break
+
+      v[features_to_drop] <- 0
+    }
+
+    feats <- sort(rownames(countsMatrix)[v > 0])
+    if (length(feats) == 0) {
+      next
+    }
+    
+    if (length(feats) > maxAllowedClasses) {
+      feats <- 'Multiple'
+    }
+
+    cellLabels[i] <- paste0(feats, collapse = ',')
+  }
+
+  return(cellLabels)
+}
