@@ -230,7 +230,9 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
 
     # perform in two steps to avoid warnings:
     ad <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts'), m)))
-    seuratObject[[targetAssayName]] <- NULL
+    if (targetAssayName != Seurat::DefaultAssay(seuratObject)) {
+      seuratObject[[targetAssayName]] <- NULL
+    }
     seuratObject[[targetAssayName]] <- ad
     
     names(fs) <- rownames(seuratObject@assays[[targetAssayName]])
