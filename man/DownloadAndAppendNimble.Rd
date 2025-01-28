@@ -18,7 +18,8 @@ DownloadAndAppendNimble(
   assayForLibrarySize = "RNA",
   maxLibrarySizeRatio = 0.05,
   queryDatabaseForLineageUpdates = FALSE,
-  replaceExistingAssayData = TRUE
+  replaceExistingAssayData = TRUE,
+  featureRenameList = NULL
 )
 }
 \arguments{
@@ -49,6 +50,8 @@ DownloadAndAppendNimble(
 \item{queryDatabaseForLineageUpdates}{If true, after downloading the raw nimble output, the code will query any feature not ending with 'g' against the database and replace that name with the current value of lineage.}
 
 \item{replaceExistingAssayData}{If true, any existing data in the targetAssay will be deleted}
+
+\item{featureRenameList}{An optional named list in the format <OLD_NAME> = <NEW_NAME>. If any <OLD_NAME> are present, the will be renamed to <NEW_NAME>. The intention of this is to recover specific ambiguous classes.}
 }
 \value{
 A modified Seurat object.

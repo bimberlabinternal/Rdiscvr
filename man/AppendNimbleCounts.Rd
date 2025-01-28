@@ -17,7 +17,8 @@ AppendNimbleCounts(
   maxLibrarySizeRatio = 0.05,
   doPlot = TRUE,
   maxFeaturesToPlot = 40,
-  replaceExistingAssayData = TRUE
+  replaceExistingAssayData = TRUE,
+  featureRenameList = NULL
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ AppendNimbleCounts(
 \item{maxFeaturesToPlot}{If doPlot is true, this is the maximum number of features to plot}
 
 \item{replaceExistingAssayData}{If true, any existing data in the targetAssay will be deleted}
+
+\item{featureRenameList}{An optional named list in the format <OLD_NAME> = <NEW_NAME>. If any <OLD_NAME> are present, the will be renamed to <NEW_NAME>. The intention of this is to recover specific ambiguous classes.}
 }
 \value{
 A modified Seurat object.

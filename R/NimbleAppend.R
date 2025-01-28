@@ -17,9 +17,10 @@
 #' @param doPlot If true, FeaturePlots will be generated for the appended features
 #' @param maxFeaturesToPlot If doPlot is true, this is the maximum number of features to plot
 #' @param replaceExistingAssayData If true, any existing data in the targetAssay will be deleted
+#' @param featureRenameList An optional named list in the format <OLD_NAME> = <NEW_NAME>. If any <OLD_NAME> are present, the will be renamed to <NEW_NAME>. The intention of this is to recover specific ambiguous classes.
 #' @return A modified Seurat object.
 #' @export
-AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmbiguityAllowed = 0, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = (targetAssayName %in% names(seuratObject@assays)), assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, doPlot = TRUE, maxFeaturesToPlot = 40, replaceExistingAssayData = TRUE) {
+AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmbiguityAllowed = 0, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = (targetAssayName %in% names(seuratObject@assays)), assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, doPlot = TRUE, maxFeaturesToPlot = 40, replaceExistingAssayData = TRUE, featureRenameList = NULL) {
   if (!file.exists(nimbleFile)) {
     stop(paste0("Nimble file does not exist: ", nimbleFile))
   }
@@ -71,36 +72,47 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
     maxAmbiguityAllowed <- 1
   }
 
-  ambigFeatRows <- totalHitsByRow > maxAmbiguityAllowed
+  # Ensure consistent sorting of ambiguous features, and re-group if needed:
+  if (any(grepl(df$V1, pattern = ','))) {
+    print('Ensuring consistent feature sort within ambiguous features:')
+    df$V1 <- unlist(sapply(df$V1, function(y){
+      return(paste0(sort(unlist(strsplit(y, split = ','))), collapse = ','))
+    }))
 
+    df <- df %>%
+      group_by(V1, V3) %>%
+      summarize(V2 = sum(V2))
+
+    df <- df[c('V1', 'V2', 'V3')]
+
+    paste0('Distinct features after re-grouping: ', length(unique(df$V1)))
+  }
+
+  if (!all(is.null(featureRenameList))) {
+    print('Potentially renaming features:')
+    df$V1 <- as.character(df$V1)
+    for (featName in names(featureRenameList)) {
+      if (featName %in% df$V1) {
+        df$V1[df$V1 == featName] <- featureRenameList[[featName]]
+      }
+    }
+  }
+
+  ambigFeatRows <- totalHitsByRow > maxAmbiguityAllowed
   if (sum(ambigFeatRows) > 0) {
       print(paste0('Dropping ', sum(ambigFeatRows), ' rows with ambiguous features (>', maxAmbiguityAllowed, '), ', sum(ambigFeatRows),' of ', nrow(df)))
+      totalUMI <- sum(df$V2)
       x <- df$V1[ambigFeatRows]
       totalHitsByRow <- totalHitsByRow[ambigFeatRows]
       x[totalHitsByRow > 3] <- 'ManyHits'
 
       x <- sort(table(x), decreasing = T)
       x <- data.frame(Feature = names(x), Total = as.numeric(unname(x)))
+      x$Fraction <- x$Total / totalUMI
       print(x)
       df <- df[!ambigFeatRows, , drop = F]
 
       paste0('Distinct features after pruning: ', length(unique(df$V1)))
-  }
-
-  # TODO: consider a percent filter on ambiguous classes...
-
-  # Ensure consistent sorting of ambiguous features, and re-group if needed:
-  if (any(grepl(df$V1, pattern = ','))) {
-      print('Ensuring consistent feature sort within ambiguous features:')
-      df$V1 <- unlist(sapply(df$V1, function(y){
-        return(paste0(sort(unlist(strsplit(y, split = ','))), collapse = ','))
-      }))
-
-      df <- df %>%
-        group_by(V1, V3) %>%
-        summarize(V2 = sum(V2))
-
-    paste0('Distinct features after re-grouping: ', length(unique(df$V1)))
   }
 
   if (any(duplicated(df[c('V1','V3')]))) {
@@ -108,6 +120,8 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
     df <- df %>%
       group_by(V1, V3) %>%
       summarize(V2 = sum(V2))
+
+    df <- df[c('V1', 'V2', 'V3')]
 
     print(paste0('After re-grouping: ', nrow(df)))
   }

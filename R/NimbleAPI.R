@@ -26,9 +26,10 @@ utils::globalVariables(
 #' @param maxLibrarySizeRatio Passed directly to AppendNimbleCounts()
 #' @param queryDatabaseForLineageUpdates If true, after downloading the raw nimble output, the code will query any feature not ending with 'g' against the database and replace that name with the current value of lineage.
 #' @param replaceExistingAssayData If true, any existing data in the targetAssay will be deleted
+#' @param featureRenameList An optional named list in the format <OLD_NAME> = <NEW_NAME>. If any <OLD_NAME> are present, the will be renamed to <NEW_NAME>. The intention of this is to recover specific ambiguous classes.
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = FALSE, normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, queryDatabaseForLineageUpdates = FALSE, replaceExistingAssayData = TRUE) {
+DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = FALSE, normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, queryDatabaseForLineageUpdates = FALSE, replaceExistingAssayData = TRUE, featureRenameList = NULL) {
   # Ensure we have a DatasetId column
   if (is.null(seuratObject@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
@@ -95,10 +96,11 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   print(paste0('Total features: ', length(unique(df$V1))))
   
   outFile <- file.path(outPath, paste0("mergedNimbleCounts.tsv"))
+  df <- df[c('V1', 'V2', 'V3')] # grouping could re-order this
   write.table(df, outFile, sep="\t", col.names=F, row.names=F, quote=F)
 
   print(paste0('Appending counts to ', targetAssayName))
-  seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, targetAssayName = targetAssayName, nimbleFile=outFile, maxAmbiguityAllowed = maxAmbiguityAllowed, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio, replaceExistingAssayData = replaceExistingAssayData)
+  seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, targetAssayName = targetAssayName, nimbleFile=outFile, maxAmbiguityAllowed = maxAmbiguityAllowed, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio, replaceExistingAssayData = replaceExistingAssayData, featureRenameList = featureRenameList)
   unlink(outFile)
 
   return(seuratObject)
@@ -337,6 +339,8 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   df <- df %>%
     group_by(V1, V3) %>%
     summarize(V2 = sum(V2))
+
+  df <- df[c('V1', 'V2', 'V3')]
 
   print(paste0('Distinct features after re-grouping: ', length(unique(df$V1))))
 
