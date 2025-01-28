@@ -48,10 +48,11 @@ test_that("Nimble Append output Seurat object is valid when appending", {
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", targetAssayName = 'RNA', maxLibrarySizeRatio = 1, replaceExistingAssayData = FALSE)
   expect_equal(colnames(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')), expectedBarcodes)
   expect_equal(rownames(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')), expectedFeatures)
-  expect_false(FALSE %in% (GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[1]] == expectedValues[[1]]))
-  expect_false(FALSE %in% (GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[2]] == expectedValues[[2]]))
-  expect_false(FALSE %in% (GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[3]] == expectedValues[[3]]))
-  expect_false(FALSE %in% (GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[4]] == expectedValues[[4]]))
+  
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[1]]), expectedValues[[1]])
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[2]]), expectedValues[[2]])
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[3]]), expectedValues[[3]])
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[4]]), expectedValues[[4]])
 })
 
 test_that("Nimble Append deletes blank feature names when creating new assay", {
@@ -83,8 +84,9 @@ test_that("Nimble Append output Seurat object is valid when creating new assay",
   seuratObj <- AppendNimbleCounts(seuratObj, "../testdata/12345_nimbleCounts.tsv", targetAssayName = 'Nimble', maxLibrarySizeRatio = 1)
   expect_equal(colnames(GetAssayData(seuratObj, assay = 'Nimble', slot = 'counts')), expectedBarcodes)
   expect_equal(rownames(GetAssayData(seuratObj, assay = 'Nimble', slot = 'counts')), expectedFeatures)
-  expect_false(FALSE %in% (GetAssayData(seuratObj, assay = 'Nimble', slot = 'counts')[, expectedBarcodes[1]] == expectedValues[[1]]))
-  expect_false(FALSE %in% (GetAssayData(seuratObj, assay = 'Nimble', slot = 'counts')[, expectedBarcodes[2]] == expectedValues[[2]]))
-  expect_false(FALSE %in% (GetAssayData(seuratObj, assay = 'Nimble', slot = 'counts')[, expectedBarcodes[3]] == expectedValues[[3]]))
-  expect_false(FALSE %in% (GetAssayData(seuratObj, assay = 'Nimble', slot = 'counts')[, expectedBarcodes[4]] == expectedValues[[4]]))
+  
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[1]]), expectedValues[[1]])
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[2]]), expectedValues[[2]])
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[3]]), expectedValues[[3]])
+  expect_equal(unname(GetAssayData(seuratObj, assay = 'RNA', slot = 'counts')[, expectedBarcodes[4]]), expectedValues[[4]])
 })
