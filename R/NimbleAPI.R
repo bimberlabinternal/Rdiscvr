@@ -220,6 +220,11 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
         }
       }
 
+      d <- as.integer(nimbleTable$V2)
+      if (any(is.na(d))){
+        stop(paste0('Non-integer count values found, were: ', paste0(head(unique(df$nimbleTable[is.na(d)])), collapse = ',')))
+      }
+
       # strip hyphens
       nimbleTable$V3 <- gsub(nimbleTable$V3, pattern = '-[0-9]$', replacement = '')
 

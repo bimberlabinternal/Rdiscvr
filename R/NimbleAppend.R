@@ -54,6 +54,11 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
     stop("The nimble data contains features with trailing commas. This should not occur.")
   }
 
+  d <- as.integer(df$V2)
+  if (any(is.na(d))){
+    stop(paste0('Non-integer count values found, were: ', paste0(head(df$V2[is.na(d)]), collapse = ',')))
+  }
+
   #Remove ambiguous features
   totalHitsByRow <- sapply(df$V1, function(y){
     return(length(unlist(strsplit(y, split = ','))))
