@@ -60,15 +60,9 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
     stop(paste0('Non-integer count values found, were: ', paste0(head(df$V2[is.na(d)]), collapse = ',')))
   }
 
-  #Remove ambiguous features
-  totalHitsByRow <- sapply(df$V1, function(y){
-    return(length(unlist(strsplit(y, split = ','))))
-  })
-
   if (is.na(maxAmbiguityAllowed) || is.null(maxAmbiguityAllowed)){
     maxAmbiguityAllowed <- Inf
-  }
-  else if (maxAmbiguityAllowed == 0) {
+  } else if (maxAmbiguityAllowed == 0) {
     maxAmbiguityAllowed <- 1
   }
 
@@ -97,6 +91,11 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
       }
     }
   }
+
+  #Remove ambiguous features
+  totalHitsByRow <- sapply(df$V1, function(y){
+    return(length(unlist(strsplit(y, split = ','))))
+  })
 
   ambigFeatRows <- totalHitsByRow > maxAmbiguityAllowed
   if (sum(ambigFeatRows) > 0) {
@@ -178,7 +177,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
   }
 
   df <- subset(df, select=-(V1))
-  m <- Reduce(methods::cbind2, lapply(df, Matrix::Matrix, sparse = TRUE))
+  m <- Seurat::as.sparse(df)
   dimnames(m) <- list(featureNames, colnames(df))
   if (is.null(colnames(m))) {
     stop(paste0('Error: no column names in nimble count matrix, size: ', paste0(dim(m), collapse = ' by ')))
@@ -229,8 +228,11 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
 
     fs <- c(fs, rep('Nimble', nrow(m)))
 
-    seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts'), m)))
-
+    # perform in two steps to avoid warnings:
+    ad <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts'), m)))
+    seuratObject[[targetAssayName]] <- NULL
+    seuratObject[[targetAssayName]] <- ad
+    
     names(fs) <- rownames(seuratObject@assays[[targetAssayName]])
     seuratObject@assays[[targetAssayName]] <- Seurat::AddMetaData(seuratObject@assays[[targetAssayName]], metadata = fs, col.name = 'FeatureSource')
 
