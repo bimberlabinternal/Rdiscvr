@@ -2,9 +2,11 @@
 
 export(AppendNimbleCounts)
 export(ApplyAcuteNxMetadata)
+export(ApplyEC_Metadata)
 export(ApplyMalariaMetadata)
 export(ApplyPC475Metadata)
 export(ApplyPC531Metadata)
+export(ApplyPPG_Stim_Metadata)
 export(ApplyTBMetadata)
 export(ClassifyTNKByExpression)
 export(CompareCellBarcodeSets)

@@ -447,3 +447,129 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
 
     return(seuratObj)
 }
+
+#' @title ApplyEC_Metadata
+#' @description Applies standard metadata related to JS46 / EC Project
+#'
+#' @param seuratObj A Seurat object.
+#' @param errorIfUnknownIdsFound If true, the function will fail if the seurat object contains unknown IDs
+#' @param reApplyMetadata If true, QueryAndApplyCdnaMetadata will be re-run
+#' @return A modified Seurat object.
+#' @export
+ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMetadata = TRUE) {
+  if (reApplyMetadata) {
+    seuratObj <- .ApplyMetadata(seuratObj)
+  }
+  seuratObj <- .AppendDemographics(seuratObj)
+
+  metadata <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/1619",
+    schemaName="lists",
+    queryName="EC_Subjects",
+    colNameOpt="rname",
+    colSelect = 'subjectid,genotype,challengedate,category',
+  )
+  names(metadata) <- c('SubjectId', 'Genotype', 'ChallengeDate', 'Category')
+
+  metadata2 <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/1619",
+    schemaName="lists",
+    queryName="EC_Libraries",
+    colNameOpt="rname",
+    colSelect = 'cDNA_ID,Timepoint'
+  )
+  names(metadata2) <- c('cDNA_ID', 'Timepoint')
+
+  metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
+  metadata <- metadata[names(metadata) != 'SubjectId']
+
+  if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
+    if (any(is.na(seuratObj$cDNA_ID))) {
+      stop('There were missing cDNA_IDs in the seurat object')
+    }
+    missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
+    stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
+  }
+
+  if (any(duplicated(metadata$cDNA_ID))) {
+    dups <- metadata$cDNA_ID[duplicated(metadata$cDNA_ID)]
+    stop(paste0('There were duplicated cDNA_IDs in the metadata: ', paste0(dups, collapse = ',')))
+  }
+
+  toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
+  toAdd$SortOrder <- seq_len(nrow(toAdd))
+  toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
+  toAdd <- arrange(toAdd, SortOrder)
+  rownames(toAdd) <- toAdd$CellBarcode
+  toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+
+  seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
+
+  return(seuratObj)
+}
+
+#' @title ApplyPPG_Stim_Metadata
+#' @description Applies standard metadata related to the PPG T Cell Stim Data
+#'
+#' @param seuratObj A Seurat object.
+#' @param errorIfUnknownIdsFound If true, the function will fail if the seurat object contains unknown IDs
+#' @param reApplyMetadata If true, QueryAndApplyCdnaMetadata will be re-run
+#' @return A modified Seurat object.
+#' @export
+ApplyPPG_Stim_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMetadata = TRUE) {
+  if (reApplyMetadata) {
+    seuratObj <- .ApplyMetadata(seuratObj)
+  }
+  seuratObj <- .AppendDemographics(seuratObj)
+
+  metadata <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/1297",
+    schemaName="lists",
+    queryName="EC_Subjects",
+    colNameOpt="rname",
+    colSelect = 'subjectid,genotype,challengedate,category',
+  )
+  names(metadata) <- c('SubjectId', 'Genotype', 'ChallengeDate', 'Category')
+
+  metadata2 <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/1297",
+    schemaName="lists",
+    queryName="EC_Libraries",
+    colNameOpt="rname",
+    colSelect = 'cDNA_ID,Timepoint'
+  )
+  names(metadata2) <- c('cDNA_ID', 'Timepoint')
+
+  metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
+  metadata <- metadata[names(metadata) != 'SubjectId']
+
+  if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
+    if (any(is.na(seuratObj$cDNA_ID))) {
+      stop('There were missing cDNA_IDs in the seurat object')
+    }
+    missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
+    stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
+  }
+
+  if (any(duplicated(metadata$cDNA_ID))) {
+    dups <- metadata$cDNA_ID[duplicated(metadata$cDNA_ID)]
+    stop(paste0('There were duplicated cDNA_IDs in the metadata: ', paste0(dups, collapse = ',')))
+  }
+
+  toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
+  toAdd$SortOrder <- seq_len(nrow(toAdd))
+  toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
+  toAdd <- arrange(toAdd, SortOrder)
+  rownames(toAdd) <- toAdd$CellBarcode
+  toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+
+  seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
+
+  return(seuratObj)
+}
