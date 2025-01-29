@@ -393,13 +393,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        )
   )
   seuratObj <- PerformMhcNormalization(seuratObj)
-  groupedMHC <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = 'MHC', slot = 'counts'), featureTransform = function(x){
-    return(seuratObj@assays$MHC@meta.features$locus[rownames(seuratObj@assays$MHC) == x])
-  })
-  groupedMHCData <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = 'MHC', slot = 'data'), featureTransform = function(x){
-    return(seuratObj@assays$MHC@meta.features$locus[rownames(seuratObj@assays$MHC) == x])
-  })
-  seuratObj[['MHC_Grouped']] <- Seurat::SetAssayData(Seurat::CreateAssayObject(groupedMHC), layer = 'data', new.data = groupedMHCData)
+  seuratObj <- .GroupMhcData(seuratObj, targetAssay = 'MHC_Grouped')
   
   # KIR:
   seuratObj <- DownloadAndAppendNimble(seuratObj,
@@ -459,6 +453,20 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   return(seuratObj)
 }
 
+.GroupMhcData <- function(seuratObj, targetAssay, sourceAssay = 'MHC') {
+  ad <- Seurat::GetAssayData(seuratObj, assay = sourceAssay)
+  groupedMHC <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = sourceAssay, layer = 'counts'), featureTransform = function(x){
+    return(ad@meta.features$locus[rownames(ad) == x])
+  })
+
+  groupedMHCData <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = sourceAssay, layer = 'data'), featureTransform = function(x){
+    return(ad@meta.features$locus[rownames(ad) == x])
+  })
+  seuratObj[[targetAssay]] <- Seurat::SetAssayData(Seurat::CreateAssayObject(groupedMHC), layer = 'data', new.data = groupedMHCData)
+
+  return(seuratObj)
+}
+
 #' @title CalculateIsotype
 #' @description Uses nimble data to score isotype of each cell
 #' @param seuratObj A Seurat object.
@@ -498,7 +506,6 @@ CalculateIsotype <- function(seuratObj, assayName = 'IG', isotypeFilterThreshold
   }
   
   if (any(rownames(mat) != updatedRows)) {
-    print('Grouping matrix')
     newMat <- NULL
     for (val in unique(updatedRows)) {
       toSelect <- names(updatedRows)[updatedRows == val]
@@ -506,6 +513,8 @@ CalculateIsotype <- function(seuratObj, assayName = 'IG', isotypeFilterThreshold
       rownames(m) <- val
       newMat <- rbind(newMat, Seurat::as.sparse(m))
     }
+
+    colnames(newMat) <- colnames(mat)
     
     return(newMat)
   } else {
