@@ -453,16 +453,23 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   return(seuratObj)
 }
 
-.GroupMhcData <- function(seuratObj, targetAssay, sourceAssay = 'MHC') {
-  ad <- Seurat::GetAssayData(seuratObj, assay = sourceAssay)
+.GroupMhcData <- function(seuratObj, targetAssay, sourceAssay = 'MHC', prefix = 'Mamu-') {
+  ad <- Seurat::GetAssay(seuratObj, assay = sourceAssay)
   groupedMHC <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = sourceAssay, layer = 'counts'), featureTransform = function(x){
     return(ad@meta.features$locus[rownames(ad) == x])
   })
+  rownames(groupedMHC) <- paste0(prefix, rownames(groupedMHC))
 
   groupedMHCData <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = sourceAssay, layer = 'data'), featureTransform = function(x){
     return(ad@meta.features$locus[rownames(ad) == x])
   })
+  rownames(groupedMHCData) <- paste0(prefix, rownames(groupedMHCData))
+
   seuratObj[[targetAssay]] <- Seurat::SetAssayData(Seurat::CreateAssayObject(groupedMHC), layer = 'data', new.data = groupedMHCData)
+
+  for (feat in rownames(seuratObj@assays[[targetAssay]])){
+    print(FeaturePlot(seuratObj, features = feat))
+  }
 
   return(seuratObj)
 }
