@@ -399,7 +399,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   groupedMHCData <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = 'MHC', slot = 'data'), featureTransform = function(x){
     return(seuratObj@assays$MHC@meta.features$locus[rownames(seuratObj@assays$MHC) == x])
   })
-  seuratObj[['MHC_Grouped']] <- Seurat::CreateAssayObject(groupedMHC, data = groupedMHCData)
+  seuratObj[['MHC_Grouped']] <- Seurat::SetAssayData(Seurat::CreateAssayObject(groupedMHC), layer = 'data', new.data = groupedMHCData)
   
   # KIR:
   seuratObj <- DownloadAndAppendNimble(seuratObj,
@@ -452,6 +452,8 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   )
   
   seuratObj <- CalculateIsotype(seuratObj, assayName = 'IG', isotypeFilterThreshold = isotypeFilterThreshold)
+
+  # Viruses:
 
 
   return(seuratObj)
