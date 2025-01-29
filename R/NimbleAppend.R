@@ -406,7 +406,7 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
     dat[seuratObj[[sourceAssayName]]@meta.features$locus == locus] <- toNormalize
   }
 
-  seuratObj <- Seurat::SetAssayData(seuratObj, assay = sourceAssayName, slot = 'data', new.data = toNormalize)
+  seuratObj <- Seurat::SetAssayData(seuratObj, assay = sourceAssayName, slot = 'data', new.data = dat)
 
   return(seuratObj)
 }
