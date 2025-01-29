@@ -373,13 +373,13 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
 
 #' @title PerformDefaultNimbleAppend
 #' @description This is designed to wrap a series of nimble download commands into one, along with some domain-specific logic for each type of data
-#'
 #' @param seuratObj A Seurat object.
+#' @param isotypeFilterThreshold When calculating isotype, any isotype representing below this fraction of reads in the cell is discarded. If this value is 0.1, then a cell with 5 percent of isotype reads for IHGM and 95 percent IGHA would be labeled IGHA.
 #' @param maxLibrarySizeRatio Passed directly to AppendNimbleCounts()
 #' @param assayForLibrarySize Passed directly to AppendNimbleCounts()
 #' @return A modified Seurat object.
 #' @export
-PerformDefaultNimbleAppend <- function(seuratObj, maxLibrarySizeRatio = 100, assayForLibrarySize = 'RNA') {
+PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, maxLibrarySizeRatio = 100, assayForLibrarySize = 'RNA') {
   # MHC:
   seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('Rhesus Macaque MHC'),
@@ -411,14 +411,15 @@ PerformDefaultNimbleAppend <- function(seuratObj, maxLibrarySizeRatio = 100, ass
                                        replaceExistingAssayData = TRUE,
                                        featureRenameList = NULL
   )
-  seuratObj$KIR_Status <- .IterativeFeatureFiltering(seuratObj, features = rownames(seuratObj@assays$KIR), threshold = 0, maxAllowedClasses = 1, featureTransform = function(x){
+  seuratObj$KIR_Status <- .IterativeFeatureFiltering(seuratObj, assayName = 'KIR', features = rownames(seuratObj@assays$KIR), threshold = 0, maxAllowedClasses = 1, featureTransform = function(x){
     return(dplyr::case_when(
       grepl(x, pattern = 'KIR[0-9]DL') ~ 'Inhibitory KIR+',
       grepl(x, pattern = 'KIR[0-9]DS') ~ 'Activating KIR+',
-      .default = NA
+      .default = x
     ))
   })
   print(sort(table(seuratObj$KIR_Status)))  
+  print(DimPlot(seuratObj, group.by = 'KIR_Status'))
 
   # NKG:
   seuratObj <- DownloadAndAppendNimble(seuratObj,
@@ -437,24 +438,41 @@ PerformDefaultNimbleAppend <- function(seuratObj, maxLibrarySizeRatio = 100, ass
   )
   seuratObj$NKG_Status <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E",  "NKG2D"), threshold = 0, maxAllowedClasses = 2, assayName = 'Nimble')
   print(sort(table(seuratObj$NKG_Status)))
-
+  print(DimPlot(seuratObj, group.by = 'NKG_Status'))
+  
   # Ig
   seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('Rhesus_Ig'),
-                                       targetAssayName = 'Ig',
+                                       targetAssayName = 'IG',
                                        assayForLibrarySize = assayForLibrarySize,
                                        normalizeData = TRUE,
                                        maxLibrarySizeRatio = maxLibrarySizeRatio,
                                        replaceExistingAssayData = TRUE,
                                        featureRenameList = NULL
   )
-  seuratObj$IsoType <- .IterativeFeatureFiltering(seuratObj, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 1)
-  print(sort(table(seuratObj$IsoType)))
   
-  seuratObj$IsoTypeDetailed <- .IterativeFeatureFiltering(seuratObj, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 2)
-  print(sort(table(seuratObj$IsoTypeDetailed)))
+  seuratObj <- CalculateIsotype(seuratObj, assayName = 'IG', isotypeFilterThreshold = isotypeFilterThreshold)
+
+
+  return(seuratObj)
+}
+
+#' @title CalculateIsotype
+#' @description Uses nimble data to score isotype of each cell
+#' @param seuratObj A Seurat object.
+#' @param isotypeFilterThreshold When calculating isotype, any isotype representing below this fraction of reads in the cell is discarded. If this value is 0.1, then a cell with 5 percent of isotype reads for IHGM and 95 percent IGHA would be labeled IGHA.
+#' @return A modified Seurat object.
+#' @export
+CalculateIsotype <- function(seuratObj, assayName = 'IG', isotypeFilterThreshold = 0.1) {
+  seuratObj$Isotype <- .IterativeFeatureFiltering(seuratObj, assayName = assayName, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 1, threshold = isotypeFilterThreshold)
+  print(sort(table(seuratObj$Isotype)))
+  print(DimPlot(seuratObj, group.by = 'Isotype'))
   
-  seuratObj$ClassSwitchedStatus <- .IterativeFeatureFiltering(seuratObj, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 1, threshold = 0.1, featureTransform = function(x){
+  seuratObj$IsotypeDetailed <- .IterativeFeatureFiltering(seuratObj, assayName = assayName, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 2)
+  print(sort(table(seuratObj$IsotypeDetailed)))
+  print(DimPlot(seuratObj, group.by = 'IsotypeDetailed'))
+  
+  seuratObj$ClassSwitchedStatus <- .IterativeFeatureFiltering(seuratObj, assayName = assayName, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 1, threshold = isotypeFilterThreshold, featureTransform = function(x){
     return(dplyr::case_when(
       grepl(x, pattern = 'IGHA|IGHG') ~ 'Class-switched',
       grepl(x, pattern = 'IGHM|IGHD') ~ 'Not Class-switched',
@@ -462,10 +480,10 @@ PerformDefaultNimbleAppend <- function(seuratObj, maxLibrarySizeRatio = 100, ass
     ))
   })
   print(sort(table(seuratObj$ClassSwitchedStatus)))
-
+  print(DimPlot(seuratObj, group.by = 'ClassSwitchedStatus'))
+  
   return(seuratObj)
 }
-
 
 .RegroupCountMatrix <- function(mat, featureTransform) {
   if (is.null(featureTransform)) {
