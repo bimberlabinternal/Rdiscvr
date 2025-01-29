@@ -85,11 +85,15 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
   if (!all(is.null(featureRenameList))) {
     print('Potentially renaming features:')
     df$V1 <- as.character(df$V1)
+    totalRenamed  <- 0
     for (featName in names(featureRenameList)) {
       if (featName %in% df$V1) {
         df$V1[df$V1 == featName] <- featureRenameList[[featName]]
+        totalRenamed <- totalRenamed + 1
       }
     }
+
+    print(paste0('Total features renamed: ', totalRenamed))
   }
 
   #Remove ambiguous features
@@ -269,7 +273,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
     if (length(reductions) == 0){
         print('No reductions, cannot plot')
     } else {
-        feats <- rownames(seuratObject[[targetAssayName]])
+        feats <- paste0(seuratObject[[targetAssayName]]@key, rownames(seuratObject[[targetAssayName]]))
         if (length(feats) > maxFeaturesToPlot){
             print(paste0('Too many features, will plot the first: ', maxFeaturesToPlot))
             feats <- feats[1:maxFeaturesToPlot]
@@ -326,7 +330,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
 #' @param ambiguousFeatureDelim This character is used to split feature names in the case of ambiguous features. If a feature is ambiguous, the locus is assigned as the unique loci of the feature set.
 #' @param perCell If true, the feature counts are scaled based on the library size of features from that locus in that cell. If false, it is scaled based on the library size of features in that locus from all cells matching cellGroupingVariable
 #' @param cellGroupingVariable If perCell is FALSE, the library size is calculated by taking the sum of features from that locus across all cells where this metadata variable matches the current cell
-#' @param stripNumbersFromLocus If true, numeric values will be stripped from all locus strings 
+#' @param stripNumbersFromLocus If true, numeric values will be stripped from all locus strings
 #' @return A modified Seurat object.
 #' @import ggplot2
 #' @export
@@ -340,18 +344,18 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
     if (!cellGroupingVariable %in% names(seuratObj@meta.data)) {
       stop(paste0('The cellGroupingVariable of ', cellGroupingVariable, ' was not present seuratObj@meta.data'))
     }
-    
+
     if (any(is.na(seuratObj[[cellGroupingVariable]]))) {
       stop(paste0('The cellGroupingVariable cannot have NAs in it: ', cellGroupingVariable))
     }
-    
+
     librarySizeData <- NULL
     for (locus in sort(unique(seuratObj[[sourceAssayName]]@meta.features$locus))) {
       groupNames <- unique(seuratObj@meta.data[[cellGroupingVariable]])
       for (gn in groupNames) {
         scale.factor <- sum(seuratObj@meta.data[[cellGroupingVariable]] == gn)  # the number of cells in the group
         librarySize <- sum(dat[seuratObj[[sourceAssayName]]@meta.features$locus == locus, colnames(seuratObj)[seuratObj@meta.data[[cellGroupingVariable]] == gn], drop = TRUE])
-        
+
         toAdd <- data.frame(locus = locus, groupName = gn, librarySize = librarySize, scale.factor = scale.factor)
         if (all(is.null(librarySizeData))) {
           librarySizeData <- toAdd
@@ -378,7 +382,7 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
         scale.factor <- librarySizeData$scale.factor[librarySizeData$locus == locus & librarySizeData$groupName == groupName]
         librarySize <- librarySizeData$librarySize[librarySizeData$locus == locus & librarySizeData$groupName == groupName]
       }
-      
+
       librarySizes <- c(librarySizes, librarySize)
 
       if (librarySize == 0) {
@@ -389,10 +393,10 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
 
       toNormalize[, i] <- xnorm
     }
-    
+
     print(paste0('Total features: ', nrow(toNormalize)))
     print(paste0('Mean  library size: ', mean(librarySizes), ', min: ', min(librarySizes), ', max: ', max(librarySizes)))
-    
+
     print(ggplot(data.frame(x = as.numeric(toNormalize)), aes(x = x)) +
       geom_density() +
       egg::theme_presentation(base_size = 12) +

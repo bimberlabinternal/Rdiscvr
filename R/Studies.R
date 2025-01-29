@@ -478,9 +478,9 @@ ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMe
     schemaName="lists",
     queryName="EC_Libraries",
     colNameOpt="rname",
-    colSelect = 'cDNA_ID,Timepoint'
+    colSelect = 'cDNA_ID,Timepoint,cDNA_ID/sortId/sampleId/subjectId'
   )
-  names(metadata2) <- c('cDNA_ID', 'Timepoint')
+  names(metadata2) <- c('cDNA_ID', 'Timepoint', 'SubjectId')
 
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
@@ -529,21 +529,21 @@ ApplyPPG_Stim_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reA
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1297",
     schemaName="lists",
-    queryName="EC_Subjects",
+    queryName="PPG_TCR_Stim_Subjects",
     colNameOpt="rname",
-    colSelect = 'subjectid,genotype,challengedate,category',
+    colSelect = 'subjectid,vaccinetype,challengedate,vaccinationdate',
   )
-  names(metadata) <- c('SubjectId', 'Genotype', 'ChallengeDate', 'Category')
+  names(metadata) <- c('SubjectId', 'VaccineType', 'ChallengeDate', 'VaccinationDate')
 
   metadata2 <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1297",
     schemaName="lists",
-    queryName="EC_Libraries",
+    queryName="TCR_Stims",
     colNameOpt="rname",
-    colSelect = 'cDNA_ID,Timepoint'
+    colSelect = 'cDNA_ID,background,CD4_IFNG_TNF,CD4_IFNG_TNF,CD8_IFNG_TNF,status,cDNA_ID/sortId/sampleId/subjectId'
   )
-  names(metadata2) <- c('cDNA_ID', 'Timepoint')
+  names(metadata2) <- c('cDNA_ID', 'Background', 'CD4_IFNG_TNF', 'CD8_IFNG_TNF', 'StimStatus', 'SubjectId')
 
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
