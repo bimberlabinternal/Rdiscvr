@@ -389,7 +389,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        maxLibrarySizeRatio = maxLibrarySizeRatio,
                                        replaceExistingAssayData = TRUE,
                                        featureRenameList = list(
-                                         'Mamu-E*01,Mamu-E*08' = 'Mamu-E*01/08'
+                                         'Mamu-E*01g,Mamu-E*08g' = 'Mamu-E*01/08'
                                        )
   )
   seuratObj <- PerformMhcNormalization(seuratObj)
