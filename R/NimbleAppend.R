@@ -273,13 +273,19 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
     if (length(reductions) == 0){
         print('No reductions, cannot plot')
     } else {
-        feats <- paste0(seuratObject[[targetAssayName]]@key, rownames(seuratObject[[targetAssayName]]))
+      feats <- paste0(seuratObject[[targetAssayName]]@key, rownames(seuratObject[[targetAssayName]]))
+      rowSums <- Matrix::rowSums(Seurat::GetAssayData(seuratObject, assay = targetAssayName, layer = 'counts'))
+      feats <- feats[rowSums > 0]
+      if (length(feats) == 0) {
+        print('All features are zero, skipping plot')
+      } else {
         if (length(feats) > maxFeaturesToPlot){
             print(paste0('Too many features, will plot the first: ', maxFeaturesToPlot))
             feats <- feats[1:maxFeaturesToPlot]
         }
 
         RIRA::PlotMarkerSeries(seuratObject, reductions = reductions, features = feats, title = targetAssayName)
+      }
     }
   }
   
