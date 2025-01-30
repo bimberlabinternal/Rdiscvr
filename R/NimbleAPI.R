@@ -385,14 +385,13 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        allowableGenomes = .FindLibraryByName('Rhesus Macaque MHC'),
                                        targetAssayName = 'MHC',
                                        assayForLibrarySize = assayForLibrarySize,
-                                       normalizeData = FALSE,
+                                       normalizeData = TRUE,
                                        maxLibrarySizeRatio = maxLibrarySizeRatio,
                                        replaceExistingAssayData = TRUE,
                                        featureRenameList = list(
                                          'Mamu-E*01g,Mamu-E*08g' = 'Mamu-E*01/08'
                                        )
   )
-  seuratObj <- PerformMhcNormalization(seuratObj)
   seuratObj <- .GroupMhcData(seuratObj, targetAssay = 'MHC_Grouped')
   
   # KIR:
@@ -430,7 +429,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                          'NKG2C-KLRC2,NKG2E-KLRC3' = 'NKG2C/E'
                                        )
   )
-  seuratObj$NKG_Status <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E",  "NKG2D"), threshold = 0, maxAllowedClasses = 2, assayName = 'Nimble')
+  seuratObj$NKG_Status <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E",  "NKG2D"), threshold = 0, maxAllowedClasses = 1, assayName = 'Nimble')
   print(sort(table(seuratObj$NKG_Status)))
   print(DimPlot(seuratObj, group.by = 'NKG_Status'))
   
@@ -453,19 +452,15 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   return(seuratObj)
 }
 
-.GroupMhcData <- function(seuratObj, targetAssay, sourceAssay = 'MHC', prefix = 'Mamu-') {
+.GroupMhcData <- function(seuratObj, targetAssay, sourceAssay = 'MHC', prefix = 'Mamu-', assayForLibrarySize = 'RNA') {
   ad <- Seurat::GetAssay(seuratObj, assay = sourceAssay)
   groupedMHC <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = sourceAssay, layer = 'counts'), featureTransform = function(x){
     return(ad@meta.features$locus[rownames(ad) == x])
   })
   rownames(groupedMHC) <- paste0(prefix, rownames(groupedMHC))
 
-  groupedMHCData <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = sourceAssay, layer = 'data'), featureTransform = function(x){
-    return(ad@meta.features$locus[rownames(ad) == x])
-  })
-  rownames(groupedMHCData) <- paste0(prefix, rownames(groupedMHCData))
-
-  seuratObj[[targetAssay]] <- Seurat::SetAssayData(Seurat::CreateAssayObject(groupedMHC), layer = 'data', new.data = groupedMHCData)
+  seuratObj[[targetAssay]] <- Seurat::CreateAssayObject(counts = groupedMHC)
+  seuratObj <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
 
   for (feat in rownames(seuratObj@assays[[targetAssay]])){
     print(FeaturePlot(seuratObj, features = feat))
