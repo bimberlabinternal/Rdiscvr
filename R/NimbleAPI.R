@@ -427,7 +427,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                          'NKG2A-KLRC1' = 'NKG2A',
                                          'NKG2C-KLRC2' = 'NKG2C/E',
                                          'NKG2E-KLRC3' = 'NKG2C/E',
-                                         'NKG2C-KLRC2,NKG2E-KLRC3' = 'NKG2C/E',
+                                         'NKG2C-KLRC2,NKG2E-KLRC3' = 'NKG2C/E'
                                        )
   )
   seuratObj$NKG_Status <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E",  "NKG2D"), threshold = 0, maxAllowedClasses = 2, assayName = 'Nimble')
