@@ -111,7 +111,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
 
       x <- sort(table(x), decreasing = T)
       x <- data.frame(Feature = names(x), Total = as.numeric(unname(x)))
-      x$Fraction <- x$Total / totalUMI
+      x$Total <- paste0(x$Total, ' (', scales::percent(x$Total / totalUMI, accuracy = 0.001), ')')
       print(x)
       df <- df[!ambigFeatRows, , drop = F]
 

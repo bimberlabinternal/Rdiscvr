@@ -460,6 +460,8 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
 }
 
 .GroupMhcData <- function(seuratObj, targetAssay, sourceAssay = 'MHC', prefix = 'Mamu-', assayForLibrarySize = 'RNA') {
+  seuratObj <- .AssignLocusToMhcFeatures(seuratObj, sourceAssayName = sourceAssay)
+
   ad <- Seurat::GetAssay(seuratObj, assay = sourceAssay)
   groupedMHC <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = sourceAssay, layer = 'counts'), featureTransform = function(x){
     return(ad@meta.features$locus[rownames(ad) == x])
