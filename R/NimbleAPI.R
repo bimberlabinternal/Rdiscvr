@@ -447,7 +447,15 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   seuratObj <- CalculateIsotype(seuratObj, assayName = 'IG', isotypeFilterThreshold = isotypeFilterThreshold)
 
   # Viruses:
-
+  seuratObj <- DownloadAndAppendNimble(seuratObj,
+                                       allowableGenomes = .FindLibraryByName('Viral_Genomes'),
+                                       targetAssayName = 'Virus',
+                                       assayForLibrarySize = assayForLibrarySize,
+                                       normalizeData = TRUE,
+                                       maxLibrarySizeRatio = NULL,
+                                       replaceExistingAssayData = TRUE,
+                                       featureRenameList = NULL
+  )
 
   return(seuratObj)
 }
