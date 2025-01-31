@@ -541,9 +541,9 @@ ApplyPPG_Stim_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reA
     schemaName="lists",
     queryName="TCR_Stims",
     colNameOpt="rname",
-    colSelect = 'cDNA_ID,background,CD4_IFNG_TNF,CD4_IFNG_TNF,CD8_IFNG_TNF,status,cDNA_ID/sortId/sampleId/subjectId'
+    colSelect = 'cDNA_ID,CD4_IFNG_TNF,CD4_IFNG_TNF_BS,CD8_IFNG_TNF,CD8_IFNG_TNF_BS,status,cDNA_ID/sortId/sampleId/subjectId,nostimid'
   )
-  names(metadata2) <- c('cDNA_ID', 'Background', 'CD4_IFNG_TNF', 'CD8_IFNG_TNF', 'StimStatus', 'SubjectId')
+  names(metadata2) <- c('cDNA_ID', 'CD4_IFNG_TNF', 'CD4_IFNG_TNF_BS', 'CD8_IFNG_TNF', 'CD8_IFNG_TNF_BS', 'StimStatus', 'SubjectId', 'NoStim_cDNA_ID')
 
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']

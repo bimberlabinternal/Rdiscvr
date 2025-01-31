@@ -193,7 +193,6 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
       filetype <- summary(f)$class
       close.connection(f)
       if (filetype == 'gzfile') {
-        message('Opening gzipped nimble output')
         f <- gzfile(fn)
 
         # Check for an empty file:
