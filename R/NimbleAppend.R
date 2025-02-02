@@ -103,19 +103,29 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
 
   ambigFeatRows <- totalHitsByRow > maxAmbiguityAllowed
   if (sum(ambigFeatRows) > 0) {
-      print(paste0('Dropping ', sum(ambigFeatRows), ' rows with ambiguous features (>', maxAmbiguityAllowed, '), ', sum(ambigFeatRows),' of ', nrow(df)))
-      totalUMI <- sum(df$V2)
-      x <- df$V1[ambigFeatRows]
-      totalHitsByRow <- totalHitsByRow[ambigFeatRows]
-      x[totalHitsByRow > 3] <- 'ManyHits'
+    print(paste0('Dropping ', sum(ambigFeatRows), ' rows with ambiguous features (>', maxAmbiguityAllowed, '), ', sum(ambigFeatRows),' of ', nrow(df)))
+    totalUMI <- sum(df$V2)
+    x <- df$V1[ambigFeatRows]
+    totalHitsByRow <- totalHitsByRow[ambigFeatRows]
+    x[totalHitsByRow > 3] <- 'ManyHits'
 
-      x <- sort(table(x), decreasing = T)
-      x <- data.frame(Feature = names(x), Total = as.numeric(unname(x)))
+    x <- sort(table(x), decreasing = T)
+    x <- data.frame(Feature = names(x), Total = as.numeric(unname(x)))
+
+    x$Fraction <- x$Total / totalUMI
+    x <- x[x$Fraction > 0.005,]
+
+    if (nrow(x) > 0) {
+      x$Name <- substr(x$Feature, start = 1, stop = 40)
+      x$Name[x$Name != x$Feature] <- paste0(x$Name[x$Name != x$Feature], '..')
       x$Total <- paste0(x$Total, ' (', scales::percent(x$Total / totalUMI, accuracy = 0.001), ')')
-      print(x)
-      df <- df[!ambigFeatRows, , drop = F]
 
-      paste0('Distinct features after pruning: ', length(unique(df$V1)))
+      print('Top ambiguous combinations:')
+      print(head(x[c('Name', 'Total')], n = 100))
+    }
+
+    df <- df[!ambigFeatRows, , drop = F]
+    paste0('Distinct features after pruning: ', length(unique(df$V1)))
   }
 
   if (any(duplicated(df[c('V1','V3')]))) {
