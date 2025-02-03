@@ -376,9 +376,10 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
 #' @param isotypeFilterThreshold When calculating isotype, any isotype representing below this fraction of reads in the cell is discarded. If this value is 0.1, then a cell with 5 percent of isotype reads for IHGM and 95 percent IGHA would be labeled IGHA.
 #' @param maxLibrarySizeRatio Passed directly to AppendNimbleCounts()
 #' @param assayForLibrarySize Passed directly to AppendNimbleCounts()
+#' @param maxAmbiguityAllowedForKIR Passed to maxAmbiguityAllowed in AppendNimbleCounts() for KIR data specifically
 #' @return A modified Seurat object.
 #' @export
-PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, maxLibrarySizeRatio = 100, assayForLibrarySize = 'RNA') {
+PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, maxLibrarySizeRatio = 100, assayForLibrarySize = 'RNA', maxAmbiguityAllowedForKIR = 2) {
   # MHC:
   seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('Rhesus Macaque MHC'),
@@ -399,19 +400,12 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        targetAssayName = 'KIR',
                                        assayForLibrarySize = assayForLibrarySize,
                                        normalizeData = TRUE,
+                                       maxAmbiguityAllowed = maxAmbiguityAllowedForKIR,
                                        maxLibrarySizeRatio = maxLibrarySizeRatio,
                                        replaceExistingAssayData = TRUE,
                                        featureRenameList = NULL
   )
-  seuratObj$KIR_Status <- .IterativeFeatureFiltering(seuratObj, assayName = 'KIR', features = rownames(seuratObj@assays$KIR), threshold = 0, maxAllowedClasses = 1, featureTransform = function(x){
-    return(dplyr::case_when(
-      grepl(x, pattern = 'KIR[0-9]DL') ~ 'Inhibitory KIR+',
-      grepl(x, pattern = 'KIR[0-9]DS') ~ 'Activating KIR+',
-      .default = x
-    ))
-  })
-  print(sort(table(seuratObj$KIR_Status)))  
-  print(DimPlot(seuratObj, group.by = 'KIR_Status'))
+  seuratObj <- .GroupKirData(seuratObj)
 
   # NKG:
   seuratObj <- DownloadAndAppendNimble(seuratObj,
@@ -474,6 +468,40 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   for (feat in rownames(seuratObj@assays[[targetAssay]])){
     print(FeaturePlot(seuratObj, features = feat))
   }
+
+  return(seuratObj)
+}
+
+.GroupKirData <- function(seuratObj, targetAssay = 'KIR_Grouped', sourceAssay = 'KIR', assayForLibrarySize = 'RNA') {
+  groupedMat <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = sourceAssay, layer = 'counts'), featureTransform = function(x){
+    x <- unlist(strsplit(x, split = ','))
+    feats <- sapply(x, function(y) {
+      return(dplyr::case_when(
+        grepl(y, pattern = 'KIR[0-9]DL') ~ 'Inhibitory-KIR',
+        grepl(y, pattern = 'KIR[0-9]DS') ~ 'Activating-KIR',
+        .default = y
+      ))
+    })
+
+    feats <- sort(unique(feats))
+    if (length(feats) > 1) {
+      return('Multiple')
+    }
+
+    return(paste0(feats, collapse = ','))
+  })
+
+  seuratObj[[targetAssay]] <- Seurat::CreateAssayObject(counts = groupedMat)
+  seuratObj <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
+
+  for (feat in rownames(seuratObj@assays[[targetAssay]])){
+    print(FeaturePlot(seuratObj, features = paste0(seuratObj@assays[[targetAssay]]@key, feat)))
+  }
+
+  seuratObj$KIR_Status <- .IterativeFeatureFiltering(seuratObj, assayName = 'KIR_Grouped', features = rownames(seuratObj@assays$KIR_Grouped), threshold = 0, maxAllowedClasses = 1)
+
+  print(sort(table(seuratObj$KIR_Status)))
+  print(DimPlot(seuratObj, group.by = 'KIR_Status'))
 
   return(seuratObj)
 }

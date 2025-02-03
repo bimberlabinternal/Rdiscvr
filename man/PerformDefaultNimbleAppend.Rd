@@ -8,7 +8,8 @@ PerformDefaultNimbleAppend(
   seuratObj,
   isotypeFilterThreshold = 0.1,
   maxLibrarySizeRatio = 100,
-  assayForLibrarySize = "RNA"
+  assayForLibrarySize = "RNA",
+  maxAmbiguityAllowedForKIR = 2
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ PerformDefaultNimbleAppend(
 \item{maxLibrarySizeRatio}{Passed directly to AppendNimbleCounts()}
 
 \item{assayForLibrarySize}{Passed directly to AppendNimbleCounts()}
+
+\item{maxAmbiguityAllowedForKIR}{Passed to maxAmbiguityAllowed in AppendNimbleCounts() for KIR data specifically}
 }
 \value{
 A modified Seurat object.
