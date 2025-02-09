@@ -414,7 +414,10 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        assayForLibrarySize = assayForLibrarySize,
                                        normalizeData = TRUE,
                                        maxLibrarySizeRatio = maxLibrarySizeRatio,
-                                       replaceExistingAssayData = TRUE
+                                       replaceExistingAssayData = TRUE,
+                                       featureRenameList = list(
+                                         'NKG2C-KLRC2,NKG2E-KLRC3' = 'NKG2C/E',
+                                       )
   )
 
   seuratObj <- .GroupNkgData(seuratObj)
