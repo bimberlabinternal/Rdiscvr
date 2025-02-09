@@ -431,12 +431,13 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        allowableGenomes = .FindLibraryByName('Rhesus_Ig'),
                                        targetAssayName = 'IG',
                                        assayForLibrarySize = assayForLibrarySize,
-                                       normalizeData = TRUE,
+                                       normalizeData = FALSE,
                                        maxLibrarySizeRatio = maxLibrarySizeRatio,
                                        replaceExistingAssayData = TRUE,
                                        featureRenameList = NULL
   )
-  
+
+  seuratObj <- .MergeNimbleAndRnaIg(seuratObj, assayForLibrarySize = assayForLibrarySize)
   seuratObj <- CalculateIsotype(seuratObj, assayName = 'IG', isotypeFilterThreshold = isotypeFilterThreshold)
 
   # Viruses:
@@ -449,6 +450,41 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        replaceExistingAssayData = TRUE,
                                        featureRenameList = NULL
   )
+
+  return(seuratObj)
+}
+
+.MergeNimbleAndRnaIg <- function(seuratObj, igAssay = 'IG', assayForLibrarySize = 'RNA'){
+  ad <- GetAssayData(seuratObj, assay = igAssay, layer = 'counts')
+  ighgMap <- c(
+    "IGHG1-like" = "LOC708891",
+    "IGHG2-like" = "LOC114679691",
+    "IGHG4-like" = c("LOC114679690", "LOC710905")
+  )
+
+  for (feat in names(ighgMap)) {
+    dat <- suppressWarnings(Seurat::FetchData(seuratObj, vars = ighgMap[[feat]]))
+    if (ncol(dat) != length(ighgMap[[feat]])) {
+      stop(paste0('Did not find all features: ', paste0(ighgMap[[feat]], collapse = ',')))
+    }
+
+    dat <- rowSums(dat)
+    if (any(names(dat) != colnames(ad))) {
+      stop('Cell barcodes not equal!')
+    }
+
+    if (feat %in% rownames(ad)) {
+      ad[feat] <- dat
+    } else {
+      ad <- rbind(ad, dat)
+      rownames(ad)[length(rownames(ad))] <- feat
+    }
+  }
+
+  newAssay <- Seurat::CreateAssayObject(counts = ad)
+  seuratObj[[igAssay]] <- NULL
+  seuratObj[[igAssay]] <- newAssay
+  seuratObj <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObj, assay = igAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
 
   return(seuratObj)
 }
@@ -513,15 +549,17 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
 #' @return A modified Seurat object.
 #' @export
 CalculateIsotype <- function(seuratObj, assayName = 'IG', isotypeFilterThreshold = 0.1) {
-  seuratObj$Isotype <- .IterativeFeatureFiltering(seuratObj, assayName = assayName, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 1, threshold = isotypeFilterThreshold)
+  seuratObj$Isotype <- .IterativeFeatureFiltering(seuratObj, assayName = assayName, features = c("IGHA", "IGHG1-like", "IGHG2-like", "IGHG4-like", "IGHM", "IGHD"), maxAllowedClasses = 1, threshold = isotypeFilterThreshold, featureTransform = function(x){
+    return(substr(x = x, start = 1, stop = 4))
+  })
   print(sort(table(seuratObj$Isotype)))
   print(DimPlot(seuratObj, group.by = 'Isotype'))
   
-  seuratObj$IsotypeDetailed <- .IterativeFeatureFiltering(seuratObj, assayName = assayName, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 2)
+  seuratObj$IsotypeDetailed <- .IterativeFeatureFiltering(seuratObj, assayName = assayName, features = c("IGHA", "IGHG1-like", "IGHG2-like", "IGHG4-like", "IGHM", "IGHD"), maxAllowedClasses = 2)
   print(sort(table(seuratObj$IsotypeDetailed)))
   print(DimPlot(seuratObj, group.by = 'IsotypeDetailed'))
   
-  seuratObj$ClassSwitchedStatus <- .IterativeFeatureFiltering(seuratObj, assayName = assayName, features = c("IGHA", "IGHG", "IGHM", "IGHD"), maxAllowedClasses = 1, threshold = isotypeFilterThreshold, featureTransform = function(x){
+  seuratObj$ClassSwitchedStatus <- .IterativeFeatureFiltering(seuratObj, assayName = assayName, features = c("IGHA", "IGHG1-like", "IGHG2-like", "IGHG4-like", "IGHM", "IGHD"), maxAllowedClasses = 1, threshold = isotypeFilterThreshold, featureTransform = function(x){
     return(dplyr::case_when(
       grepl(x, pattern = 'IGHA|IGHG') ~ 'Class-switched',
       grepl(x, pattern = 'IGHM|IGHD') ~ 'Not Class-switched',
