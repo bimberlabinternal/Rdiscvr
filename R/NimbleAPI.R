@@ -414,15 +414,11 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        assayForLibrarySize = assayForLibrarySize,
                                        normalizeData = TRUE,
                                        maxLibrarySizeRatio = maxLibrarySizeRatio,
-                                       replaceExistingAssayData = TRUE,
-                                       featureRenameList = list(
-                                         'NKG2A-KLRC1' = 'NKG2A',
-                                         'NKG2C-KLRC2' = 'NKG2C/E',
-                                         'NKG2E-KLRC3' = 'NKG2C/E',
-                                         'NKG2C-KLRC2,NKG2E-KLRC3' = 'NKG2C/E'
-                                       )
+                                       replaceExistingAssayData = TRUE
   )
-  seuratObj$NKG_Status <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E",  "NKG2D"), threshold = 0, maxAllowedClasses = 1, assayName = 'Nimble')
+
+  seuratObj <- .GroupNkgData(seuratObj)
+  seuratObj$NKG_Status <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E",  "NKG2D"), threshold = 0, maxAllowedClasses = 1, assayName = 'NKG')
   print(sort(table(seuratObj$NKG_Status)))
   print(DimPlot(seuratObj, group.by = 'NKG_Status'))
   
@@ -485,6 +481,30 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   seuratObj[[igAssay]] <- NULL
   seuratObj[[igAssay]] <- newAssay
   seuratObj <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObj, assay = igAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
+
+  return(seuratObj)
+}
+
+.GroupNkgData <- function(seuratObj, targetAssay = 'NKG', sourceAssay = 'Nimble', assayForLibrarySize = 'RNA') {
+  groupedData <- .RegroupCountMatrix(Seurat::GetAssayData(seuratObj, assay = sourceAssay, layer = 'counts'), featureTransform = function(x){
+    return(dplyr::case_when(
+      x == 'NKG2A-KLRC1' ~ 'NKG2A',
+      x == 'NKG2C-KLRC2' ~ 'NKG2C/E',
+      x == 'NKG2E-KLRC3' ~ 'NKG2C/E',
+      x == 'NKG2C-KLRC2,NKG2E-KLRC3' ~ 'NKG2C/E',
+      .default = x
+    ))
+  })
+
+  groupedData <- groupedData[c('NKG2A', 'NKG2C/E'),]
+  dat <- Matrix::t(Seurat::as.sparse(suppressWarnings(Seurat::FetchData(seuratObj, vars = 'NKG2D'))))
+  groupedData <- rbind(groupedData, dat)
+  seuratObj[[targetAssay]] <- Seurat::CreateAssayObject(counts = groupedData)
+  seuratObj <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
+
+  for (feat in rownames(seuratObj@assays[[targetAssay]])){
+    print(FeaturePlot(seuratObj, features = paste0(seuratObj@assays[[targetAssay]]@key, feat)))
+  }
 
   return(seuratObj)
 }
