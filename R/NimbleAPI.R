@@ -416,7 +416,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        maxLibrarySizeRatio = maxLibrarySizeRatio,
                                        replaceExistingAssayData = TRUE,
                                        featureRenameList = list(
-                                         'NKG2C-KLRC2,NKG2E-KLRC3' = 'NKG2C/E'Bugfix
+                                         'NKG2C-KLRC2,NKG2E-KLRC3' = 'NKG2C/E'
                                        )
   )
 
