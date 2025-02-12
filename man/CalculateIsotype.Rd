@@ -9,6 +9,8 @@ CalculateIsotype(seuratObj, assayName = "IG", isotypeFilterThreshold = 0.1)
 \arguments{
 \item{seuratObj}{A Seurat object.}
 
+\item{assayName}{The name of the source assay}
+
 \item{isotypeFilterThreshold}{When calculating isotype, any isotype representing below this fraction of reads in the cell is discarded. If this value is 0.1, then a cell with 5 percent of isotype reads for IHGM and 95 percent IGHA would be labeled IGHA.}
 }
 \value{

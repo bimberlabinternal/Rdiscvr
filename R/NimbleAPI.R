@@ -568,6 +568,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
 #' @title CalculateIsotype
 #' @description Uses nimble data to score isotype of each cell
 #' @param seuratObj A Seurat object.
+#' @param assayName The name of the source assay
 #' @param isotypeFilterThreshold When calculating isotype, any isotype representing below this fraction of reads in the cell is discarded. If this value is 0.1, then a cell with 5 percent of isotype reads for IHGM and 95 percent IGHA would be labeled IGHA.
 #' @return A modified Seurat object.
 #' @export
