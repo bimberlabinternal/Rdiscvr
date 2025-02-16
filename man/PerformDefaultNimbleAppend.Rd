@@ -9,7 +9,12 @@ PerformDefaultNimbleAppend(
   isotypeFilterThreshold = 0.1,
   maxLibrarySizeRatio = 100,
   assayForLibrarySize = "RNA",
-  maxAmbiguityAllowedForKIR = 2
+  maxAmbiguityAllowedForKIR = 2,
+  appendMHC = TRUE,
+  appendKIR = TRUE,
+  appendNKG = TRUE,
+  appendIG = TRUE,
+  appendViral = TRUE
 )
 }
 \arguments{
@@ -22,6 +27,16 @@ PerformDefaultNimbleAppend(
 \item{assayForLibrarySize}{Passed directly to AppendNimbleCounts()}
 
 \item{maxAmbiguityAllowedForKIR}{Passed to maxAmbiguityAllowed in AppendNimbleCounts() for KIR data specifically}
+
+\item{appendMHC}{If true, MHC data will be appended}
+
+\item{appendKIR}{= If true, KIR data will be appended}
+
+\item{appendNKG}{= If true, NKG2 data will be appended}
+
+\item{appendIG}{= If true, Ig data will be appended}
+
+\item{appendViral}{= If true, viral data will be appended}
 }
 \value{
 A modified Seurat object.

@@ -377,25 +377,30 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
 #' @param maxLibrarySizeRatio Passed directly to AppendNimbleCounts()
 #' @param assayForLibrarySize Passed directly to AppendNimbleCounts()
 #' @param maxAmbiguityAllowedForKIR Passed to maxAmbiguityAllowed in AppendNimbleCounts() for KIR data specifically
+#' @param appendMHC If true, MHC data will be appended
+#' @param appendKIR = If true, KIR data will be appended
+#' @param appendNKG = If true, NKG2 data will be appended
+#' @param appendIG = If true, Ig data will be appended
+#' @param appendViral = If true, viral data will be appended
 #' @return A modified Seurat object.
 #' @export
-PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, maxLibrarySizeRatio = 100, assayForLibrarySize = 'RNA', maxAmbiguityAllowedForKIR = 2) {
+PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, maxLibrarySizeRatio = 100, assayForLibrarySize = 'RNA', maxAmbiguityAllowedForKIR = 2, appendMHC = TRUE, appendKIR = TRUE, appendNKG = TRUE, appendIG = TRUE, appendViral = TRUE) {
   # MHC:
-  seuratObj <- DownloadAndAppendNimble(seuratObj,
-                                       allowableGenomes = .FindLibraryByName('Rhesus Macaque MHC'),
+  if (appendMHC) {
+    seuratObj <- DownloadAndAppendNimble(seuratObj,
+                                       allowableGenomes = .FindLibraryByName('Rhesus Macaque MHC V2'),
                                        targetAssayName = 'MHC',
                                        assayForLibrarySize = assayForLibrarySize,
                                        normalizeData = TRUE,
                                        maxLibrarySizeRatio = maxLibrarySizeRatio,
-                                       replaceExistingAssayData = TRUE,
-                                       featureRenameList = list(
-                                         'Mamu-E*01g,Mamu-E*08g' = 'Mamu-E*01/08'
-                                       )
-  )
-  seuratObj <- .GroupMhcData(seuratObj, targetAssay = 'MHC_Grouped')
-  
+                                       replaceExistingAssayData = TRUE
+    )
+    seuratObj <- .GroupMhcData(seuratObj, targetAssay = 'MHC_Grouped')
+  }
+
   # KIR:
-  seuratObj <- DownloadAndAppendNimble(seuratObj,
+  if (appendKIR) {
+    seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('Rhesus_KIR'),
                                        targetAssayName = 'KIR',
                                        assayForLibrarySize = assayForLibrarySize,
@@ -404,11 +409,13 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        maxLibrarySizeRatio = maxLibrarySizeRatio,
                                        replaceExistingAssayData = TRUE,
                                        featureRenameList = NULL
-  )
-  seuratObj <- .GroupKirData(seuratObj)
+    )
+    seuratObj <- .GroupKirData(seuratObj)
+  }
 
   # NKG:
-  seuratObj <- DownloadAndAppendNimble(seuratObj,
+  if (appendNKG) {
+    seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('RhesusSupplementalFeatures'),
                                        targetAssayName = 'Nimble',
                                        assayForLibrarySize = assayForLibrarySize,
@@ -418,15 +425,17 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        featureRenameList = list(
                                          'NKG2C-KLRC2,NKG2E-KLRC3' = 'NKG2C/E'
                                        )
-  )
+    )
 
-  seuratObj <- .GroupNkgData(seuratObj)
-  seuratObj$NKG_Status <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E",  "NKG2D"), threshold = 0, maxAllowedClasses = 1, assayName = 'NKG')
-  print(sort(table(seuratObj$NKG_Status)))
-  print(DimPlot(seuratObj, group.by = 'NKG_Status'))
-  
+    seuratObj <- .GroupNkgData(seuratObj)
+    seuratObj$NKG_Status <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E",  "NKG2D"), threshold = 0, maxAllowedClasses = 1, assayName = 'NKG')
+    print(sort(table(seuratObj$NKG_Status)))
+    print(DimPlot(seuratObj, group.by = 'NKG_Status'))
+  }
+
   # Ig
-  seuratObj <- DownloadAndAppendNimble(seuratObj,
+  if (appendIG) {
+    seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('Rhesus_Ig'),
                                        targetAssayName = 'IG',
                                        assayForLibrarySize = assayForLibrarySize,
@@ -434,13 +443,15 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        maxLibrarySizeRatio = maxLibrarySizeRatio,
                                        replaceExistingAssayData = TRUE,
                                        featureRenameList = NULL
-  )
+    )
 
-  seuratObj <- .MergeNimbleAndRnaIg(seuratObj, assayForLibrarySize = assayForLibrarySize)
-  seuratObj <- CalculateIsotype(seuratObj, assayName = 'IG', isotypeFilterThreshold = isotypeFilterThreshold)
+    seuratObj <- .MergeNimbleAndRnaIg(seuratObj, assayForLibrarySize = assayForLibrarySize)
+    seuratObj <- CalculateIsotype(seuratObj, assayName = 'IG', isotypeFilterThreshold = isotypeFilterThreshold)
+  }
 
   # Viruses:
-  seuratObj <- DownloadAndAppendNimble(seuratObj,
+  if (appendViral) {
+    seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('Viral_Genomes'),
                                        targetAssayName = 'Virus',
                                        assayForLibrarySize = assayForLibrarySize,
@@ -448,7 +459,8 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
                                        maxLibrarySizeRatio = NULL,
                                        replaceExistingAssayData = TRUE,
                                        featureRenameList = NULL
-  )
+    )
+  }
 
   return(seuratObj)
 }
