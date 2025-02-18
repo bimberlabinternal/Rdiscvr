@@ -5,7 +5,7 @@
 \title{DownloadAndAppendNimble}
 \usage{
 DownloadAndAppendNimble(
-  seuratObject,
+  seuratObj,
   targetAssayName,
   outPath = tempdir(),
   enforceUniqueFeatureNames = TRUE,
@@ -23,7 +23,7 @@ DownloadAndAppendNimble(
 )
 }
 \arguments{
-\item{seuratObject}{A Seurat object.}
+\item{seuratObj}{A Seurat object.}
 
 \item{targetAssayName}{The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.}
 

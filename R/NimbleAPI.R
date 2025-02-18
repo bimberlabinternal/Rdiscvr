@@ -12,7 +12,7 @@ utils::globalVariables(
 #' @title DownloadAndAppendNimble
 #' @description This read a given seurat object and download/append all associated files to the object
 #'
-#' @param seuratObject A Seurat object.
+#' @param seuratObj A Seurat object.
 #' @param targetAssayName The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.
 #' @param outPath The path to which nimble files will be downloaded and saved
 #' @param enforceUniqueFeatureNames Whether or not to fail if we discover multiple nimble files with the same feature name
@@ -29,22 +29,22 @@ utils::globalVariables(
 #' @param featureRenameList An optional named list in the format <OLD_NAME> = <NEW_NAME>. If any <OLD_NAME> are present, the will be renamed to <NEW_NAME>. The intention of this is to recover specific ambiguous classes.
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = FALSE, normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, queryDatabaseForLineageUpdates = FALSE, replaceExistingAssayData = TRUE, featureRenameList = NULL) {
+DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = FALSE, normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, queryDatabaseForLineageUpdates = FALSE, replaceExistingAssayData = TRUE, featureRenameList = NULL) {
   # Ensure we have a DatasetId column
-  if (is.null(seuratObject@meta.data[['DatasetId']])) {
+  if (is.null(seuratObj@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
   }
 
   if (performDietSeurat) {
     print('Running DietSeurat')
-    seuratObject <- Seurat::DietSeurat(seuratObject)
+    seuratObj <- Seurat::DietSeurat(seuratObj)
   }
 
   # Produce a nimble file id/DatasetId vector for each DatasetId
   nimbleFileComponents <- list()
   genomeToDataset <- list()
-  print(paste0('Total datasets: ', length(unique(seuratObject@meta.data[['DatasetId']]))))
-  for (datasetId in unique(seuratObject@meta.data[['DatasetId']])) {
+  print(paste0('Total datasets: ', length(unique(seuratObj@meta.data[['DatasetId']]))))
+  for (datasetId in unique(seuratObj@meta.data[['DatasetId']])) {
     print(paste0('Possibly adding nimble data for dataset: ', datasetId))
     
     nimbleToGenome <- .queryNimble(loupeDataId=datasetId, allowableGenomes=allowableGenomes)
@@ -100,10 +100,10 @@ DownloadAndAppendNimble <- function(seuratObject, targetAssayName, outPath=tempd
   write.table(df, outFile, sep="\t", col.names=F, row.names=F, quote=F)
 
   print(paste0('Appending counts to ', targetAssayName))
-  seuratObject <- AppendNimbleCounts(seuratObject=seuratObject, targetAssayName = targetAssayName, nimbleFile=outFile, maxAmbiguityAllowed = maxAmbiguityAllowed, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio, replaceExistingAssayData = replaceExistingAssayData, featureRenameList = featureRenameList)
+  seuratObj <- AppendNimbleCounts(seuratObj = seuratObj, targetAssayName = targetAssayName, nimbleFile=outFile, maxAmbiguityAllowed = maxAmbiguityAllowed, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio, replaceExistingAssayData = replaceExistingAssayData, featureRenameList = featureRenameList)
   unlink(outFile)
 
-  return(seuratObject)
+  return(seuratObj)
 }
 
 .queryNimble <- function(loupeDataId, allowableGenomes=NULL) {

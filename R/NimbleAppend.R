@@ -4,7 +4,7 @@
 #' @title AppendNimbleCounts
 #' @description Reads a given seurat object and a nimble file, and appends the nimble data to the object.
 #'
-#' @param seuratObject A Seurat object.
+#' @param seuratObj A Seurat object.
 #' @param nimbleFile A nimble file, which is a TSV of feature counts created by nimble
 #' @param maxAmbiguityAllowed If provided, any features representing more than ths value will be discarded. For example, 'Feat1,Feat2,Feat3' represents 3 features. maxAmbiguityAllowed=1 results in removal of all ambiguous features.
 #' @param targetAssayName The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.
@@ -20,7 +20,7 @@
 #' @param featureRenameList An optional named list in the format <OLD_NAME> = <NEW_NAME>. If any <OLD_NAME> are present, the will be renamed to <NEW_NAME>. The intention of this is to recover specific ambiguous classes.
 #' @return A modified Seurat object.
 #' @export
-AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmbiguityAllowed = 0, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = (targetAssayName %in% names(seuratObject@assays)), assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, doPlot = TRUE, maxFeaturesToPlot = 40, replaceExistingAssayData = TRUE, featureRenameList = NULL) {
+AppendNimbleCounts <- function(seuratObj, nimbleFile, targetAssayName, maxAmbiguityAllowed = 0, renameConflictingFeatures = TRUE, duplicateFeatureSuffix = ".Nimble", normalizeData = TRUE, performDietSeurat = (targetAssayName %in% names(seuratObj@assays)), assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, doPlot = TRUE, maxFeaturesToPlot = 40, replaceExistingAssayData = TRUE, featureRenameList = NULL) {
   if (!file.exists(nimbleFile)) {
     stop(paste0("Nimble file does not exist: ", nimbleFile))
   }
@@ -40,7 +40,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
 
   # Indicates no data in TSV
   if (all(is.null(df))){
-    return(seuratObject)
+    return(seuratObj)
   }
 
   if (sum(df$V1 == "") > 0) {
@@ -160,15 +160,15 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
     stop(e)
   })
 
-  if (replaceExistingAssayData && targetAssayName %in% names(seuratObject@assays)) {
+  if (replaceExistingAssayData && targetAssayName %in% names(seuratObj@assays)) {
     print('Replacing existing assay')
-    seuratObject@assays[[targetAssayName]] <- NULL
+    seuratObj@assays[[targetAssayName]] <- NULL
   }
 
-  appendToExistingAssay <- targetAssayName %in% names(seuratObject@assays)
+  appendToExistingAssay <- targetAssayName %in% names(seuratObj@assays)
 
   # Remove barcodes from nimble that aren't in seurat
-  seuratBarcodes <- colnames(seuratObject@assays[[Seurat::DefaultAssay(seuratObject)]])
+  seuratBarcodes <- colnames(seuratObj@assays[[Seurat::DefaultAssay(seuratObj)]])
   barcodeDiff <- colnames(df) %in% seuratBarcodes
   barcodeDiff[1] <- TRUE # retain feature name
   numColsToDrop <- length(barcodeDiff) - sum(barcodeDiff)
@@ -198,7 +198,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
   }
 
   m <- m[,seuratBarcodes, drop=FALSE] # Ensure column order matches
-  if (appendToExistingAssay && ncol(m) != ncol(seuratObject@assays[[targetAssayName]])) {
+  if (appendToExistingAssay && ncol(m) != ncol(seuratObj@assays[[targetAssayName]])) {
     stop(paste0('Error parsing nimble data, ncol not equal after subset, was ', ncol(m)))
   }
 
@@ -207,8 +207,8 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
   }
 
   if (appendToExistingAssay) {
-    if (any(rownames(m) %in% rownames(seuratObject@assays[[targetAssayName]]))) {
-      conflicting <- rownames(m)[rownames(m) %in% rownames(seuratObject@assays[[targetAssayName]])]
+    if (any(rownames(m) %in% rownames(seuratObj@assays[[targetAssayName]]))) {
+      conflicting <- rownames(m)[rownames(m) %in% rownames(seuratObj@assays[[targetAssayName]])]
 
       if (renameConflictingFeatures) {
         print(paste0('The following nimble features have conflicts in the existing assay and will be renamed: ', paste0(conflicting, collapse = ',')))
@@ -224,36 +224,36 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
 
     if (performDietSeurat) {
       print('Running DietSeurat')
-      seuratObject <- Seurat::DietSeurat(seuratObject)
+      seuratObj <- Seurat::DietSeurat(seuratObj)
     }
 
     # Append nimble matrix to seurat count matrix
-    existingBarcodes <- colnames(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts'))
+    existingBarcodes <- colnames(Seurat::GetAssayData(seuratObj, assay = targetAssayName, slot = 'counts'))
     if (sum(colnames(m) != existingBarcodes) > 0) {
       stop('cellbarcodes do not match on matrices')
     }
 
     # If feature source exists, retain it. Otherwise assume these are from cellranger:
     slotName <- .GetAssayMetaSlotName(seuratObj[[sourceAssayName]])
-    if ('FeatureSource' %in% names(slot(seuratObject@assays[[targetAssayName]], slotName))) {
-      fs <- slot(seuratObject@assays[[targetAssayName]], slotName)$FeatureSource
+    if ('FeatureSource' %in% names(slot(seuratObj@assays[[targetAssayName]], slotName))) {
+      fs <- slot(seuratObj@assays[[targetAssayName]], slotName)$FeatureSource
     } else {
-      fs <- rep('CellRanger', nrow(seuratObject@assays[[targetAssayName]]))
+      fs <- rep('CellRanger', nrow(seuratObj@assays[[targetAssayName]]))
     }
 
     fs <- c(fs, rep('Nimble', nrow(m)))
 
     # perform in two steps to avoid warnings:
-    ad <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts'), m)))
-    if (targetAssayName != Seurat::DefaultAssay(seuratObject)) {
-      seuratObject[[targetAssayName]] <- NULL
+    ad <- Seurat::CreateAssayObject(counts = Seurat::as.sparse(rbind(Seurat::GetAssayData(seuratObj, assay = targetAssayName, slot = 'counts'), m)))
+    if (targetAssayName != Seurat::DefaultAssay(seuratObj)) {
+      seuratObj[[targetAssayName]] <- NULL
     }
-    seuratObject[[targetAssayName]] <- ad
+    seuratObj[[targetAssayName]] <- ad
     
-    names(fs) <- rownames(seuratObject@assays[[targetAssayName]])
-    seuratObject@assays[[targetAssayName]] <- Seurat::AddMetaData(seuratObject@assays[[targetAssayName]], metadata = fs, col.name = 'FeatureSource')
+    names(fs) <- rownames(seuratObj@assays[[targetAssayName]])
+    seuratObj@assays[[targetAssayName]] <- Seurat::AddMetaData(seuratObj@assays[[targetAssayName]], metadata = fs, col.name = 'FeatureSource')
 
-    if (sum(colnames(Seurat::GetAssayData(seuratObject, assay = targetAssayName, slot = 'counts')) != existingBarcodes) > 0) {
+    if (sum(colnames(Seurat::GetAssayData(seuratObj, assay = targetAssayName, slot = 'counts')) != existingBarcodes) > 0) {
       stop('cellbarcodes do not match on matrices after assay replacement')
     }
   } else {
@@ -261,31 +261,31 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
     if (any(duplicated(rownames(m)))) {
       stop('Error: The count matrix had duplicate rownames')
     }
-    seuratObject[[targetAssayName]] <- Seurat::CreateAssayObject(counts = m, min.features = 0, min.cells = 0)
+    seuratObj[[targetAssayName]] <- Seurat::CreateAssayObject(counts = m, min.features = 0, min.cells = 0)
 
-    fs <- rep('Nimble', nrow(seuratObject@assays[[targetAssayName]]))
-    names(fs) <- rownames(seuratObject@assays[[targetAssayName]])
-    seuratObject@assays[[targetAssayName]] <- Seurat::AddMetaData(seuratObject@assays[[targetAssayName]], metadata = fs, col.name = 'FeatureSource')
+    fs <- rep('Nimble', nrow(seuratObj@assays[[targetAssayName]]))
+    names(fs) <- rownames(seuratObj@assays[[targetAssayName]])
+    seuratObj@assays[[targetAssayName]] <- Seurat::AddMetaData(seuratObj@assays[[targetAssayName]], metadata = fs, col.name = 'FeatureSource')
   }
 
   if (normalizeData) {
     if (targetAssayName == assayForLibrarySize) {
       print('Normalizing using Seurat::NormalizeData')
-      seuratObject <- Seurat::NormalizeData(seuratObject, assay = targetAssayName, verbose = FALSE)
+      seuratObj <- Seurat::NormalizeData(seuratObj, assay = targetAssayName, verbose = FALSE)
     } else {
       print(paste0('Normalizing using LogNormalizeUsingAlternateAssay with ', assayForLibrarySize))
-      seuratObject <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObject, assay = targetAssayName, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio)
+      seuratObj <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssayName, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio)
     }
   }
 
   if (doPlot) {
     print('Plotting features')
-    reductions <- intersect(names(seuratObject@reductions), c('umap', 'tsne', 'wnn'))
+    reductions <- intersect(names(seuratObj@reductions), c('umap', 'tsne', 'wnn'))
     if (length(reductions) == 0){
         print('No reductions, cannot plot')
     } else {
-      feats <- paste0(seuratObject[[targetAssayName]]@key, rownames(seuratObject[[targetAssayName]]))
-      rowSums <- Matrix::rowSums(Seurat::GetAssayData(seuratObject, assay = targetAssayName, layer = 'counts'))
+      feats <- paste0(seuratObj[[targetAssayName]]@key, rownames(seuratObj[[targetAssayName]]))
+      rowSums <- Matrix::rowSums(Seurat::GetAssayData(seuratObj, assay = targetAssayName, layer = 'counts'))
       feats <- feats[rowSums > 0]
       if (length(feats) == 0) {
         print('All features are zero, skipping plot')
@@ -295,12 +295,12 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
             feats <- feats[1:maxFeaturesToPlot]
         }
 
-        RIRA::PlotMarkerSeries(seuratObject, reductions = reductions, features = feats, title = targetAssayName)
+        RIRA::PlotMarkerSeries(seuratObj, reductions = reductions, features = feats, title = targetAssayName)
       }
     }
   }
   
-  return(seuratObject)
+  return(seuratObj)
 }
 
 .AssignLocusToMhcFeatures <- function(seuratObj, sourceAssayName = 'MHC', featurePrefix = 'Mamu-', delimiter = '*', ambiguousFeatureDelim = ',', stripNumbersFromLocus = TRUE) {

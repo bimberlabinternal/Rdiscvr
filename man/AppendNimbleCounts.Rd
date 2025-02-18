@@ -5,14 +5,14 @@
 \title{AppendNimbleCounts}
 \usage{
 AppendNimbleCounts(
-  seuratObject,
+  seuratObj,
   nimbleFile,
   targetAssayName,
   maxAmbiguityAllowed = 0,
   renameConflictingFeatures = TRUE,
   duplicateFeatureSuffix = ".Nimble",
   normalizeData = TRUE,
-  performDietSeurat = (targetAssayName \%in\% names(seuratObject@assays)),
+  performDietSeurat = (targetAssayName \%in\% names(seuratObj@assays)),
   assayForLibrarySize = "RNA",
   maxLibrarySizeRatio = 0.05,
   doPlot = TRUE,
@@ -22,7 +22,7 @@ AppendNimbleCounts(
 )
 }
 \arguments{
-\item{seuratObject}{A Seurat object.}
+\item{seuratObj}{A Seurat object.}
 
 \item{nimbleFile}{A nimble file, which is a TSV of feature counts created by nimble}
 
