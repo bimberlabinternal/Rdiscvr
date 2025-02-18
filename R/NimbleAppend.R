@@ -234,8 +234,9 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
     }
 
     # If feature source exists, retain it. Otherwise assume these are from cellranger:
-    if ('FeatureSource' %in% names(seuratObject@assays[[targetAssayName]]@meta.features)) {
-      fs <- seuratObject@assays[[targetAssayName]]@meta.features$FeatureSource
+    slotName <- .GetAssayMetaSlotName(seuratObj[[sourceAssayName]])
+    if ('FeatureSource' %in% names(slot(seuratObject@assays[[targetAssayName]], slotName))) {
+      fs <- slot(seuratObject@assays[[targetAssayName]], slotName)$FeatureSource
     } else {
       fs <- rep('CellRanger', nrow(seuratObject@assays[[targetAssayName]]))
     }
@@ -303,7 +304,9 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
 }
 
 .AssignLocusToMhcFeatures <- function(seuratObj, sourceAssayName = 'MHC', featurePrefix = 'Mamu-', delimiter = '*', ambiguousFeatureDelim = ',', stripNumbersFromLocus = TRUE) {
-  seuratObj[[sourceAssayName]]@meta.features$locus <- NA
+  slotName <- .GetAssayMetaSlotName(seuratObj[[sourceAssayName]])
+  slot(seuratObj[[sourceAssayName]], slotName)$loci <- NA
+
   for (featName in rownames(seuratObj[[sourceAssayName]])) {
     feats <- unlist(strsplit(x = featName, split = ambiguousFeatureDelim))
     loci <- c()
@@ -330,7 +333,7 @@ AppendNimbleCounts <- function(seuratObject, nimbleFile, targetAssayName, maxAmb
       warning(paste0('Feature matched multiple loci: ', featName, ', ', paste0(loci, collapse = ',')))
     }
 
-    seuratObj[[sourceAssayName]]@meta.features$locus[rownames(seuratObj[[sourceAssayName]]) == feat] <- paste0(loci, collapse = ',')
+    slot(seuratObj[[sourceAssayName]], slotName)$locus[rownames(seuratObj[[sourceAssayName]]) == feat] <- paste0(loci, collapse = ',')
   }
 
   return(seuratObj)
@@ -354,6 +357,7 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
   seuratObj <- .AssignLocusToMhcFeatures(seuratObj, sourceAssayName = sourceAssayName, featurePrefix = featurePrefix, delimiter = delimiter, ambiguousFeatureDelim = ambiguousFeatureDelim, stripNumbersFromLocus = stripNumbersFromLocus)
 
   dat <- Seurat::GetAssayData(seuratObj, assay = sourceAssayName, slot = 'counts')
+  assayMeta <- .GetAssayMeta(seuratObj[[sourceAssayName]])
   margin <- 2
 
   if (!perCell) {
@@ -366,11 +370,11 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
     }
 
     librarySizeData <- NULL
-    for (locus in sort(unique(seuratObj[[sourceAssayName]]@meta.features$locus))) {
+    for (locus in sort(unique(assayMeta$locus))) {
       groupNames <- unique(seuratObj@meta.data[[cellGroupingVariable]])
       for (gn in groupNames) {
         scale.factor <- sum(seuratObj@meta.data[[cellGroupingVariable]] == gn)  # the number of cells in the group
-        librarySize <- sum(dat[seuratObj[[sourceAssayName]]@meta.features$locus == locus, colnames(seuratObj)[seuratObj@meta.data[[cellGroupingVariable]] == gn], drop = TRUE])
+        librarySize <- sum(dat[assayMeta$locus == locus, colnames(seuratObj)[seuratObj@meta.data[[cellGroupingVariable]] == gn], drop = TRUE])
 
         toAdd <- data.frame(locus = locus, groupName = gn, librarySize = librarySize, scale.factor = scale.factor)
         if (all(is.null(librarySizeData))) {
@@ -382,10 +386,10 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
     }
   }
 
-  for (locus in sort(unique(seuratObj[[sourceAssayName]]@meta.features$locus))) {
+  for (locus in sort(unique(assayMeta$locus))) {
     print(paste0('Normalizing locus: ', locus))
     librarySizes <- c()
-    toNormalize <- dat[seuratObj[[sourceAssayName]]@meta.features$locus == locus,,drop = FALSE]
+    toNormalize <- dat[assayMeta$locus == locus,,drop = FALSE]
     ncells <- dim(x = toNormalize)[margin]
 
     for (i in seq_len(length.out = ncells)) {
@@ -419,10 +423,25 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
       labs(x = 'Normalized Value', y = 'Density') +
       ggtitle(paste0('Normalized Data: ', locus)))
 
-    dat[seuratObj[[sourceAssayName]]@meta.features$locus == locus] <- toNormalize
+    dat[assayMeta$locus == locus] <- toNormalize
   }
 
   seuratObj <- Seurat::SetAssayData(seuratObj, assay = sourceAssayName, slot = 'data', new.data = dat)
 
   return(seuratObj)
+}
+
+.GetAssayMetaSlotName <- function(assayObj) {
+  slotName <- ifelse('meta.features' %in% slotNames(assayObj), yes = 'meta.features', no = 'meta.data')
+  if (! slotName %in% slotNames(assayObj)) {
+    stop(paste0('Assay object lacks slot: ', slotName))
+  }
+
+  return(slotName)
+
+}
+
+.GetAssayMeta <- function(assayObj) {
+  return(slot(assayObj, .GetAssayMetaSlotName(assayObj)))
+
 }
