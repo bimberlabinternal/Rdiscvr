@@ -5,16 +5,16 @@
 #' @title DownloadAndAppendCellHashing
 #'
 #' @description Downloads matching Cell Hashing data using barcodePrefix on the seurat object and appends it to metadata
-#' @param seuratObject A Seurat object.
+#' @param seuratObj A Seurat object.
 #' @param outPath The filepath where downloaded count data will be written
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendCellHashing <- function(seuratObject, outPath = tempdir()){
-	if (is.null(seuratObject[['BarcodePrefix']])){
+DownloadAndAppendCellHashing <- function(seuratObj, outPath = tempdir()){
+	if (is.null(seuratObj[['BarcodePrefix']])){
 		stop('Seurat object lacks BarcodePrefix column')
 	}
 
-	for (barcodePrefix in unique(unlist(seuratObject[['BarcodePrefix']]))) {
+	for (barcodePrefix in unique(unlist(seuratObj[['BarcodePrefix']]))) {
 		print(paste0('Possibly adding cell hashing data for prefix: ', barcodePrefix))
 
 		cellHashingId <- .FindMatchedCellHashing(barcodePrefix)
@@ -31,10 +31,10 @@ DownloadAndAppendCellHashing <- function(seuratObject, outPath = tempdir()){
 			stop(paste0('Unable to download calls table for prefix: ', barcodePrefix))
 		}
 
-		seuratObject <- cellhashR::AppendCellHashing(seuratObj = seuratObject, barcodeCallFile = callsFile, barcodePrefix = barcodePrefix)
+		seuratObj <- cellhashR::AppendCellHashing(seuratObj = seuratObj, barcodeCallFile = callsFile, barcodePrefix = barcodePrefix)
 	}
 
-	return(seuratObject)
+	return(seuratObj)
 }
 
 #' @import Rlabkey

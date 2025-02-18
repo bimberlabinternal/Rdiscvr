@@ -4,10 +4,10 @@
 \alias{DownloadAndAppendCellHashing}
 \title{DownloadAndAppendCellHashing}
 \usage{
-DownloadAndAppendCellHashing(seuratObject, outPath = tempdir())
+DownloadAndAppendCellHashing(seuratObj, outPath = tempdir())
 }
 \arguments{
-\item{seuratObject}{A Seurat object.}
+\item{seuratObj}{A Seurat object.}
 
 \item{outPath}{The filepath where downloaded count data will be written}
 }

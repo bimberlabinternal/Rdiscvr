@@ -5,7 +5,7 @@
 \title{DownloadAndAppendTcrClonotypes}
 \usage{
 DownloadAndAppendTcrClonotypes(
-  seuratObject,
+  seuratObj,
   outPath = tempdir(),
   dropExisting = T,
   overwriteTcrTable = F,
@@ -14,7 +14,7 @@ DownloadAndAppendTcrClonotypes(
 )
 }
 \arguments{
-\item{seuratObject}{A Seurat object}
+\item{seuratObj}{A Seurat object}
 
 \item{outPath}{The output filepath}
 

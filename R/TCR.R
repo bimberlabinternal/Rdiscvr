@@ -10,7 +10,7 @@ utils::globalVariables(
 
 #' @title DownloadAndAppendTcrClonotypes
 #' @description Download And Append TCR Clonotypes data from Prime-Seq
-#' @param seuratObject A Seurat object
+#' @param seuratObj A Seurat object
 #' @param outPath The output filepath
 #' @param dropExisting If true, any existing clonotype data will be replaced
 #' @param overwriteTcrTable If true, any existing table(s) of TCR clones will be overwritten and re-downloaded
@@ -19,13 +19,13 @@ utils::globalVariables(
 #' @importFrom magrittr %>%
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dropExisting = T, overwriteTcrTable = F, allowMissing = FALSE, dropConflictingVJSegments = TRUE){
-  if (all(is.null(seuratObject[['BarcodePrefix']]))){
+DownloadAndAppendTcrClonotypes <- function(seuratObj, outPath = tempdir(), dropExisting = T, overwriteTcrTable = F, allowMissing = FALSE, dropConflictingVJSegments = TRUE){
+  if (all(is.null(seuratObj[['BarcodePrefix']]))){
     stop('Seurat object lacks BarcodePrefix column')
   }
 
   i <- 0
-  allPrefixes <- unique(unlist(seuratObject[['BarcodePrefix']]))
+  allPrefixes <- unique(unlist(seuratObj[['BarcodePrefix']]))
   hasTcrs <- FALSE
   for (barcodePrefix in allPrefixes) {
     i <- i + 1
@@ -57,14 +57,14 @@ DownloadAndAppendTcrClonotypes <- function(seuratObject, outPath = tempdir(), dr
 
     doDropExisting <- i == 1 && dropExisting
     hasTcrs <- TRUE
-    seuratObject <- .AppendTcrClonotypes(seuratObject, clonotypeFile, barcodePrefix = barcodePrefix, dropExisting = doDropExisting, dropConflictingVJSegments)
+    seuratObj <- .AppendTcrClonotypes(seuratObj, clonotypeFile, barcodePrefix = barcodePrefix, dropExisting = doDropExisting, dropConflictingVJSegments)
   }
 
   if (hasTcrs == FALSE) {
-    seuratObject$HasCDR3Data <- FALSE
+    seuratObj$HasCDR3Data <- FALSE
   }
 
-  return(seuratObject)
+  return(seuratObj)
 }
 
 .HasTcrLibrary <- function(loupeDataId, allowNonBlankStatus = FALSE) {
@@ -195,7 +195,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
 
   return(dat)
 }
-.AppendTcrClonotypes <- function(seuratObject = NA, clonotypeFile = NA, barcodePrefix = NULL, dropExisting = F, dropConflictingVJSegments = FALSE){
+.AppendTcrClonotypes <- function(seuratObj = NA, clonotypeFile = NA, barcodePrefix = NULL, dropExisting = F, dropConflictingVJSegments = FALSE){
   tcr <- .ProcessAndAggregateTcrClonotypes(clonotypeFile, dropConflictingVJSegments)
   if (!is.null(barcodePrefix)){
     tcr$barcode <- as.character(tcr$barcode)
@@ -208,8 +208,8 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
 
   origRows <- nrow(tcr)
 
-  datasetSelect <- seuratObject$BarcodePrefix == barcodePrefix
-  gexBarcodes <- colnames(seuratObject)[datasetSelect]
+  datasetSelect <- seuratObj$BarcodePrefix == barcodePrefix
+  gexBarcodes <- colnames(seuratObj)[datasetSelect]
 
   tcrIntersect <- tcr[tcr$barcode %in% gexBarcodes,]
   pct <- round(nrow(tcrIntersect) / origRows * 100, 2)
@@ -245,23 +245,23 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
     toAdd <- as.character(merged[[colName]])
     names(toAdd) <- merged[['barcode']]
 
-    if ((colName %in% names(seuratObject@meta.data)) && dropExisting) {
-      seuratObject@meta.data[colName] <- NULL
+    if ((colName %in% names(seuratObj@meta.data)) && dropExisting) {
+      seuratObj@meta.data[colName] <- NULL
     }
 
     # Handle legacy columns:
     if (grepl(pattern = '_', x = colName)) {
       legacyName <- gsub(colName, pattern = '_', replacement = '')
-      if (legacyName %in% names(seuratObject@meta.data)) {
+      if (legacyName %in% names(seuratObj@meta.data)) {
         print(paste0('Dropping legacy column: ', legacyName))
-        seuratObject@meta.data[[legacyName]] <- NULL
+        seuratObj@meta.data[[legacyName]] <- NULL
       }
     }
 
-    if (!(colName %in% names(seuratObject@meta.data))) {
-      toUpdate <- rep(NA, ncol(seuratObject))
+    if (!(colName %in% names(seuratObj@meta.data))) {
+      toUpdate <- rep(NA, ncol(seuratObj))
     } else {
-      toUpdate <- unlist(seuratObject[[colName]])
+      toUpdate <- unlist(seuratObj[[colName]])
     }
 
     # Convert to string in case levels do not match:
@@ -269,16 +269,16 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
       toUpdate <- as.character(toUpdate)
     }
 
-    names(toUpdate) <- colnames(seuratObject)
+    names(toUpdate) <- colnames(seuratObj)
     toUpdate[datasetSelect] <- toAdd
-    seuratObject[[colName]] <- as.factor(toUpdate)
+    seuratObj[[colName]] <- as.factor(toUpdate)
   }
 
-  seuratObject$HasCDR3Data <- !is.na(seuratObject$CDR3s)
-  seuratObject$HasTRAorB <- !is.na(seuratObject$TRA) | !is.na(seuratObject$TRB)
-  seuratObject$HasTRGorD <- !is.na(seuratObject$TRG) | !is.na(seuratObject$TRD)
+  seuratObj$HasCDR3Data <- !is.na(seuratObj$CDR3s)
+  seuratObj$HasTRAorB <- !is.na(seuratObj$TRA) | !is.na(seuratObj$TRB)
+  seuratObj$HasTRGorD <- !is.na(seuratObj$TRG) | !is.na(seuratObj$TRD)
 
-  return(seuratObject)
+  return(seuratObj)
 }
 
 .FindMatchedVloupe <- function(loupeDataId) {
