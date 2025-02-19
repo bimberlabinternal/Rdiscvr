@@ -31,7 +31,8 @@ Imports:
     forcats,
     scales,
     RColorBrewer,
-    grDevices
+    grDevices,
+    ComplexHeatmap
 Suggests:
     devtools,
     testthat (>= 2.1.0)
@@ -49,6 +50,7 @@ Collate:
     'TCR.R'
     'BarcodeComparison.R'
     'CellHashing.R'
+    'MHC.R'
     'NimbleAPI.R'
     'NimbleAppend.R'
     'PlotFunctions.R'
