@@ -51,6 +51,7 @@ PerformMhcDimRedux <- function(seuratObj, sourceAssay = 'MHC', groupField = 'Sub
 #' @param seuratObj A Seurat object.
 #' @param sourceAssay The assay holding MHC data
 #' @param groupField The field on which to group the data
+#' @param dist.method Passed directly to stats::dist()
 #'
 #' @export
 GroupByMhcSimilarity <- function(seuratObj, groupField, sourceAssay = 'MHC', dist.method = 'euclidean') {

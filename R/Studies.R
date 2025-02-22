@@ -190,7 +190,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     'BCG (at birth) / RhCMV-TB/6Ag',
     'IV-BCG',
     
-    '∆pp71 RhCMV-TB/6Ag',
+    'Delta pp71 RhCMV-TB/6Ag',
     'RhCMV-TB/6Ag',
     'RhCMV-TB/9Ag'
   )
