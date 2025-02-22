@@ -287,8 +287,8 @@ GenerateSRATable <- function(cDNA_IDs) {
 }
 
 .GetAssayMetaSlotName <- function(assayObj) {
-	slotName <- ifelse('meta.features' %in% slotNames(assayObj), yes = 'meta.features', no = 'meta.data')
-	if (! slotName %in% slotNames(assayObj)) {
+	slotName <- ifelse('meta.features' %in% methods::slotNames(assayObj), yes = 'meta.features', no = 'meta.data')
+	if (! slotName %in% methods::slotNames(assayObj)) {
 		stop(paste0('Assay object lacks slot: ', slotName))
 	}
 
@@ -297,5 +297,5 @@ GenerateSRATable <- function(cDNA_IDs) {
 }
 
 .GetAssayMeta <- function(assayObj) {
-	return(slot(assayObj, .GetAssayMetaSlotName(assayObj)))
+	return(methods::slot(assayObj, .GetAssayMetaSlotName(assayObj)))
 }

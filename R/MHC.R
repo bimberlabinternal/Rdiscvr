@@ -69,7 +69,7 @@ GroupByMhcSimilarity <- function(seuratObj, groupField, sourceAssay = 'MHC', dis
 
 .AssignLocusToMhcFeatures <- function(seuratObj, sourceAssayName = 'MHC', featurePrefix = 'Mamu-', delimiter = '*', ambiguousFeatureDelim = ',', stripNumbersFromLocus = TRUE) {
   slotName <- .GetAssayMetaSlotName(seuratObj[[sourceAssayName]])
-  slot(seuratObj[[sourceAssayName]], slotName)$loci <- NA
+  methods::slot(seuratObj[[sourceAssayName]], slotName)$loci <- NA
 
   for (featName in rownames(seuratObj[[sourceAssayName]])) {
     feats <- unlist(strsplit(x = featName, split = ambiguousFeatureDelim))
@@ -97,7 +97,7 @@ GroupByMhcSimilarity <- function(seuratObj, groupField, sourceAssay = 'MHC', dis
       warning(paste0('Feature matched multiple loci: ', featName, ', ', paste0(loci, collapse = ',')))
     }
 
-    slot(seuratObj[[sourceAssayName]], slotName)$locus[rownames(seuratObj[[sourceAssayName]]) == feat] <- paste0(loci, collapse = ',')
+    methods::slot(seuratObj[[sourceAssayName]], slotName)$locus[rownames(seuratObj[[sourceAssayName]]) == feat] <- paste0(loci, collapse = ',')
   }
 
   return(seuratObj)

@@ -238,8 +238,8 @@ AppendNimbleCounts <- function(seuratObj, nimbleFile, targetAssayName, maxAmbigu
 
     # If feature source exists, retain it. Otherwise assume these are from cellranger:
     slotName <- .GetAssayMetaSlotName(seuratObj[[targetAssayName]])
-    if ('FeatureSource' %in% names(slot(seuratObj@assays[[targetAssayName]], slotName))) {
-      fs <- slot(seuratObj@assays[[targetAssayName]], slotName)$FeatureSource
+    if ('FeatureSource' %in% names(methods::slot(seuratObj@assays[[targetAssayName]], slotName))) {
+      fs <- methods::slot(seuratObj@assays[[targetAssayName]], slotName)$FeatureSource
     } else {
       fs <- rep('CellRanger', nrow(seuratObj@assays[[targetAssayName]]))
     }

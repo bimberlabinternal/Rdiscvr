@@ -23,7 +23,6 @@ Imports:
     methods,
     RIRA,
     htmltools,
-    ggplot2,
     magrittr,
     egg,
     ggplot2,
