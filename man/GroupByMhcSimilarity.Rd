@@ -17,6 +17,8 @@ GroupByMhcSimilarity(
 \item{groupField}{The field on which to group the data}
 
 \item{sourceAssay}{The assay holding MHC data}
+
+\item{dist.method}{Passed directly to stats::dist()}
 }
 \description{
 Uses MHC typing data to pseudobulk data by the supplied variable and then reports a matrix of distances
