@@ -7,9 +7,11 @@
 #' @param sourceAssay The assay holding MHC data
 #' @param groupField An optional field holding the Subject/Sample variable. This is used for plotting only.
 #' @param resolution The cluster resolution
+#' @param nVariableFeatures Passed directly to Seurat::FindVariableFeatures
+#' @param dimsForUmap Passed to the dims argument of Seurat::RunUMAP
 #'
 #' @export
-PerformMhcDimRedux <- function(seuratObj, sourceAssay = 'MHC', groupField = 'SubjectId', resolution = 0.05) {
+PerformMhcDimRedux <- function(seuratObj, sourceAssay = 'MHC', groupField = 'SubjectId', resolution = 0.05, nVariableFeatures = 200, dimsForUmap = 1:10) {
   origDefaultAssay <- DefaultAssay(seuratObj)
   origDefaultVariableFeatures <- VariableFeatures(seuratObj)
 
@@ -18,20 +20,20 @@ PerformMhcDimRedux <- function(seuratObj, sourceAssay = 'MHC', groupField = 'Sub
   fn <- paste0("MHC_snn_res.", resolution)
   seuratObj <- Seurat::NormalizeData(seuratObj, verbose = FALSE, assay = sourceAssay)
   seuratObj <- Seurat::ScaleData(seuratObj, verbose = FALSE, assay = sourceAssay)
-  seuratObj <- FindVariableFeatures(seuratObj, verbose = FALSE, assay = sourceAssay)
+  seuratObj <- Seurat::FindVariableFeatures(seuratObj, verbose = FALSE, assay = sourceAssay, nfeatures = nVariableFeatures)
 
-  seuratObj <- RunPCA(seuratObj, verbose = FALSE, assay = sourceAssay, reduction.name = 'mhc.pca', reduction.key = 'mhcPCA_')
-  seuratObj <- FindNeighbors(seuratObj, verbose = FALSE, assay = sourceAssay, reduction = 'mhc.pca', graph.name = 'MHC_snn')
-  seuratObj <- FindClusters(object = seuratObj,
+  seuratObj <- Seurat::RunPCA(seuratObj, verbose = FALSE, assay = sourceAssay, reduction.name = 'mhc.pca', reduction.key = 'mhcPCA_')
+  seuratObj <- Seurat::FindNeighbors(seuratObj, verbose = FALSE, assay = sourceAssay, reduction = 'mhc.pca', graph.name = 'MHC_snn')
+  seuratObj <- Seurat::FindClusters(object = seuratObj,
                                resolution = resolution,
                                verbose = FALSE,
                                random.seed = CellMembrane::GetSeed(),
                                method = 'igraph',
-                               algorithm = 4,
+                               algorithm = 4, #Leiden
                                graph.name = 'MHC_snn',
                                cluster.name = fn
   )
-  seuratObj <- RunUMAP(seuratObj, dims = 1:10, verbose = FALSE, assay = sourceAssay, reduction = 'mhc.pca', reduction.name = 'mhc.umap', reduction.key = "mhcUMAP_")
+  seuratObj <- Seurat::RunUMAP(seuratObj, dims = dimsForUmap, verbose = FALSE, assay = sourceAssay, reduction = 'mhc.pca', reduction.name = 'mhc.umap', reduction.key = "mhcUMAP_")
 
   print(DimPlot(seuratObj, group.by = fn, reduction = 'mhc.umap'))
 
@@ -39,8 +41,8 @@ PerformMhcDimRedux <- function(seuratObj, sourceAssay = 'MHC', groupField = 'Sub
     print(CellMembrane::PlotSeuratVariables(seuratObj, xvar = fn, yvar = groupField, labelDimplot = TRUE, reduction = 'mhc.umap'))
   }
 
-  DefaultAssay(seuratObj) <- origDefaultAssay
-  VariableFeatures(seuratObj) <- origDefaultVariableFeatures
+  Seurat::DefaultAssay(seuratObj) <- origDefaultAssay
+  Seurat::VariableFeatures(seuratObj) <- origDefaultVariableFeatures
 
   return(seuratObj)
 }
