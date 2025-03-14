@@ -35,7 +35,7 @@ PerformMhcDimRedux <- function(seuratObj, sourceAssay = 'MHC', groupField = 'Sub
   )
   seuratObj <- Seurat::RunUMAP(seuratObj, dims = dimsForUmap, verbose = FALSE, assay = sourceAssay, reduction = 'mhc.pca', reduction.name = 'mhc.umap', reduction.key = "mhcUMAP_")
 
-  print(DimPlot(seuratObj, group.by = fn, reduction = 'mhc.umap'))
+  print(Seurat::DimPlot(seuratObj, group.by = fn, reduction = 'mhc.umap'))
 
   if (! is.null(groupField)) {
     print(CellMembrane::PlotSeuratVariables(seuratObj, xvar = fn, yvar = groupField, labelDimplot = TRUE, reduction = 'mhc.umap'))
@@ -57,9 +57,6 @@ PerformMhcDimRedux <- function(seuratObj, sourceAssay = 'MHC', groupField = 'Sub
 #'
 #' @export
 GroupByMhcSimilarity <- function(seuratObj, groupField, sourceAssay = 'MHC', dist.method = 'euclidean') {
-  origDefaultAssay <- DefaultAssay(seuratObj)
-  origDefaultVariableFeatures <- VariableFeatures(seuratObj)
-
   seuratObjGrouped <- Seurat::AggregateExpression(seuratObj, group.by = groupField, assays = sourceAssay, verbose = FALSE, return.seurat = TRUE)
   seuratObjGrouped <- PerformMhcNormalization(seuratObjGrouped, sourceAssayName = sourceAssay)
   mhcData <- Seurat::GetAssayData(seuratObjGrouped, assay = sourceAssay, layer = 'data')

@@ -8,7 +8,8 @@ DownloadOutputDirectoryFromOutputFile(
   outputFileId,
   outFile,
   overwrite = T,
-  pathTranslator = NULL
+  pathTranslator = NULL,
+  showProgressBar = FALSE
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ DownloadOutputDirectoryFromOutputFile(
 \item{overwrite}{If true, any pre-existing local copy will be replaced.}
 
 \item{pathTranslator}{There are instances where the goal is to download some file located relative to the actual outputfile. For example, 10x data has an outputfile for the Loupe file, but it might be useful to download the raw counts. To accomplish this, a function can be provided that accepts the primary file remote path, and returns a modified path to download.}
+
+\item{showProgressBar}{If true, a progress bar will be shown}
 }
 \description{
 Downloads an output file tracked in LabKey to the local filesystem.

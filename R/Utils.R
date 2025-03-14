@@ -6,11 +6,12 @@
 #' @param outFile The local path to write this file
 #' @param overwrite If true, any pre-existing local copy will be replaced.
 #' @param pathTranslator There are instances where the goal is to download some file located relative to the actual outputfile. For example, 10x data has an outputfile for the Loupe file, but it might be useful to download the raw counts. To accomplish this, a function can be provided that accepts the primary file remote path, and returns a modified path to download.
+#' @param showProgressBar If true, a progress bar will be shown
 #' @export
 #'
 #' @import Rlabkey
-DownloadOutputFile <- function(outputFileId, outFile, overwrite = T, pathTranslator = NULL) {
-	return(.DownloadOutputFileOrDirectory(outputFileId = outputFileId, outFile = outFile, overwrite = overwrite, pathTranslator = pathTranslator, asDirectory = F))
+DownloadOutputFile <- function(outputFileId, outFile, overwrite = T, pathTranslator = NULL, showProgressBar = FALSE) {
+	return(.DownloadOutputFileOrDirectory(outputFileId = outputFileId, outFile = outFile, overwrite = overwrite, pathTranslator = pathTranslator, asDirectory = FALSE, showProgressBar = showProgressBar))
 }
 
 #' @title DownloadOutputFile
@@ -19,17 +20,18 @@ DownloadOutputFile <- function(outputFileId, outFile, overwrite = T, pathTransla
 #' @param outFile The local path to write this file
 #' @param overwrite If true, any pre-existing local copy will be replaced.
 #' @param pathTranslator There are instances where the goal is to download some file located relative to the actual outputfile. For example, 10x data has an outputfile for the Loupe file, but it might be useful to download the raw counts. To accomplish this, a function can be provided that accepts the primary file remote path, and returns a modified path to download.
+#' @param showProgressBar If true, a progress bar will be shown
 #' @export
 #'
 #' @import Rlabkey
-DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwrite = T, pathTranslator = NULL) {
+DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwrite = T, pathTranslator = NULL, showProgressBar = FALSE) {
 	if (is.null(pathTranslator)) {
 		stop('When attempting to download a folder relative to an outputfile, you must provide a pathTranslator function')
 	}
-	return(.DownloadOutputFileOrDirectory(outputFileId = outputFileId, outFile = outFile, overwrite = overwrite, pathTranslator = pathTranslator, asDirectory = T))
+	return(.DownloadOutputFileOrDirectory(outputFileId = outputFileId, outFile = outFile, overwrite = overwrite, pathTranslator = pathTranslator, asDirectory = TRUE, showProgressBar = showProgressBar))
 }
 
-.DownloadOutputFileOrDirectory <- function(outputFileId, outFile, asDirectory, overwrite = T, pathTranslator = NULL) {
+.DownloadOutputFileOrDirectory <- function(outputFileId, outFile, asDirectory, overwrite = T, pathTranslator = NULL, showProgressBar = FALSE) {
 	if (is.na(outputFileId)) {
 		stop('Output file ID cannot be NA')
 	}
@@ -76,7 +78,8 @@ DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwri
 			folderPath=paste0(.getLabKeyDefaultFolder(),wb),
 			remoteFilePath = remotePath,
 			overwriteFiles = overwrite,
-			localBaseDir = outFile
+			localBaseDir = outFile,
+			showProgressBar = showProgressBar
 		)
 
 		if (!success) {
@@ -88,7 +91,8 @@ DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwri
 			folderPath=paste0(.getLabKeyDefaultFolder(),wb),
 			remoteFilePath = remotePath,
 			overwrite = overwrite,
-			localFilePath = outFile
+			localFilePath = outFile,
+			showProgressBar = showProgressBar
 		)
 
 		if (!success || !file.exists(outFile)) {
