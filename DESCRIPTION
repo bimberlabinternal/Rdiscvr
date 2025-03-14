@@ -13,7 +13,7 @@ Imports:
     Seurat,
     dplyr,
     naturalsort,
-    Rlabkey (>=3.4.2),
+    Rlabkey (>= 3.4.2),
     cellhashR,
     CellMembrane,
     Biostrings,
