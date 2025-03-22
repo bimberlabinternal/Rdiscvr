@@ -230,9 +230,9 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     schemaName="lists",
     queryName="MalariaAnimals",
     colNameOpt="rname",
-    colSelect = 'subjectid,sex,groupname,mmr,d0,mmr_date,cvac1,cvac2,cvac3,challengedate,PreExposureDate,Protection',
+    colSelect = 'subjectid,sex,groupname,mmr,d0,mmr_date,cvac1,cvac2,cvac3,challengedate,PreExposureDate,ChallengeType,Protection',
   )
-  names(metadata) <- c('SubjectId', 'Sex', 'GroupName', 'MMR', 'D0', 'MMR_Date', 'CVac1', 'CVac2', 'CVac3', 'ChallengeDate', 'PreExposureDate', 'Protection')
+  names(metadata) <- c('SubjectId', 'Sex', 'GroupName', 'MMR', 'D0', 'MMR_Date', 'CVac1', 'CVac2', 'CVac3', 'ChallengeDate', 'PreExposureDate', 'ChallengeType', 'Protection')
   
   metadata2 <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
