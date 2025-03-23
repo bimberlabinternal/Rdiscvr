@@ -68,6 +68,10 @@ ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   rownames(toAdd) <- toAdd$CellBarcode
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
 
+  if (any(rownames(toAdd) != rownames(seuratObj@meta.data))) {
+    stop('Row names not equal on metadata')
+  }
+
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
 
@@ -105,6 +109,10 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+
+  if (any(rownames(toAdd) != rownames(seuratObj@meta.data))) {
+    stop('Row names not equal on metadata')
+  }
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
@@ -263,6 +271,10 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   rownames(toAdd) <- toAdd$CellBarcode
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
 
+  if (any(rownames(toAdd) != rownames(seuratObj@meta.data))) {
+    stop('Row names not equal on metadata')
+  }
+
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
 
@@ -330,7 +342,11 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
-  
+
+  if (any(rownames(toAdd) != rownames(seuratObj@meta.data))) {
+    stop('Row names not equal on metadata')
+  }
+
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
   
@@ -388,6 +404,10 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
   toAdd$NxDate <- as.Date(toAdd$NxDate)
 
+  if (any(rownames(toAdd) != rownames(seuratObj@meta.data))) {
+    stop('Row names not equal on metadata')
+  }
+
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj$SampleDate <- as.Date(seuratObj$SampleDate)
   seuratObj$SampleType <- ifelse(seuratObj$SampleDate < seuratObj$NxDate, yes = 'Pre-infection', no = 'Necropsy')
@@ -439,13 +459,25 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     )
     names(dat) <- c('SubjectId', 'Sex', 'Species', 'Birth', 'Death')
 
-    toAdd <- seuratObj@meta.data[,'SubjectId', drop = FALSE]
-    rownames(toAdd) <- rownames(seuratObj@meta.data)
+  toAdd <- seuratObj@meta.data[,'SubjectId', drop = FALSE]
+  toAdd$SortOrder <- seq_len(ncol(seuratObj))
+  toAdd$CellBarcode <- rownames(seuratObj@meta.data)
 
-    toAdd <- merge(toAdd, dat, by = 'SubjectId', all.x = TRUE)
-    seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  toAdd <- merge(toAdd, dat, by = 'SubjectId', all.x = TRUE)
+  toAdd <- arrange(toAdd, SortOrder)
+  rownames(toAdd) <- toAdd$CellBarcode
+  if (any(rownames(toAdd) != rownames(seuratObj@meta.data))) {
+    stop('Row names not equal')
+  }
 
-    return(seuratObj)
+  if (any(toAdd$SubjectId != seuratObj$SubjectId)) {
+    stop('SubjectId not equal when adding metadata')
+  }
+
+  toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'SubjectId')]
+  seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+
+  return(seuratObj)
 }
 
 #' @title ApplyEC_Metadata
@@ -504,6 +536,10 @@ ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMe
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+
+  if (any(rownames(toAdd) != rownames(seuratObj@meta.data))) {
+    stop('Row names not equal on metadata')
+  }
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
@@ -567,6 +603,10 @@ ApplyPPG_Stim_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reA
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+
+  if (any(rownames(toAdd) != rownames(seuratObj@meta.data))) {
+    stop('Row names not equal on metadata')
+  }
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
