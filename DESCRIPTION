@@ -18,7 +18,6 @@ Imports:
     CellMembrane,
     Biostrings,
     Matrix,
-    cFIT,
     tidyr,
     methods,
     RIRA,
