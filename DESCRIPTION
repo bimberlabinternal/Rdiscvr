@@ -52,7 +52,6 @@ Collate:
     'CellHashing.R'
     'MHC.R'
     'NimbleAPI.R'
-    'NimbleAppend.R'
     'PlotFunctions.R'
     'SingleCell.R'
     'Studies.R'
