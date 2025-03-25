@@ -22,11 +22,11 @@ PerformDefaultNimbleAppend(
 
 \item{isotypeFilterThreshold}{When calculating isotype, any isotype representing below this fraction of reads in the cell is discarded. If this value is 0.1, then a cell with 5 percent of isotype reads for IHGM and 95 percent IGHA would be labeled IGHA.}
 
-\item{maxLibrarySizeRatio}{Passed directly to AppendNimbleCounts()}
+\item{maxLibrarySizeRatio}{Passed directly to nimbleR::AppendNimbleCounts()}
 
-\item{assayForLibrarySize}{Passed directly to AppendNimbleCounts()}
+\item{assayForLibrarySize}{Passed directly to nimbleR::AppendNimbleCounts()}
 
-\item{maxAmbiguityAllowedForKIR}{Passed to maxAmbiguityAllowed in AppendNimbleCounts() for KIR data specifically}
+\item{maxAmbiguityAllowedForKIR}{Passed to maxAmbiguityAllowed in nimbleR::AppendNimbleCounts() for KIR data specifically}
 
 \item{appendMHC}{If true, MHC data will be appended}
 

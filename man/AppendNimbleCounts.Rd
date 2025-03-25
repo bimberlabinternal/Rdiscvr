@@ -34,13 +34,13 @@ AppendNimbleCounts(
 
 \item{duplicateFeatureSuffix}{If renameConflictingFeatures is true, this string will be appended to duplicated feature names}
 
-\item{normalizeData}{If true, data will be normalized after appending/creating the assay. This will default to CellMembrane::LogNormalizeUsingAlternateAssay; however, if assayForLibrarySize equals targetAssayName then Seurat::NormalizeData is used.}
+\item{normalizeData}{If true, data will be normalized after appending/creating the assay. This will default to nimbleR::LogNormalizeUsingAlternateAssay; however, if assayForLibrarySize equals targetAssayName then Seurat::NormalizeData is used.}
 
 \item{performDietSeurat}{If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is to perform this if the targetAssay exists.}
 
 \item{assayForLibrarySize}{If normalizeData is true, then this is the assay used for librarySize when normalizing. If assayForLibrarySize equals targetAssayName, Seurat::NormalizeData is used.}
 
-\item{maxLibrarySizeRatio}{If normalizeData is true, then this is passed to CellMembrane::LogNormalizeUsingAlternateAssay}
+\item{maxLibrarySizeRatio}{If normalizeData is true, then this is passed to nimbleR::LogNormalizeUsingAlternateAssay}
 
 \item{doPlot}{If true, FeaturePlots will be generated for the appended features}
 

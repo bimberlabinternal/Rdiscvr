@@ -41,11 +41,11 @@ DownloadAndAppendNimble(
 
 \item{performDietSeurat}{If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage.}
 
-\item{normalizeData}{Passed directly to AppendNimbleCounts()}
+\item{normalizeData}{Passed directly to nimbleR::AppendNimbleCounts()}
 
-\item{assayForLibrarySize}{Passed directly to AppendNimbleCounts()}
+\item{assayForLibrarySize}{Passed directly to nimbleR::AppendNimbleCounts()}
 
-\item{maxLibrarySizeRatio}{Passed directly to AppendNimbleCounts()}
+\item{maxLibrarySizeRatio}{Passed directly to nimbleR::AppendNimbleCounts()}
 
 \item{queryDatabaseForLineageUpdates}{If true, after downloading the raw nimble output, the code will query any feature not ending with 'g' against the database and replace that name with the current value of lineage.}
 

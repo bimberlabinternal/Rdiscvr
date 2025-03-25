@@ -13,10 +13,10 @@
 #' @param targetAssayName The target assay. If this assay exists, features will be appended (and an error thrown if there are duplicates). Otherwise a new assay will be created.
 #' @param renameConflictingFeatures If true, when appending to an existing assay, any conflicting feature names will be renamed, appending the value of duplicateFeatureSuffix
 #' @param duplicateFeatureSuffix If renameConflictingFeatures is true, this string will be appended to duplicated feature names
-#' @param normalizeData If true, data will be normalized after appending/creating the assay. This will default to CellMembrane::LogNormalizeUsingAlternateAssay; however, if assayForLibrarySize equals targetAssayName then Seurat::NormalizeData is used.
+#' @param normalizeData If true, data will be normalized after appending/creating the assay. This will default to nimbleR::LogNormalizeUsingAlternateAssay; however, if assayForLibrarySize equals targetAssayName then Seurat::NormalizeData is used.
 #' @param performDietSeurat If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage, but the default is to perform this if the targetAssay exists.
 #' @param assayForLibrarySize If normalizeData is true, then this is the assay used for librarySize when normalizing. If assayForLibrarySize equals targetAssayName, Seurat::NormalizeData is used.
-#' @param maxLibrarySizeRatio If normalizeData is true, then this is passed to CellMembrane::LogNormalizeUsingAlternateAssay
+#' @param maxLibrarySizeRatio If normalizeData is true, then this is passed to nimbleR::LogNormalizeUsingAlternateAssay
 #' @param doPlot If true, FeaturePlots will be generated for the appended features
 #' @param maxFeaturesToPlot If doPlot is true, this is the maximum number of features to plot
 #' @param replaceExistingAssayData If true, any existing data in the targetAssay will be deleted
@@ -277,7 +277,7 @@ AppendNimbleCounts <- function(seuratObj, nimbleFile, targetAssayName, maxAmbigu
       seuratObj <- Seurat::NormalizeData(seuratObj, assay = targetAssayName, verbose = FALSE)
     } else {
       print(paste0('Normalizing using LogNormalizeUsingAlternateAssay with ', assayForLibrarySize))
-      seuratObj <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssayName, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio)
+      seuratObj <- nimbleR::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssayName, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio)
     }
   }
 

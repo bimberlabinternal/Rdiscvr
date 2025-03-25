@@ -21,9 +21,9 @@ utils::globalVariables(
 #' @param maxAmbiguityAllowed If provided, any features representing more than ths value will be discarded. For example, 'Feat1,Feat2,Feat3' represents 3 features. maxAmbiguityAllowed=1 results in removal of all ambiguous features.
 #' @param reuseExistingDownloads If true, any pre-existing downloaded nimble TSVs will be re-used
 #' @param performDietSeurat If true, DietSeurat will be run, which removes existing reductions. This may or may not be required based on your usage.
-#' @param normalizeData Passed directly to AppendNimbleCounts()
-#' @param assayForLibrarySize Passed directly to AppendNimbleCounts()
-#' @param maxLibrarySizeRatio Passed directly to AppendNimbleCounts()
+#' @param normalizeData Passed directly to nimbleR::AppendNimbleCounts()
+#' @param assayForLibrarySize Passed directly to nimbleR::AppendNimbleCounts()
+#' @param maxLibrarySizeRatio Passed directly to nimbleR::AppendNimbleCounts()
 #' @param queryDatabaseForLineageUpdates If true, after downloading the raw nimble output, the code will query any feature not ending with 'g' against the database and replace that name with the current value of lineage.
 #' @param replaceExistingAssayData If true, any existing data in the targetAssay will be deleted
 #' @param featureRenameList An optional named list in the format <OLD_NAME> = <NEW_NAME>. If any <OLD_NAME> are present, the will be renamed to <NEW_NAME>. The intention of this is to recover specific ambiguous classes.
@@ -100,7 +100,7 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
   write.table(df, outFile, sep="\t", col.names=F, row.names=F, quote=F)
 
   print(paste0('Appending counts to ', targetAssayName))
-  seuratObj <- AppendNimbleCounts(seuratObj = seuratObj, targetAssayName = targetAssayName, nimbleFile=outFile, maxAmbiguityAllowed = maxAmbiguityAllowed, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio, replaceExistingAssayData = replaceExistingAssayData, featureRenameList = featureRenameList)
+  seuratObj <- nimbleR::AppendNimbleCounts(seuratObj = seuratObj, targetAssayName = targetAssayName, nimbleFile=outFile, maxAmbiguityAllowed = maxAmbiguityAllowed, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio, replaceExistingAssayData = replaceExistingAssayData, featureRenameList = featureRenameList, doPlot = TRUE)
   unlink(outFile)
 
   return(seuratObj)
@@ -374,9 +374,9 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
 #' @description This is designed to wrap a series of nimble download commands into one, along with some domain-specific logic for each type of data
 #' @param seuratObj A Seurat object.
 #' @param isotypeFilterThreshold When calculating isotype, any isotype representing below this fraction of reads in the cell is discarded. If this value is 0.1, then a cell with 5 percent of isotype reads for IHGM and 95 percent IGHA would be labeled IGHA.
-#' @param maxLibrarySizeRatio Passed directly to AppendNimbleCounts()
-#' @param assayForLibrarySize Passed directly to AppendNimbleCounts()
-#' @param maxAmbiguityAllowedForKIR Passed to maxAmbiguityAllowed in AppendNimbleCounts() for KIR data specifically
+#' @param maxLibrarySizeRatio Passed directly to nimbleR::AppendNimbleCounts()
+#' @param assayForLibrarySize Passed directly to nimbleR::AppendNimbleCounts()
+#' @param maxAmbiguityAllowedForKIR Passed to maxAmbiguityAllowed in nimbleR::AppendNimbleCounts() for KIR data specifically
 #' @param appendMHC If true, MHC data will be appended
 #' @param appendKIR = If true, KIR data will be appended
 #' @param appendNKG = If true, NKG2 data will be appended
@@ -495,7 +495,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   newAssay <- Seurat::CreateAssayObject(counts = ad)
   seuratObj[[igAssay]] <- NULL
   seuratObj[[igAssay]] <- newAssay
-  seuratObj <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObj, assay = igAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
+  seuratObj <- nimbleR::LogNormalizeUsingAlternateAssay(seuratObj, assay = igAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
 
   return(seuratObj)
 }
@@ -515,7 +515,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   dat <- Matrix::t(Seurat::as.sparse(suppressWarnings(Seurat::FetchData(seuratObj, vars = 'NKG2D'))))
   groupedData <- rbind(groupedData, dat)
   seuratObj[[targetAssay]] <- Seurat::CreateAssayObject(counts = groupedData)
-  seuratObj <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
+  seuratObj <- nimbleR::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
 
   for (feat in rownames(seuratObj@assays[[targetAssay]])){
     print(FeaturePlot(seuratObj, features = paste0(seuratObj@assays[[targetAssay]]@key, feat)))
@@ -534,7 +534,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   rownames(groupedMHC) <- paste0(prefix, rownames(groupedMHC))
 
   seuratObj[[targetAssay]] <- Seurat::CreateAssayObject(counts = groupedMHC)
-  seuratObj <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
+  seuratObj <- nimbleR::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
 
   for (feat in rownames(seuratObj@assays[[targetAssay]])){
     print(FeaturePlot(seuratObj, features = feat))
@@ -563,7 +563,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   })
 
   seuratObj[[targetAssay]] <- Seurat::CreateAssayObject(counts = groupedMat)
-  seuratObj <- CellMembrane::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
+  seuratObj <- nimbleR::LogNormalizeUsingAlternateAssay(seuratObj, assay = targetAssay, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = NULL)
 
   for (feat in rownames(seuratObj@assays[[targetAssay]])){
     print(FeaturePlot(seuratObj, features = paste0(seuratObj@assays[[targetAssay]]@key, feat)))

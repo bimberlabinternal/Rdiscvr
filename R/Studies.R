@@ -278,8 +278,12 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
 
+  seuratObj$TimepointLabel <- as.character(seuratObj$TimepointLabel)
+  seuratObj$TimepointLabel[seuratObj$TimepointLabel == 'Baseline-2' & seuratObj$GroupName == 'Malaria Preexposed'] <- 'Challenge-1'
   seuratObj$TimepointLabel <- naturalsort::naturalfactor(seuratObj$TimepointLabel)
   seuratObj$TimepointLabel <- forcats::fct_relevel(seuratObj$TimepointLabel, 'Chall_05', after = Inf)
+  seuratObj$TimepointLabel <- forcats::fct_relevel(seuratObj$TimepointLabel, 'Necropsy', after = Inf)
+  seuratObj$TimepointLabel <- forcats::fct_relevel(seuratObj$TimepointLabel, 'Challenge-1', after = 3)
 
   seuratObj$GroupName <- naturalsort::naturalfactor(seuratObj$GroupName)
 
