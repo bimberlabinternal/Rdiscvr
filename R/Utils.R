@@ -297,7 +297,6 @@ GenerateSRATable <- function(cDNA_IDs) {
 	}
 
 	return(slotName)
-
 }
 
 .GetAssayMeta <- function(assayObj) {
