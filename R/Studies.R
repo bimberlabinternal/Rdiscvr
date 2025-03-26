@@ -447,21 +447,21 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
 }
 
 .AppendDemographics <- function(seuratObj) {
-    if (! 'SubjectId' %in% names(seuratObj@meta.data)) {
-      stop('Missing SubjectId column!')
-    }
+  if (! 'SubjectId' %in% names(seuratObj@meta.data)) {
+    stop('Missing SubjectId column!')
+  }
 
-    dat <- labkey.selectRows(
-      baseUrl="https://prime-seq.ohsu.edu",
-      folderPath="/Internal/PMR",
-      schemaName="study",
-      queryName="Demographics",
-      colSelect="Id,gender,species,birth,death",
-      colFilter=makeFilter(c('Id', 'IN', paste0(unique(seuratObj$SubjectId), collapse = ';'))),
-      containerFilter=NULL,
-      colNameOpt="rname"
-    )
-    names(dat) <- c('SubjectId', 'Sex', 'Species', 'Birth', 'Death')
+  dat <- suppressWarnings(labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Internal/PMR",
+    schemaName="study",
+    queryName="Demographics",
+    colSelect="Id,gender,species,birth,death",
+    colFilter=makeFilter(c('Id', 'IN', paste0(unique(seuratObj$SubjectId), collapse = ';'))),
+    containerFilter=NULL,
+    colNameOpt="rname"
+  ))
+  names(dat) <- c('SubjectId', 'Sex', 'Species', 'Birth', 'Death')
 
   toAdd <- seuratObj@meta.data[,'SubjectId', drop = FALSE]
   toAdd$SortOrder <- seq_len(ncol(seuratObj))
@@ -474,7 +474,7 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     stop('Row names not equal')
   }
 
-  if (any(toAdd$SubjectId != seuratObj$SubjectId)) {
+  if (any(!is.na(seuratObj$SubjectId) & !is.na(toAdd$SubjectId) & toAdd$SubjectId != seuratObj$SubjectId)) {
     stop('SubjectId not equal when adding metadata')
   }
 
