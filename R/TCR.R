@@ -614,6 +614,7 @@ RunCoNGA <- function(seuratObj,
 #' @param includeConstantRegionExpression If includeConstantRegionExpression is true, RNA expression of TRA/B/G constant regions will be considered in the classification. This is disabled by default because we find expression of these genes may be leaky and not necessarily linked to a functional TCR
 #' @param includeDeltaConstantRegionExpression Similar to includeConstantRegionExpression, but applies to the delta constant region alone
 #' @param collapseGOnlyToGD By default, cells with gamma-chain alone are reported as a separate category (since A/B T cells can encode a gamma-chain). If TRUE, these will be collapsed into the Gamma/Delta category.
+#' @import Seurat ggplot2
 #' @export
 ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegionCountThreshold = 1.5, includeConstantRegionExpression = FALSE, includeDeltaConstantRegionExpression = FALSE, collapseGOnlyToGD = FALSE) {
   if (!'HasCDR3Data' %in% names(seuratObj@meta.data)) {
