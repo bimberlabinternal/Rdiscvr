@@ -309,12 +309,12 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
         print(paste0('more than one matching loupeDataId found, using most recent: ', loupeDataId))
       }
 
-      rows <- suppressWarnings(labkey.selectRows(
+      gexRows <- suppressWarnings(labkey.selectRows(
         baseUrl=.getBaseUrl(),
         folderPath=.getLabKeyDefaultFolder(),
         schemaName="singlecell",
         queryName="singlecellDatasets",
-        colSelect="cDNAId/tcrReadsetId",
+        colSelect="readsetId",
         colFilter=makeFilter(
           c("loupeFileId", "EQUAL", loupeDataId)
         ),
@@ -322,7 +322,33 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
         colNameOpt="rname"
       ))
 
-      names(rows) <- 'readset_cdna_tcrreadsetid'
+      if (nrow(gexRows) > 0) {
+        gexReadset <- sort(unique(gexRows$readsetid), decreasing = TRUE)[1]
+
+        cdnaRows <- suppressWarnings(labkey.selectRows(
+          baseUrl=.getBaseUrl(),
+          folderPath=.getLabKeyDefaultFolder(),
+          schemaName="singlecell",
+          queryName="cdna_libraries",
+          colSelect="tcrReadsetId",
+          colFilter=makeFilter(
+            c("readsetid", "EQUAL", gexReadset)
+          ),
+          containerFilter=NULL,
+          colNameOpt="rname"
+        ))
+
+        if (nrow(gexRows) > 0) {
+          tcrReadsets <- sort(unique(cdnaRows$tcrreadsetid), decreasing = TRUE)
+          if (nrow(tcrReadsets) > 1) {
+            stop(paste0('More than one TCR readset found associated with GEX readset: ', gexReadset, ' and barcode: ', loupeDataId))
+          }
+
+          print(paste0('Found TCR readset in deleted loupe files table: ', tcrReadsets[1]))
+          rows <- cdnaRows
+          names(rows) <- 'readset_cdna_tcrreadsetid'
+        }
+      }
     }
   }
 
