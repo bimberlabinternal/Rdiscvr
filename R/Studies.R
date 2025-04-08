@@ -571,9 +571,9 @@ ApplyPPG_Stim_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reA
     schemaName="lists",
     queryName="PPG_TCR_Stim_Subjects",
     colNameOpt="rname",
-    colSelect = 'subjectid,vaccinetype,challengedate,vaccinationdate,vaccinetype,orfs,purpose',
+    colSelect = 'subjectid,vaccinetype,challengedate,vaccinationdate,orfs,purpose',
   )
-  names(metadata) <- c('SubjectId', 'VaccineType', 'ChallengeDate', 'VaccinationDate', 'VaccineType', 'ORFs', 'StimCohort')
+  names(metadata) <- c('SubjectId', 'VaccineType', 'ChallengeDate', 'VaccinationDate', 'ORFs', 'StimCohort')
 
   metadata2 <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
