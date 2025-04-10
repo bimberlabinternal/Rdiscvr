@@ -133,7 +133,11 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, enforceAllDataPresent = TRU
     group_by(across(all_of(c(groupingFields, 'Label', 'TotalCellsForSample', 'TotalCellsForSampleByActivation', 'TotalCellsForClone', 'IsActive')))) %>%
     summarize(TotalCellsForCloneByActive = n()) %>%
     as.data.frame() %>%
-    mutate(Fraction = TotalCellsForCloneByActive / TotalCellsForSample, FractionOfCloneActive = TotalCellsForCloneByActive / TotalCellsForClone) %>%
+    mutate(
+      Fraction = TotalCellsForCloneByActive / TotalCellsForSample,
+      FractionOfCloneActive = TotalCellsForCloneByActive / TotalCellsForClone,
+      FractionOfSampleActive = TotalCellsForSampleByActivation / TotalCellsForSample
+    ) %>%
     group_by(across(all_of(c('SubjectId', 'Label')))) %>%
     mutate(MaxFractionInSubject = max(Fraction))
 
@@ -264,7 +268,7 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, yFacetField = 'IsActiveLabel'
     scale_fill_manual(values = cols) +
     labs(y = 'Fraction of Cells', x = '', fill = 'Clone') +
     geom_text(aes(label=LabelText), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
-    scale_y_continuous(label = scales::percent, expand = expansion(add = c(0, min(0.01, max(df$FractionActive)*0.2)))) +
+    scale_y_continuous(label = scales::percent, expand = expansion(add = c(0, min(0.01, max(dat$FractionOfSampleActive[dat$IsActive])*0.2)))) +
     theme_classic(base_size = 14) +
     theme(
       legend.position = 'none',
