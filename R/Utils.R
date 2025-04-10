@@ -216,11 +216,12 @@ UploadSeuratObject <- function(localPath, workbook, name, category, description,
 #' @param overwrite If true, any pre-existing local copy will be replaced.
 #' @param returnDataFrame If true, the metadata will be read to a data.frame and returned
 #' @param deleteFile If true, the outFile will be deleted. This only makes sense when used with returnDataFrame=TRUE
+#' @param showProgressBar If true, a progress bar will be shown
 #' @export
-DownloadMetadataForSeuratObject <- function(outputFileId, outFile, overwrite = TRUE, returnDataFrame = FALSE, deleteFile = returnDataFrame) {
+DownloadMetadataForSeuratObject <- function(outputFileId, outFile, overwrite = TRUE, returnDataFrame = FALSE, deleteFile = returnDataFrame, showProgressBar = FALSE) {
 	DownloadOutputFile(outputFileId = outputFileId, outFile = outFile, overwrite = overwrite, pathTranslator = function(x){
 		return(gsub(x, pattern = 'seurat.rds', replacement = 'seurat.meta.txt.gz'))
-	})
+	}, showProgressBar = showProgressBar)
 
 	if (returnDataFrame) {
 		df <- read.table(outFile, header = T, sep = ',')

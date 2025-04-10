@@ -1,0 +1,292 @@
+#' @include LabKeySettings.R
+#' @include Utils.R
+#' @import utils
+
+
+
+.ScoreFns <- list(
+  TandNK_Activation_UCell = function(df) {
+    if (! 'TandNK_Activation_UCell' %in% names(df)) {
+      stop('Missing field: TandNK_Activation_UCell')
+    }
+
+    return(df$TandNK_Activation_UCell > 0.5)
+  }
+)
+
+#' @title PrepareTcrData
+#' @description This will group TCR data by the supplied chain, and calculate fields used for filtering
+#'
+#' @param seuratObjOrDf Either a Seurat object or the meta.data dataframe from an object
+#' @param subjectId The subjectId to process
+#' @param enforceAllDataPresent If true, the function will error unless all stims defined in lists.tcr_stims are present in the input object
+#' @param chain The chain to summarize
+#' @param dropUnknownTNK_Type If true, cells with Ambiguous or Unknown TNK_Type will be dropped
+#' @param lowFreqThreshold Clones that never have a per-sample fraction above this value will be labeled as Low Freq.
+#' @export
+#' @import Rlabkey
+#' @import dplyr
+PrepareTcrData <- function(seuratObjOrDf, subjectId, enforceAllDataPresent = TRUE, chain = 'TRB', dropUnknownTNK_Type = FALSE, lowFreqThreshold = 0.001) {
+  groupingFields <- c('cDNA_ID', 'SubjectId')
+
+  if (typeof(seuratObjOrDf) == 'S4') {
+    dat <- seuratObj@meta.data
+  } else if (typeof(seuratObjOrDf) == 'list') {
+    dat <- seuratObjOrDf
+  } else {
+    stop('Unknown object provided for seuratObjOrDf')
+  }
+
+  dat <- dat %>%
+    filter(SubjectId == subjectId)
+
+  dat$SubjectId <- naturalsort::naturalfactor(dat$SubjectId)
+  if (nrow(dat) == 0) {
+    stop(paste0('No records found for the subject: ', subjectId))
+  }
+
+  if (! chain %in% names(dat)) {
+    stop(paste0('Missing chain: ', chain))
+  }
+
+  for (fieldName in c('cDNA_ID')) {
+    if (!fieldName %in% names(dat)) {
+      stop(paste0('Missing field: ', fieldName))
+    }
+  }
+
+  allStims <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/1297",
+    schemaName="lists",
+    queryName="TCR_Stims",
+    colSelect="cDNA_ID,NoStimId",
+    colFilter=makeFilter(
+      c("cDNA_ID/sortId/sampleId/subjectId", "EQUALS", subjectId),
+      c("cDNA_ID/readsetId/totalFiles", "GT", 0)
+    ),
+    colNameOpt="rname"
+  ) %>%
+    rename(
+      cDNA_ID = 'cdna_id',
+      NoStimId = 'nostimid'
+    )
+
+  print(paste0('Found ', nrow(allStims), ' known stims'))
+
+  if (enforceAllDataPresent && nrow(allStims) == 0) {
+    stop('No matching stims found')
+  }
+
+  if (! all(allStims$cDNA_ID %in% dat$cDNA_ID)) {
+    missing <- unique(allStims$cDNA_ID)
+    missing <- missing[! missing %in% dat$cDNA_ID]
+
+    if (enforceAllDataPresent) {
+      stop(paste0('Missing cDNA_IDs: ', paste0(sort(missing), collapse = ', ')))
+    } else {
+      warning(paste0('Missing some cDNA_IDs: ', paste0(sort(missing), collapse = ', ')))
+    }
+  }
+
+  allStims$IsNoStim <- allStims$cDNA_ID %in% allStims$NoStimId
+  noStimData <- allStims %>%
+    filter(IsNoStim)
+
+  if (! all(noStimData$cDNA_ID %in% dat$cDNA_ID)) {
+    missing <- unique(noStimData$cDNA_ID)
+    missing <- missing[! missing %in% dat$cDNA_ID]
+
+    if (enforceAllDataPresent) {
+      stop(paste0('Missing cDNA_IDs for NoStims: ', paste0(sort(missing), collapse = ', ')))
+    } else {
+      warning(paste0('Missing cDNA_IDs for NoStims: ', paste0(sort(missing), collapse = ', ')))
+    }
+  }
+
+  if (any(duplicated(allStims$cDNA_ID))) {
+    stop('Duplicates found in stim data')
+  }
+
+  dat$Label <- dat[[chain]]
+  dat <- dat %>% filter(!is.na(Label))
+
+  if (dropUnknownTNK_Type) {
+    if (! 'TNK_Type'  %in% names(dat)) {
+      stop('Missing TNK_Type field')
+    }
+
+    dat <- dat %>%
+      filter(TNK_Type != 'Ambiguous') %>%
+      filter(TNK_Type != 'Unknown')
+  }
+
+  dat <- dat %>%
+    group_by(across(all_of(c(groupingFields)))) %>%
+    mutate(TotalCellsForSample = n()) %>%
+    group_by(across(all_of(c(groupingFields, 'IsActive')))) %>%
+    mutate(TotalCellsForSampleByActivation = n()) %>%
+    ungroup() %>%
+    group_by(across(all_of(c(groupingFields, 'Label')))) %>%
+    mutate(TotalCellsForClone = n()) %>%
+    ungroup() %>%
+    group_by(across(all_of(c(groupingFields, 'Label', 'TotalCellsForSample', 'TotalCellsForSampleByActivation', 'TotalCellsForClone', 'IsActive')))) %>%
+    summarize(TotalCellsForCloneByActive = n()) %>%
+    as.data.frame() %>%
+    mutate(Fraction = TotalCellsForCloneByActive / TotalCellsForSample, FractionOfCloneActive = TotalCellsForCloneByActive / TotalCellsForClone) %>%
+    group_by(across(all_of(c('SubjectId', 'Label')))) %>%
+    mutate(MaxFractionInSubject = max(Fraction))
+
+  dat$Label <- as.character(dat$Label)
+  dat$Label[dat$MaxFractionInSubject < lowFreqThreshold] <- 'Low Freq'
+  dat$Label <- as.factor(dat$Label)
+  dat$Label <- forcats::fct_reorder(dat$Label, dat$MaxFractionInSubject, .desc = TRUE)
+
+  dat$IsActiveLabel <- ifelse(dat$IsActive, yes = 'Activated', no = 'Not Activated')
+
+  dat <- dat %>%
+    group_by(across(all_of(c(groupingFields, 'Label')))) %>%
+    mutate(IsShared = n_distinct(IsActive) > 1)
+  dat$IsShared[dat$Label == 'Low Freq'] <- FALSE
+  dat$IsShared <- ifelse(dat$IsShared, yes = 'Yes', no = 'No')
+
+  dat <- dat %>%
+    left_join(allStims, by = 'cDNA_ID')
+  
+  # Now merge with the active NoStim values:
+  noStimSummary <- dat %>%
+    as.data.frame() %>%
+    filter(cDNA_ID %in% noStimData$cDNA_ID) %>%
+    filter(Label != 'Low Freq') %>%
+    filter(IsActive) %>%
+    select(cDNA_ID, IsActive, Label, TotalCellsForClone, Fraction) %>%
+    rename(
+      NoStimId = cDNA_ID,
+      NoStimFractionActive = Fraction,
+      NoStimCellsActive = TotalCellsForClone
+    )
+
+  dat <- dat %>%
+    left_join(noStimSummary, by = c('NoStimId', 'Label', 'IsActive'))
+
+  # Now merge with the NoStim values:
+  noStimSummary <- dat %>%
+    as.data.frame() %>%
+    filter(cDNA_ID %in% noStimData$cDNA_ID) %>%
+    filter(Label != 'Low Freq') %>%
+    group_by(cDNA_ID, Label) %>%
+    mutate(TotalCellsForClone = sum(TotalCellsForClone), Fraction = sum(Fraction)) %>%
+    as.data.frame() %>%
+    select(cDNA_ID, Label, Fraction, TotalCellsForClone) %>%
+    unique() %>%
+    rename(
+      NoStimId = cDNA_ID,
+      NoStimFraction = Fraction,
+      NoStimCells = TotalCellsForClone
+    )
+
+  dat <- dat %>%
+    left_join(noStimSummary, by = c('NoStimId', 'Label'))
+
+  # If this clone is present but not active, treat the active frequency as zero, not NA
+  dat$NoStimFractionActive[is.na(dat$NoStimFractionActive) & !is.na(dat$NoStimFraction)] <- 0
+  dat$NoStimCellsActive[is.na(dat$NoStimCellsActive) & !is.na(dat$NoStimCells)] <- 0
+
+  meta <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/",
+    schemaName="singlecell",
+    queryName="cdna_libraries",
+    colSelect="rowid,sortId/sampleId/subjectId,sortId/sampleId/sampledate,sortId/sampleId/stim,sortId/sampleId/assayType,sortId/sampleId/tissue,sortId/population",
+    colFilter=makeFilter(
+      c("rowid", "IN", paste0(unique(dat$cDNA_ID), collapse = ';'))
+    ),
+    colNameOpt="rname"
+  ) %>%
+    rename(
+      cDNA_ID = 'rowid',
+      SubjectId = 'sortid_sampleid_subjectid',
+      SampleDate = 'sortid_sampleid_sampledate',
+      Stim = 'sortid_sampleid_stim',
+      AssayType = 'sortid_sampleid_assaytype',
+      Tissue = 'sortid_sampleid_tissue',
+      Population = 'sortid_population'
+    )
+
+  dat <- dat %>%
+    left_join(meta, by = c('cDNA_ID', 'SubjectId'))
+
+  return(dat)
+}
+
+#' @title GenerateTcrPlot
+#' @description This will plot TCR data created by PrepareTcrData
+#'
+#' @param dat A dataframe, generated by PrepareTcrData
+#' @param subjectId The subjectId to process
+#' @param xFacetField An optional field used for faceting
+#' @param yFacetField An optional field used for faceting
+#' @export
+#' @import dplyr
+GenerateTcrPlot <- function(dat, xFacetField = NA, yFacetField = 'IsActiveLabel', dropInactive = FALSE) {
+  colorSteps <- max(min(length(unique(dat$Label[dat$Label != 'Low Freq'])), 9), 3)
+  getPalette <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(colorSteps, 'Set1'))
+
+  if ('Low Freq' %in% dat$Label) {
+    dat$Label <- forcats::fct_relevel(dat$Label, 'Low Freq', after = 0)
+  }
+
+  cols <- getPalette(length(unique(dat$Label[dat$Label != 'Low Freq'])))
+  cols <- sample(cols, size = length(cols))
+  if ('Low Freq' %in% dat$Label) {
+    cols <- c('#ECECEC', cols)
+  }
+  names(cols) <- levels(dat$Label)
+
+  patternValues <- c('Yes' = 'stripe', 'No' = 'none')
+
+  if (dropInactive) {
+    dat <- dat %>%
+      filter(IsActive)
+  }
+
+  dat$LabelText <- paste0(dat$TotalCellsForSampleByActivation, ' / ', dat$TotalCellsForSample)
+  dat$LabelText[!dat$IsActive] <- NA
+
+  PT <- ggplot(dat, aes(x = Stim, y = Fraction, fill = Label, pattern = IsShared)) +
+    ggpattern::geom_col_pattern(pattern_fill = "black",
+                                color = 'black',
+                                pattern_density = 0.2,
+                                pattern_spacing = 0.05,
+                                pattern_key_scale_factor = 0.6
+    ) +
+    ggpattern::scale_pattern_manual(values = patternValues) +
+    scale_fill_manual(values = cols) +
+    labs(y = 'Fraction of Cells', x = '', fill = 'Clone') +
+    geom_text(aes(label=LabelText), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
+    scale_y_continuous(label = scales::percent, expand = expansion(add = c(0, min(0.01, max(df$FractionActive)*0.2)))) +
+    theme_classic(base_size = 14) +
+    theme(
+      legend.position = 'none',
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    ) +
+    ggtitle(paste0(subjectId, ': ', chain))
+
+  if (is.null(yFacetField) || is.na(yFacetField)) {
+    yFacetField <- '.'
+  }
+
+  if (is.null(xFacetField) || is.na(xFacetField)) {
+    xFacetField <- '.'
+  }
+
+  if (xFacetField != '.' || yFacetField != '.') {
+    wrap_by <- function(xFacetField, yFacetField) {
+      facet_grid(vars(!!sym(yFacetField)), vars(!!sym(xFacetField)), scales = 'free', space = 'free_x')
+    }
+
+    PT <- PT + wrap_by(xFacetField, yFacetField)
+  }
+
+  return(PT)
+}
