@@ -247,6 +247,12 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
 #' @export
 #' @import dplyr
 GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField = 'IsActiveLabel', patternField = 'IsShared', dropInactive = FALSE) {
+  if (dropInactive) {
+    dat <- dat %>%
+      filter(IsActive)
+  }
+
+  dat$Label <- forcats::fct_drop(dat$Label)
   colorSteps <- max(min(length(unique(dat$Label[dat$Label != 'Low Freq'])), 9), 3)
   getPalette <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(colorSteps, 'Set1'))
 
@@ -270,11 +276,6 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
     dat$PatternField <- NA
   }
   patternValues <- c('Yes' = 'stripe', 'No' = 'none')
-
-  if (dropInactive) {
-    dat <- dat %>%
-      filter(IsActive)
-  }
 
   if (is.null(yFacetField) || is.na(yFacetField)) {
     yFacetField <- '.'
@@ -311,10 +312,10 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
     ) +
     ggpattern::scale_pattern_manual(values = patternValues) +
     scale_fill_manual(values = cols) +
-    labs(y = 'Fraction of Cells', x = '', fill = 'Clone') +
+    labs(y = 'Pct of Cells', x = '', fill = 'Clone') +
     geom_text(data = labelData, aes(label = LabelText), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
     scale_y_continuous(label = scales::percent, expand = expansion(add = c(0, min(0.01, max(dat$FractionOfSampleActive[dat$IsActive])*0.2)))) +
-    theme_classic(base_size = 14) +
+    egg::theme_article(base_size = 14) +
     theme(
       legend.position = 'none',
       axis.text.x = element_text(angle = 45, hjust = 1)
