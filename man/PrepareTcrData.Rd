@@ -11,7 +11,8 @@ PrepareTcrData(
   enforceAllDataPresent = TRUE,
   chain = "TRB",
   dropUnknownTNK_Type = FALSE,
-  lowFreqThreshold = 0.001
+  lowFreqThreshold = 0.001,
+  retainRowsWithoutCDR3 = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ PrepareTcrData(
 \item{dropUnknownTNK_Type}{If true, cells with Ambiguous or Unknown TNK_Type will be dropped}
 
 \item{lowFreqThreshold}{Clones that never have a per-sample fraction above this value will be labeled as Low Freq.}
+
+\item{retainRowsWithoutCDR3}{If true, rather than dropping rows without CDR3 data, these will be assigned as 'No TCR' as retained}
 }
 \description{
 This will group TCR data by the supplied chain, and calculate fields used for filtering
