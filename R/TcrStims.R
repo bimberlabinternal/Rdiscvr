@@ -263,6 +263,9 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
 
   if (!is.na(patternField)) {
     dat$PatternField <- dat[[patternField]]
+    if (is.logical(dat$PatternField)) {
+      dat$PatternField <- ifelse(dat$PatternField, yes = 'Yes', no = 'No')
+    }
   } else {
     dat$PatternField <- NA
   }
