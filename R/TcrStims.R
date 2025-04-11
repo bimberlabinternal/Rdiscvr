@@ -349,26 +349,37 @@ ApplyCloneFilters <- function(dat, minCellsPerClone = 2, minFoldChangeAboveNoSti
   }
 
   if (!is.na(minCellsPerClone)) {
-    dat$Filter[dat$TotalCellsForSampleByActivation < minCellsPerClone] <- 'Insufficient Cells'
+    if ( ! 'TotalCellsForCloneByActive' %in% names(dat)) {
+      stop('Missing field: TotalCellsForCloneByActive')
+    }
+
+    dat$Filter[dat$TotalCellsForCloneByActive < minCellsPerClone] <- 'Insufficient Cells'
   }
 
   if (!is.na(minFoldChangeAboveNoStim) && minFoldChangeAboveNoStim > 0) {
+    if ( ! 'NoStimFractionActive' %in% names(dat)) {
+      stop('Missing field: NoStimFractionActive')
+    }
+
     foldChangeData <- dat$Fraction / dat$NoStimFractionActive
-    toFilter <- !is.na(foldChangeData) && foldChangeData < minFoldChangeAboveNoStim
+    toFilter <- !is.na(foldChangeData) & foldChangeData < minFoldChangeAboveNoStim
     dat$Filter[toFilter] <- 'Below NoStim Background'
   }
 
   if (!is.na(minFractionOfCloneActive) && minFractionOfCloneActive > 0) {
+    if ( ! 'FractionOfCloneActive' %in% names(dat)) {
+      stop('Missing field: FractionOfCloneActive')
+    }
+
     dat$Filter[dat$FractionOfCloneActive < minFractionOfCloneActive] <- 'Below Min Fraction Active'
   }
 
   # Only apply to IsActive:
   dat$Filter[!dat$IsActive] <- NA
 
-  print(sort(table(dat$Filter, useNA = 'ifany'), decreasing = TRUE))
+  print(sort(table(dat$Filter[dat$IsActive], useNA = 'ifany'), decreasing = TRUE))
 
   dat$IsFiltered <- !is.na(dat$Filter)
-
 
   return(dat)
 }
