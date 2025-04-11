@@ -7,6 +7,7 @@
 PrepareTcrData(
   seuratObjOrDf,
   subjectId,
+  minEDS = 0,
   enforceAllDataPresent = TRUE,
   chain = "TRB",
   dropUnknownTNK_Type = FALSE,
@@ -17,6 +18,8 @@ PrepareTcrData(
 \item{seuratObjOrDf}{Either a Seurat object or the meta.data dataframe from an object}
 
 \item{subjectId}{The subjectId to process}
+
+\item{minEDS}{If provided, cells with EDS less than this value will be discarded}
 
 \item{enforceAllDataPresent}{If true, the function will error unless all stims defined in lists.tcr_stims are present in the input object}
 
