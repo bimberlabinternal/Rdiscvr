@@ -24,10 +24,11 @@
 #' @param minEDS If provided, cells with EDS less than this value will be discarded
 #' @param dropUnknownTNK_Type If true, cells with Ambiguous or Unknown TNK_Type will be dropped
 #' @param lowFreqThreshold Clones that never have a per-sample fraction above this value will be labeled as Low Freq.
+#' @param retainRowsWithoutCDR3 If true, rather than dropping rows without CDR3 data, these will be assigned as 'No TCR' as retained
 #' @export
 #' @import Rlabkey
 #' @import dplyr
-PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataPresent = TRUE, chain = 'TRB', dropUnknownTNK_Type = FALSE, lowFreqThreshold = 0.001) {
+PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataPresent = TRUE, chain = 'TRB', dropUnknownTNK_Type = FALSE, lowFreqThreshold = 0.001, retainRowsWithoutCDR3 = FALSE) {
   groupingFields <- c('cDNA_ID', 'SubjectId')
 
   if (typeof(seuratObjOrDf) == 'S4') {
@@ -121,7 +122,12 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   }
 
   dat$Label <- dat[[chain]]
-  dat <- dat %>% filter(!is.na(Label))
+  if (retainRowsWithoutCDR3) {
+    dat$Label <- as.character(dat$Label)
+    dat$Label[is.na(dat$Label)] <- 'No TCR'
+  } else {
+    dat <- dat %>% filter(!is.na(Label))
+  }
 
   if (dropUnknownTNK_Type) {
     if (! 'TNK_Type'  %in% names(dat)) {
@@ -134,7 +140,7 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   }
 
   dat <- dat %>%
-    group_by(across(all_of(c(groupingFields)))) %>%
+    group_by(across(all_of(groupingFields))) %>%
     mutate(TotalCellsForSample = n()) %>%
     group_by(across(all_of(c(groupingFields, 'IsActive')))) %>%
     mutate(TotalCellsForSampleByActivation = n()) %>%
@@ -230,7 +236,8 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     )
 
   dat <- dat %>%
-    left_join(meta, by = c('cDNA_ID', 'SubjectId'))
+    left_join(meta, by = c('cDNA_ID', 'SubjectId')) %>%
+    as.data.frame()
 
   return(dat)
 }
@@ -252,16 +259,25 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
       filter(IsActive)
   }
 
+  dat$Label <- naturalsort::naturalfactor(dat$Label)
   dat$Label <- forcats::fct_drop(dat$Label)
   colorSteps <- max(min(length(unique(dat$Label[dat$Label != 'Low Freq'])), 9), 3)
   getPalette <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(colorSteps, 'Set1'))
+
+  if ('No TCR' %in% dat$Label) {
+    dat$Label <- forcats::fct_relevel(dat$Label, 'No TCR', after = 0)
+  }
 
   if ('Low Freq' %in% dat$Label) {
     dat$Label <- forcats::fct_relevel(dat$Label, 'Low Freq', after = 0)
   }
 
-  cols <- getPalette(length(unique(dat$Label[dat$Label != 'Low Freq'])))
+  cols <- getPalette(length(unique(dat$Label[! dat$Label %in% c('Low Freq', 'No TCR')])))
   cols <- sample(cols, size = length(cols))
+  if ('No TCR' %in% dat$Label) {
+    cols <- c('#FFFFFF', cols)
+  }
+
   if ('Low Freq' %in% dat$Label) {
     cols <- c('#ECECEC', cols)
   }
@@ -285,7 +301,7 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
     xFacetField <- '.'
   }
 
-  groupFields <- c('Stim')
+  groupFields <- 'Stim'
   if (yFacetField != '.') {
     groupFields <- c(groupFields, yFacetField)
   }
@@ -384,6 +400,7 @@ ApplyCloneFilters <- function(dat, minCellsPerClone = 2, minFoldChangeAboveNoSti
   print(sort(table(dat$Filter[dat$IsActive], useNA = 'ifany'), decreasing = TRUE))
 
   dat$IsFiltered <- !is.na(dat$Filter)
+  dat <- as.data.frame(dat)
 
   return(dat)
 }
