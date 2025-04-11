@@ -7,7 +7,9 @@
 GenerateTcrPlot(
   dat,
   xFacetField = NA,
+  plotTitle = NULL,
   yFacetField = "IsActiveLabel",
+  patternField = "IsShared",
   dropInactive = FALSE
 )
 }
@@ -16,9 +18,13 @@ GenerateTcrPlot(
 
 \item{xFacetField}{An optional field used for faceting}
 
+\item{plotTitle}{An optional string used as the plot title}
+
 \item{yFacetField}{An optional field used for faceting}
 
-\item{subjectId}{The subjectId to process}
+\item{patternField}{An optional field used for the pattern aesthetic}
+
+\item{dropInactive}{If true, cells where IsActive=FALSE will be dropped}
 }
 \description{
 This will plot TCR data created by PrepareTcrData
