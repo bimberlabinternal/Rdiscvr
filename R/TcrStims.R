@@ -329,6 +329,11 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
       mutate(LabelText = paste0(TotalCellsForCloneByActive, ' / ', TotalCellsForSample))
   }
 
+  if (nrow(dat) == 0) {
+    print('No passing data, skipping plot')
+    return()
+  }
+
   PT <- ggplot(dat, aes(x = Stim, y = Fraction)) +
     ggpattern::geom_col_pattern(aes(pattern = PatternField, fill = Label), pattern_fill = "black",
                                 color = 'black',
