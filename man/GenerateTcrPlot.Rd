@@ -10,7 +10,8 @@ GenerateTcrPlot(
   plotTitle = NULL,
   yFacetField = "IsActiveLabel",
   patternField = "IsShared",
-  dropInactive = FALSE
+  dropInactive = FALSE,
+  labelUsingCounts = TRUE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ GenerateTcrPlot(
 \item{patternField}{An optional field used for the pattern aesthetic}
 
 \item{dropInactive}{If true, cells where IsActive=FALSE will be dropped}
+
+\item{labelUsingCounts}{If true, the cell total will be listed above the bars}
 }
 \description{
 This will plot TCR data created by PrepareTcrData

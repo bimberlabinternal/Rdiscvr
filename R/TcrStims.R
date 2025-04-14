@@ -251,9 +251,10 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
 #' @param yFacetField An optional field used for faceting
 #' @param patternField An optional field used for the pattern aesthetic
 #' @param dropInactive If true, cells where IsActive=FALSE will be dropped
+#' @param labelUsingCounts If true, the cell total will be listed above the bars
 #' @export
 #' @import dplyr
-GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField = 'IsActiveLabel', patternField = 'IsShared', dropInactive = FALSE) {
+GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField = 'IsActiveLabel', patternField = 'IsShared', dropInactive = FALSE, labelUsingCounts = TRUE) {
   if (dropInactive) {
     dat <- dat %>%
       filter(IsActive)
@@ -314,10 +315,19 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
 
   labelData <- dat %>%
     filter(IsActive) %>%
-    group_by(across(all_of(c(groupFields)))) %>%
-    summarize(Fraction = sum(Fraction), TotalCellsForCloneByActive = sum(TotalCellsForCloneByActive), TotalCellsForSample = max(TotalCellsForSample)) %>%
-    as.data.frame() %>%
-    mutate(LabelText = paste0(TotalCellsForCloneByActive, ' / ', TotalCellsForSample))
+    group_by(across(all_of(groupFields)))
+
+  if (nrow(labelData) == 0) {
+    labelData$Fraction <- numeric()
+    labelData$TotalCellsForCloneByActive <- integer()
+    labelData$TotalCellsForSample <- integer()
+    labelData$LabelText <- character()
+  } else {
+    labelData <- labelData %>%
+      summarize(Fraction = sum(Fraction), TotalCellsForCloneByActive = sum(TotalCellsForCloneByActive), TotalCellsForSample = max(TotalCellsForSample)) %>%
+      as.data.frame() %>%
+      mutate(LabelText = paste0(TotalCellsForCloneByActive, ' / ', TotalCellsForSample))
+  }
 
   PT <- ggplot(dat, aes(x = Stim, y = Fraction)) +
     ggpattern::geom_col_pattern(aes(pattern = PatternField, fill = Label), pattern_fill = "black",
@@ -329,13 +339,16 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
     ggpattern::scale_pattern_manual(values = patternValues) +
     scale_fill_manual(values = cols) +
     labs(y = 'Pct of Cells', x = '', fill = 'Clone') +
-    geom_text(data = labelData, aes(label = LabelText), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
     scale_y_continuous(label = scales::percent, expand = expansion(add = c(0, min(0.01, max(dat$FractionOfSampleActive[dat$IsActive])*0.2)))) +
     egg::theme_article(base_size = 14) +
     theme(
       legend.position = 'none',
       axis.text.x = element_text(angle = 45, hjust = 1)
     )
+
+  if (labelUsingCounts) {
+    PT <- PT + geom_text(data = labelData, aes(label = LabelText), position=position_dodge(width=0.9), vjust=-0.25, size = 3)
+  }
 
   if (xFacetField != '.' || yFacetField != '.') {
     wrap_by <- function(xFacetField, yFacetField) {
