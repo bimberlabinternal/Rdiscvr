@@ -9,7 +9,8 @@ DownloadMetadataForSeuratObject(
   outFile,
   overwrite = TRUE,
   returnDataFrame = FALSE,
-  deleteFile = returnDataFrame
+  deleteFile = returnDataFrame,
+  showProgressBar = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ DownloadMetadataForSeuratObject(
 \item{returnDataFrame}{If true, the metadata will be read to a data.frame and returned}
 
 \item{deleteFile}{If true, the outFile will be deleted. This only makes sense when used with returnDataFrame=TRUE}
+
+\item{showProgressBar}{If true, a progress bar will be shown}
 }
 \description{
 Downloads an output file tracked in LabKey to the local filesystem.

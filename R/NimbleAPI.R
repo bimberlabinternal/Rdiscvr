@@ -92,7 +92,7 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
   }
 
   print('Merging into single matrix')
-  df <- .mergeNimbleFiles(fileComponents=nimbleFileComponents, enforceUniqueFeatureNames, queryDatabaseForLineageUpdates = queryDatabaseForLineageUpdates)
+  df <- .mergeNimbleFiles(seuratObj, fileComponents=nimbleFileComponents, enforceUniqueFeatureNames, queryDatabaseForLineageUpdates = queryDatabaseForLineageUpdates)
   print(paste0('Total features: ', length(unique(df$V1))))
   
   outFile <- file.path(outPath, paste0("mergedNimbleCounts.tsv"))
@@ -173,7 +173,7 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
   }
 }
 
-.mergeNimbleFiles <- function(fileComponents, enforceUniqueFeatureNames = TRUE, enforceCellBarcodeFormat = TRUE, queryDatabaseForLineageUpdates = FALSE) {
+.mergeNimbleFiles <- function(seuratObj, fileComponents, enforceUniqueFeatureNames = TRUE, enforceCellBarcodeFormat = TRUE, queryDatabaseForLineageUpdates = FALSE) {
   df <- NULL
   
   for (datasetId in names(fileComponents)) {
@@ -244,6 +244,10 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
         nimbleTable$V3 <- paste0(datasetId, "_", nimbleTable$V3)
       }
 
+      origRows <- nrow(nimbleTable)
+      nimbleTable <- nimbleTable[nimbleTable$V3 %in% colnames(seuratObj)]
+      print(paste0('Original rows: ', origRows, '. After intersecting with seurat object: ', nrow(nimbleTable)))
+
       # Note: this was an old nimble bug that has been fixed, but retain this check:
       if (sum(nimbleTable$V1 == "") > 0) {
         stop(paste0("The nimble data contains blank feature names. This should not occur. Dataset Id: ", datasetId))
@@ -259,7 +263,7 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
 
       if (queryDatabaseForLineageUpdates) {
         genomeId <- unlist(strsplit(basename(fn), split = '\\.'))[4]
-        df <- .UpdateLineages(df, libraryId = genomeId)
+        nimbleTable <- .UpdateLineages(nimbleTable, libraryId = genomeId)
       }
 
       nimbleTableGrouped <- nimbleTable %>% group_by(V1, V3) %>% summarize(V2 = sum(V2), InputRows = n())
