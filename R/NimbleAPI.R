@@ -245,7 +245,7 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
       }
 
       origRows <- nrow(nimbleTable)
-      nimbleTable <- nimbleTable[nimbleTable$V3 %in% colnames(seuratObj)]
+      nimbleTable <- nimbleTable[nimbleTable$V3 %in% colnames(seuratObj),]
       print(paste0('Original rows: ', origRows, '. After intersecting with seurat object: ', nrow(nimbleTable)))
 
       # Note: this was an old nimble bug that has been fixed, but retain this check:
