@@ -160,7 +160,10 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   metadata$Timepoint[!is.na(metadata$Timepoint)] <- paste0('Day ', metadata$Timepoint[!is.na(metadata$Timepoint)])
 
   # NOTE: make a simpler timepoint/mock field that lumps Mock-challenged samples into a different timepoint level
-  metadata$Timepoint[metadata$IsMockChallenged] <- paste0('Mock / ', metadata$Vaccine[metadata$IsMockChallenged])
+  if (any(!is.na(metadata$IsMockChallenged) & metadata$IsMockChallenged)) {
+    metadata$Timepoint[!is.na(metadata$IsMockChallenged) & metadata$IsMockChallenged] <- paste0('Mock / ', metadata$Vaccine[!is.na(metadata$IsMockChallenged) & metadata$IsMockChallenged])
+  }
+
   if ('Mock / Unvaccinated' %in% metadata$Timepoint) {
     metadata$Timepoint[metadata$Timepoint == 'Mock / Unvaccinated'] <- 'Mock'
   }
