@@ -152,7 +152,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   cDNA$CFU_Tissue <- as.numeric(cDNA$CFU_Tissue)
   cDNA$CFU_Tissue_Rescaled <- scales::rescale(asinh(cDNA$CFU_Tissue + 1), to = c(0,1))
 
-  metadata$IsMockChallenged <- metadata$Challenge == 'Mock-challenged'
+  metadata$IsMockChallenged <- !is.na(metadata$Challenge) & metadata$Challenge == 'Mock-challenged'
 
   #Round to week:
   metadata$Timepoint <- metadata$PID
@@ -181,7 +181,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
 
   metadata$Group <- as.character(metadata$Vaccine)
   if ('Mock-challenged' %in% metadata$Challenge) {
-    metadata$Group[metadata$Challenge == 'Mock-challenged'] <- paste0(metadata$Vaccine[metadata$Challenge == 'Mock-challenged'], '-Mock')
+    metadata$Group[!is.na(metadata$Challenge) & metadata$Challenge == 'Mock-challenged'] <- paste0(metadata$Vaccine[!is.na(metadata$Challenge) & metadata$Challenge == 'Mock-challenged'], '-Mock')
   }
   metadata$Group <- naturalsort::naturalfactor(metadata$Group)
 
