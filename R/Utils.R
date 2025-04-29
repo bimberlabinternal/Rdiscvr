@@ -38,9 +38,15 @@ DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwri
 
 	# NOTE: labkey.webdav.downloadFolder expects the base folder to exist, so only perform this check for files.
 	# Otherwise let labkey.webdav.downloadFolder handle overwrite behaviors
-	if (!asDirectory && file.exists(outFile) & !overwrite) {
-		print(paste0("File exists, will not overwrite: ", outFile))
-		return(outFile)
+	if (!asDirectory) {
+		if (file.exists(outFile)) {
+			if (!overwrite) {
+				print(paste0("File exists, will not overwrite: ", outFile))
+				return(outFile)
+			} else {
+				unlink(outFile)
+			}
+		}
 	}
 
 	rows <- labkey.selectRows(
@@ -86,14 +92,23 @@ DownloadOutputDirectoryFromOutputFile <- function(outputFileId, outFile, overwri
 			stop(paste0('labkey.webdav.downloadFolder failed for file: ', remotePath))
 		}
 	} else {
+		outFileTmp <- paste0(outFile, ".tmp")
+		if (file.exists(outFileTmp)) {
+			unlink(outFileTmp)
+		}
+
 		success <- labkey.webdav.get(
 			baseUrl=.getBaseUrl(),
 			folderPath=paste0(.getLabKeyDefaultFolder(),wb),
 			remoteFilePath = remotePath,
 			overwrite = overwrite,
-			localFilePath = outFile,
+			localFilePath = outFileTmp,
 			showProgressBar = showProgressBar
 		)
+
+		if (success) {
+			file.rename(outFileTmp, outFile)
+		}
 
 		if (!success || !file.exists(outFile)) {
 			stop(paste0('labkey.webdav.get failed for file: ', remotePath))
