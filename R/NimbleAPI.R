@@ -127,7 +127,7 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
     }
 
     rows <- translated[,'readsetid',drop = FALSE]
-    names(rows) <- c('readset')
+    names(rows) <- 'readset'
   }
   
   readset <- unique(rows[['readset']])

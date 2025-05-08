@@ -231,7 +231,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
 
   tcr <- tcrIntersect
 
-  merged <- merge(data.frame(barcode = gexBarcodes, sortOrder = seq_along(gexBarcodes)), tcr, by = c('barcode'), all.x = T)
+  merged <- merge(data.frame(barcode = gexBarcodes, sortOrder = seq_along(gexBarcodes)), tcr, by = 'barcode', all.x = T)
   rownames(merged) <- merged$barcode
   merged <- dplyr::arrange(merged, sortOrder)
   merged <- merged[colnames(merged) != 'sortOrder']
@@ -451,7 +451,7 @@ utils::globalVariables(
   tcr$barcode <- gsub("-1", "", tcr$barcode)
 
   # Many TRDV genes can be used as either alpha or delta TCRs.  10x classifies and TRDV/TRAJ/TRAC clones as 'Multi'.  Re-classify these:
-  tcr$chain[tcr$chain == 'Multi' & grepl(pattern = 'TRD', x = tcr$v_gene) & grepl(pattern = 'TRAJ', x = tcr$j_gene) & grepl(pattern = 'TRAC', x = tcr$c_gene)] <- c('TRA')
+  tcr$chain[tcr$chain == 'Multi' & grepl(pattern = 'TRD', x = tcr$v_gene) & grepl(pattern = 'TRAJ', x = tcr$j_gene) & grepl(pattern = 'TRAC', x = tcr$c_gene)] <- 'TRA'
 
   if (dropConflictingVJSegments) {
     tcr <- .DropConflictingVJSegments(tcr)
@@ -481,25 +481,25 @@ utils::globalVariables(
   # Add chain-specific columns:
   tcr$ChainCDR3s <- paste0(tcr$chain, ':', tcr$cdr3)
   for (l in c('TRA', 'TRB', 'TRD', 'TRG')){
-    tcr[[l]] <- c(NA)
+    tcr[[l]] <- NA
     tcr[[l]][tcr$chain == l] <- as.character(tcr$cdr3[tcr$chain == l])
 
     target <- paste0(l, 'V')
-    tcr[[target]] <- c(NA)
+    tcr[[target]] <- NA
     tcr[[target]][tcr$chain == l] <- as.character(tcr$v_gene[tcr$chain == l])
 
     target <- paste0(l, 'J')
-    tcr[[target]] <- c(NA)
+    tcr[[target]] <- NA
     tcr[[target]][tcr$chain == l] <- as.character(tcr$j_gene[tcr$chain == l])
 
     if (l %in% c('TRB', 'TRD')) {
       target <- paste0(l, 'D')
-      tcr[[target]] <- c(NA)
+      tcr[[target]] <- NA
       tcr[[target]][tcr$chain == l] <- as.character(tcr$d_gene[tcr$chain == l])
     }
 
     target <- paste0(l, 'C')
-    tcr[[target]] <- c(NA)
+    tcr[[target]] <- NA
     tcr[[target]][tcr$chain == l] <- as.character(tcr$c_gene[tcr$chain == l])
   }
 
