@@ -2,7 +2,7 @@
 % Please edit documentation in R/TcrStims.R
 \name{ApplyCloneFilters}
 \alias{ApplyCloneFilters}
-\title{GenerateTcrPlot}
+\title{ApplyCloneFilters}
 \usage{
 ApplyCloneFilters(
   dat,
@@ -21,5 +21,5 @@ ApplyCloneFilters(
 \item{minFractionOfCloneActive}{If any clone has fewer than this fraction of cells active, it will be filtered}
 }
 \description{
-This will plot TCR data created by PrepareTcrData
+This will filter TCR data created by PrepareTcrData
 }
