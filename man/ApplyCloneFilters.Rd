@@ -8,7 +8,7 @@ ApplyCloneFilters(
   dat,
   minCellsPerClone = 2,
   minFoldChangeAboveNoStim = 2,
-  minFractionOfCloneActive = 0.01
+  minFractionOfCloneActive = 0.005
 )
 }
 \arguments{

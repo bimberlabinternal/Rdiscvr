@@ -39,6 +39,12 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     stop('Unknown object provided for seuratObjOrDf')
   }
 
+  for (fieldName in c(groupingFields, 'IsActive')) {
+    if (!fieldName %in% names(dat)) {
+      stop(paste0('Missing field: ', fieldName))
+    }
+  }
+
   dat <- dat %>%
     filter(SubjectId == subjectId)
 
@@ -59,15 +65,10 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     print(paste0('Filtering data to EDS>=', minEDS))
     origCells <- nrow(dat)
     dat <- dat %>% filter(Tcell_EffectorDifferentiation >= minEDS)
-    print(paste0('cells after filter:', nrow(dat), ', original: ', origCells))
+    print(paste0('cells after filter: ', nrow(dat), ', original: ', origCells))
   }
 
-  for (fieldName in c('cDNA_ID')) {
-    if (!fieldName %in% names(dat)) {
-      stop(paste0('Missing field: ', fieldName))
-    }
-  }
-
+  # TODO: generalize!
   allStims <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1297",
@@ -102,9 +103,9 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     }
   }
 
-  allStims$IsNoStim <- allStims$cDNA_ID %in% allStims$NoStimId
+  allStims$IsControlSample <- allStims$cDNA_ID %in% allStims$NoStimId
   noStimData <- allStims %>%
-    filter(IsNoStim)
+    filter(IsControlSample)
 
   if (! all(noStimData$cDNA_ID %in% dat$cDNA_ID)) {
     missing <- unique(noStimData$cDNA_ID)
@@ -121,13 +122,16 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     stop('Duplicates found in stim data')
   }
 
-  dat$Label <- dat[[chain]]
+  dat$Clonotype <- dat[[chain]]
   dat$V_Gene <- dat[[paste0(chain, '_V')]]
+
   if (retainRowsWithoutCDR3) {
-    dat$Label <- as.character(dat$Label)
-    dat$Label[is.na(dat$Label)] <- 'No TCR'
+    dat$Clonotype <- as.character(dat$Clonotype)
+    dat$Clonotype[is.na(dat$Clonotype)] <- 'No TCR'
   } else {
-    dat <- dat %>% filter(!is.na(Label))
+    origRows <- nrow(dat)
+    dat <- dat %>% filter(!is.na(Clonotype))
+    print(paste0('Dropping rows without CDR3. Before/after filter: ', origRows, ' / ', nrow(dat)))
   }
 
   if (dropUnknownTNK_Type) {
@@ -135,44 +139,51 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
       stop('Missing TNK_Type field')
     }
 
+    origRows <- nrow(dat)
     dat <- dat %>%
       filter(TNK_Type != 'Ambiguous') %>%
       filter(TNK_Type != 'Unknown')
+
+    print(paste0('Dropping Ambiguous/Unknown TNK_Type cells. Before/after filter: ', origRows, ' / ', nrow(dat)))
   }
 
   dat <- dat %>%
     group_by(across(all_of(groupingFields))) %>%
     mutate(TotalCellsForSample = n()) %>%
-    group_by(across(all_of(c(groupingFields, 'IsActive')))) %>%
-    mutate(TotalCellsForSampleByActivation = n()) %>%
     ungroup() %>%
-    group_by(across(all_of(c(groupingFields, 'Label')))) %>%
+    group_by(across(all_of(c(groupingFields, 'IsActive')))) %>%
+    mutate(TotalCellsForSampleAndState = n()) %>%
+    ungroup() %>%
+    group_by(across(all_of(c(groupingFields, 'Clonotype')))) %>%
     mutate(TotalCellsForClone = n()) %>%
     ungroup() %>%
-    group_by(across(all_of(c(groupingFields, 'Label', 'TotalCellsForSample', 'TotalCellsForSampleByActivation', 'TotalCellsForClone', 'IsActive')))) %>%
-    summarize(TotalCellsForCloneByActive = n(), V_Gene = paste0(sort(unique(V_Gene)), collapse = ',')) %>%
+    group_by(across(all_of(c(groupingFields, 'Clonotype', 'TotalCellsForSample', 'TotalCellsForSampleAndState', 'TotalCellsForClone', 'IsActive')))) %>%
+    summarize(
+      TotalCellsForCloneAndState = n(),
+      V_Gene = paste0(sort(unique(V_Gene)), collapse = ',')
+    ) %>%
     as.data.frame() %>%
     mutate(
-      Fraction = TotalCellsForCloneByActive / TotalCellsForSample,
-      FractionOfCloneActive = TotalCellsForCloneByActive / TotalCellsForClone,
-      FractionOfSampleActive = TotalCellsForSampleByActivation / TotalCellsForSample
+      FractionOfCloneWithStateInSample = TotalCellsForCloneAndState / TotalCellsForSample,
+      FractionOfCloneWithState = TotalCellsForCloneAndState / TotalCellsForClone,
+      FractionOfSampleWithState = TotalCellsForSampleAndState / TotalCellsForSample
     ) %>%
-    group_by(across(all_of(c('SubjectId', 'Label')))) %>%
-    mutate(MaxFractionInSubject = max(Fraction))
+    group_by(across(all_of(c('SubjectId', 'Clonotype')))) %>%
+    mutate(MaxFractionInSubject = max(FractionOfCloneWithStateInSample))
 
-  dat$OrigLabel <- dat$Label
-  dat$Label <- as.character(dat$Label)
-  dat$Label[dat$MaxFractionInSubject < lowFreqThreshold] <- 'Low Freq'
-  dat$Label <- as.factor(dat$Label)
-  dat$Label <- forcats::fct_reorder(dat$Label, dat$MaxFractionInSubject, .desc = TRUE)
+  dat$OrigClonotype <- dat$Clonotype
+  dat$Clonotype <- as.character(dat$Clonotype)
+  dat$Clonotype[dat$MaxFractionInSubject < lowFreqThreshold] <- 'Low Freq'
+  dat$Clonotype <- as.factor(dat$Clonotype)
+  dat$Clonotype <- forcats::fct_reorder(dat$Clonotype, dat$MaxFractionInSubject, .desc = TRUE)
 
   dat$IsActiveLabel <- ifelse(dat$IsActive, yes = 'Activated', no = 'Not Activated')
 
   dat <- dat %>%
-    group_by(across(all_of(c(groupingFields, 'Label')))) %>%
-    mutate(IsShared = n_distinct(IsActive) > 1)
-  dat$IsShared[dat$Label == 'Low Freq'] <- FALSE
-  dat$IsShared <- ifelse(dat$IsShared, yes = 'Yes', no = 'No')
+    group_by(across(all_of(c(groupingFields, 'Clonotype')))) %>%
+    mutate(IsSharedAcrossStates = n_distinct(IsActive) > 1)
+  dat$IsSharedAcrossStates[dat$Clonotype == 'Low Freq'] <- FALSE
+  dat$IsSharedAcrossStates <- ifelse(dat$IsSharedAcrossStates, yes = 'Yes', no = 'No')
 
   dat <- dat %>%
     left_join(allStims, by = 'cDNA_ID')
@@ -181,40 +192,56 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   noStimSummary <- dat %>%
     as.data.frame() %>%
     filter(cDNA_ID %in% noStimData$cDNA_ID) %>%
-    filter(Label != 'Low Freq') %>%
+    filter(Clonotype != 'Low Freq') %>%
     filter(IsActive) %>%
-    select(cDNA_ID, IsActive, Label, TotalCellsForClone, Fraction) %>%
+    select(cDNA_ID, IsActive, Clonotype, TotalCellsForClone, FractionOfCloneWithStateInSample) %>%
     rename(
       NoStimId = cDNA_ID,
-      NoStimFractionActive = Fraction,
-      NoStimCellsActive = TotalCellsForClone
+      NoStimTotalCellsActive = TotalCellsForClone,
+      NoStimFractionActive = FractionOfCloneWithStateInSample
     )
 
   dat <- dat %>%
-    left_join(noStimSummary, by = c('NoStimId', 'Label', 'IsActive'))
+    left_join(noStimSummary, by = c('NoStimId', 'Clonotype', 'IsActive'))
 
-  # Now merge with the NoStim values:
+  # Now merge with the total NoStim values:
   noStimSummary <- dat %>%
     as.data.frame() %>%
     filter(cDNA_ID %in% noStimData$cDNA_ID) %>%
-    filter(Label != 'Low Freq') %>%
-    group_by(cDNA_ID, Label) %>%
-    mutate(TotalCellsForClone = sum(TotalCellsForClone), Fraction = sum(Fraction)) %>%
+    filter(Clonotype != 'Low Freq') %>%
+    group_by(cDNA_ID, Clonotype, TotalCellsForSample) %>%
+    summarize(TotalCellsForClone = sum(TotalCellsForClone)) %>%
     as.data.frame() %>%
-    select(cDNA_ID, Label, Fraction, TotalCellsForClone) %>%
+    mutate(FractionOfCloneInSample = TotalCellsForClone / TotalCellsForSample) %>%
+    select(cDNA_ID, Clonotype, FractionOfCloneInSample, TotalCellsForClone) %>%
     unique() %>%
     rename(
       NoStimId = cDNA_ID,
-      NoStimFraction = Fraction,
-      NoStimCells = TotalCellsForClone
+      NoStimFractionOfCloneInSample = FractionOfCloneInSample,
+      NoStimTotalCells = TotalCellsForClone
     )
 
   dat <- dat %>%
-    left_join(noStimSummary, by = c('NoStimId', 'Label'))
+    left_join(noStimSummary, by = c('NoStimId', 'Clonotype'))
 
   # If this clone is present but not active, treat the active frequency as zero, not NA
-  dat$NoStimFractionActive[is.na(dat$NoStimFractionActive) & !is.na(dat$NoStimFraction)] <- 0
-  dat$NoStimCellsActive[is.na(dat$NoStimCellsActive) & !is.na(dat$NoStimCells)] <- 0
+  dat$NoStimTotalCells[is.na(dat$NoStimTotalCells)] <- 0
+  dat$NoStimFractionOfCloneInSample[dat$NoStimTotalCells == 0] <- 0
+  dat$NoStimFractionActive[is.na(dat$NoStimFractionActive) & dat$NoStimTotalCells == 0] <- 0
+  dat$NoStimFractionActive[is.na(dat$NoStimFractionActive) & dat$NoStimTotalCells ] <- 0
+  
+  if (any(is.na(dat$NoStimTotalCells))) {
+    stop('Found NAs in NoStimTotalCells')
+  }
+  
+  if (any(is.na(dat$NoStimFractionOfCloneInSample))) {
+    stop('Found NAs in NoStimFractionOfCloneInSample')
+  }
+  
+  dat$NoStimTotalCellsActive[is.na(dat$NoStimTotalCellsActive) & !is.na(dat$NoStimTotalCells)] <- 0
+  if (any(is.na(dat$NoStimTotalCellsActive))) {
+    stop('Found NAs in NoStimTotalCellsActive')
+  }
 
   meta <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
@@ -262,29 +289,29 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
       filter(IsActive)
   }
 
-  dat$Label <- naturalsort::naturalfactor(dat$Label)
-  dat$Label <- forcats::fct_drop(dat$Label)
-  colorSteps <- max(min(length(unique(dat$Label[dat$Label != 'Low Freq'])), 9), 3)
+  dat$Clonotype <- naturalsort::naturalfactor(dat$Clonotype)
+  dat$Clonotype <- forcats::fct_drop(dat$Clonotype)
+  colorSteps <- max(min(length(unique(dat$Clonotype[dat$Clonotype != 'Low Freq'])), 9), 3)
   getPalette <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(colorSteps, 'Set1'))
 
-  if ('No TCR' %in% dat$Label) {
-    dat$Label <- forcats::fct_relevel(dat$Label, 'No TCR', after = 0)
+  if ('No TCR' %in% dat$Clonotype) {
+    dat$Clonotype <- forcats::fct_relevel(dat$Clonotype, 'No TCR', after = 0)
   }
 
-  if ('Low Freq' %in% dat$Label) {
-    dat$Label <- forcats::fct_relevel(dat$Label, 'Low Freq', after = 0)
+  if ('Low Freq' %in% dat$Clonotype) {
+    dat$Clonotype <- forcats::fct_relevel(dat$Clonotype, 'Low Freq', after = 0)
   }
 
-  cols <- getPalette(length(unique(dat$Label[! dat$Label %in% c('Low Freq', 'No TCR')])))
+  cols <- getPalette(length(unique(dat$Clonotype[! dat$Clonotype %in% c('Low Freq', 'No TCR')])))
   cols <- sample(cols, size = length(cols))
-  if ('No TCR' %in% dat$Label) {
+  if ('No TCR' %in% dat$Clonotype) {
     cols <- c('#FFFFFF', cols)
   }
 
-  if ('Low Freq' %in% dat$Label) {
+  if ('Low Freq' %in% dat$Clonotype) {
     cols <- c('#ECECEC', cols)
   }
-  names(cols) <- levels(dat$Label)
+  names(cols) <- levels(dat$Clonotype)
 
   if (!is.na(patternField)) {
     dat$PatternField <- dat[[patternField]]
@@ -320,15 +347,15 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
     group_by(across(all_of(groupFields)))
 
   if (nrow(labelData) == 0) {
-    labelData$Fraction <- numeric()
-    labelData$TotalCellsForCloneByActive <- integer()
+    labelData$FractionOfCloneWithStateInSample <- numeric()
+    labelData$TotalCellsForCloneAndState <- integer()
     labelData$TotalCellsForSample <- integer()
     labelData$LabelText <- character()
   } else {
     labelData <- labelData %>%
-      summarize(Fraction = sum(Fraction), TotalCellsForCloneByActive = sum(TotalCellsForCloneByActive), TotalCellsForSample = max(TotalCellsForSample)) %>%
+      summarize(FractionOfCloneWithStateInSample = sum(FractionOfCloneWithStateInSample), TotalCellsForCloneAndState = sum(TotalCellsForCloneAndState), TotalCellsForSample = max(TotalCellsForSample)) %>%
       as.data.frame() %>%
-      mutate(LabelText = paste0(TotalCellsForCloneByActive, ' /\n', TotalCellsForSample))
+      mutate(LabelText = paste0(TotalCellsForCloneAndState, ' /\n', TotalCellsForSample))
   }
 
   if (nrow(dat) == 0) {
@@ -336,8 +363,8 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
     return()
   }
 
-  PT <- ggplot(dat, aes(x = Stim, y = Fraction)) +
-    ggpattern::geom_col_pattern(aes(pattern = PatternField, fill = Label), pattern_fill = "black",
+  PT <- ggplot(dat, aes(x = Stim, y = FractionOfCloneWithStateInSample)) +
+    ggpattern::geom_col_pattern(aes(pattern = PatternField, fill = Clonotype), pattern_fill = "black",
                                 color = 'black',
                                 pattern_density = 0.2,
                                 pattern_spacing = 0.05,
@@ -346,7 +373,7 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
     ggpattern::scale_pattern_manual(values = patternValues) +
     scale_fill_manual(values = cols) +
     labs(y = 'Pct of Cells', x = '', fill = 'Clone') +
-    scale_y_continuous(label = scales::percent, expand = expansion(add = c(0, min(0.02, max(dat$FractionOfSampleActive[dat$IsActive])*0.2)))) +
+    scale_y_continuous(label = scales::percent, expand = expansion(add = c(0, min(0.02, max(dat$FractionOfCloneWithStateInSample[dat$IsActive])*0.2)))) +
     egg::theme_article(base_size = 14) +
     theme(
       legend.position = 'none',
@@ -378,38 +405,68 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
 #' @export
 #'
 #' @param dat A dataframe, generated by PrepareTcrData
-GroupOverlappingClones <- function(dat) {
-  dupes <- unique(grep(dat$Label, pattern = ',', value = TRUE))
+#' @param groupingFields A list of fields, typically sample-variables, on which to group
+#' @param dataMask An optional logical vector. If provided, the 'dat' dataframe is filtered to include only rows where dataMask is TRUE.
+#'
+GroupOverlappingClones <- function(dat, groupingFields, dataMask = NULL) {
+  if (is.null(dataMask)) {
+    dupes <- unique(grep(dat$Clonotype, pattern = ',', value = TRUE))
+  } else {
+    if (length(dataMask) != nrow(dat)) {
+      stop('The dataMask should be a vector of the same length as the dat dataframe')
+    }
+
+    if (!is.logical(dataMask)) {
+      stop('The dataMask should be a logical vector')
+    }
+
+    dupes <- unique(grep(dat$Clonotype[dataMask], pattern = ',', value = TRUE))
+  }
+
   if (length(dupes) > 0) {
-    dat$NormalizedClone <- as.character(dat$Label)
+    print(paste0('Total multi-chain clonotypes: ', length(dupes)))
+    dat$OriginalClone <- dat$Clonotype
+    dat$Clonotype <- as.character(dat$Clonotype)
     for (cn in dupes) {
       tokens <- unlist(strsplit(cn, split = ','))
       for (c in tokens) {
-        if (any(dat$NormalizedClone == c)) {
+        if (any(dat$Clonotype == c)) {
           print(paste0('Combining: ', c, ' into ', cn))
-          dat$NormalizedClone[dat$NormalizedClone == c] <- cn
+          dat$Clonotype[dat$Clonotype == c] <- cn
         }
       }
-
-      dat <- dat %>%
-        group_by(SubjectId, SampleDate, Stim, IsActive, NormalizedClone, TotalCellsForSample, TotalCellsForSampleByActivation) %>%
-        summarise(
-          TotalCellsForClone = sum(TotalCellsForClone),
-          TotalCellsForCloneByActive = sum(TotalCellsForCloneByActive)
-        ) %>%
-        as.data.frame()
-
-      dat$Fraction <- dat$TotalCellsForCloneByActive / dat$TotalCellsForSample
     }
 
+    # Re-group:
     dat <- dat %>%
-      rename(
-        Label = NormalizedClone
-      )
-  }
+      group_by(across(all_of(unique(c(groupingFields, 'TotalCellsForSample', 'TotalCellsForSampleAndState', 'IsActive', 'Clonotype'))))) %>%
+      summarise(
+        TotalCellsForClone = sum(TotalCellsForClone),
+        TotalCellsForCloneAndState = sum(TotalCellsForCloneAndState),
+        NoStimTotalCellsActive = sum(NoStimTotalCellsActive),
+        NoStimFractionOfCloneInSample = sum(NoStimFractionOfCloneInSample),
+        NoStimTotalCells = sum(NoStimTotalCells),
+        OrigCloneNames = paste0(sort(unique(OriginalClone)), collapse = '|'),
+        V_Gene = paste0(sort(unique(V_Gene)), collapse = ',')
+      ) %>%
+      as.data.frame() %>%
+      mutate(
+        FractionOfCloneWithStateInSample = TotalCellsForCloneAndState / TotalCellsForSample,
+        FractionOfCloneWithState = TotalCellsForCloneAndState / TotalCellsForClone,
+        FractionOfSampleWithState = TotalCellsForSampleAndState / TotalCellsForSample,
+        NoStimFractionActive = NoStimTotalCellsActive / NoStimTotalCells
+      ) %>%
+      group_by(across(all_of(c('SubjectId', 'Clonotype')))) %>%
+      mutate(MaxFractionInSubject = max(FractionOfCloneWithStateInSample))
 
-  dat <- dat %>%
-    select(SubjectId, SampleDate, Stim, IsActive, Label, TotalCellsForSample, TotalCellsForSampleByActivation, Fraction)
+    dat <- dat %>%
+      select(all_of(c(groupingFields, 'TotalCellsForSample', 'TotalCellsForSampleAndState', 'IsActive', 'Clonotype', 'TotalCellsForClone', 'TotalCellsForCloneAndState',
+                      'NoStimTotalCellsActive', 'NoStimTotalCells', 'NoStimFractionOfCloneInSample', 'OrigCloneNames', 'V_Gene',
+                      'FractionOfCloneWithStateInSample', 'FractionOfCloneWithState', 'FractionOfSampleWithState', 'NoStimFractionActive', 'MaxFractionInSubject'
+      )))
+  } else {
+    print('No multi-CDR3 clonotypes present')
+  }
 
   return(dat)
 }
@@ -423,19 +480,19 @@ GroupOverlappingClones <- function(dat) {
 #' @param minFoldChangeAboveNoStim The fold change will be calculated as the fraction of cells/clone active relative to the no-stim background. Any clone below this value will be filtered
 #' @param minFractionOfCloneActive If any clone has fewer than this fraction of cells active, it will be filtered
 #' @export
-ApplyCloneFilters <- function(dat, minCellsPerClone = 2, minFoldChangeAboveNoStim = 2, minFractionOfCloneActive = 0.01) {
+ApplyCloneFilters <- function(dat, minCellsPerClone = 2, minFoldChangeAboveNoStim = 2, minFractionOfCloneActive = 0.005) {
   dat$Filter <- NA
 
-  if (any(dat$Label == 'Low Freq')) {
-    dat$Filter[dat$Label == 'Low Freq'] <- 'Low Freq'
+  if (any(dat$Clonotype == 'Low Freq')) {
+    dat$Filter[dat$Clonotype == 'Low Freq'] <- 'Low Freq'
   }
 
   if (!is.na(minCellsPerClone)) {
-    if ( ! 'TotalCellsForCloneByActive' %in% names(dat)) {
-      stop('Missing field: TotalCellsForCloneByActive')
+    if ( ! 'TotalCellsForCloneAndState' %in% names(dat)) {
+      stop('Missing field: TotalCellsForCloneAndState')
     }
 
-    dat$Filter[dat$TotalCellsForCloneByActive < minCellsPerClone] <- 'Insufficient Cells'
+    dat$Filter[dat$TotalCellsForCloneAndState < minCellsPerClone] <- 'Insufficient Cells'
   }
 
   if (!is.na(minFoldChangeAboveNoStim) && minFoldChangeAboveNoStim > 0) {
@@ -443,17 +500,17 @@ ApplyCloneFilters <- function(dat, minCellsPerClone = 2, minFoldChangeAboveNoSti
       stop('Missing field: NoStimFractionActive')
     }
 
-    foldChangeData <- dat$Fraction / dat$NoStimFractionActive
+    foldChangeData <- dat$FractionOfCloneWithStateInSample / dat$NoStimFractionActive
     toFilter <- !is.na(foldChangeData) & foldChangeData < minFoldChangeAboveNoStim
     dat$Filter[toFilter] <- 'Below NoStim Background'
   }
 
   if (!is.na(minFractionOfCloneActive) && minFractionOfCloneActive > 0) {
-    if ( ! 'FractionOfCloneActive' %in% names(dat)) {
-      stop('Missing field: FractionOfCloneActive')
+    if ( ! 'FractionOfCloneWithState' %in% names(dat)) {
+      stop('Missing field: FractionOfCloneWithState')
     }
 
-    dat$Filter[dat$FractionOfCloneActive < minFractionOfCloneActive] <- 'Below Min Fraction Active'
+    dat$Filter[dat$IsActive & dat$FractionOfCloneWithState < minFractionOfCloneActive] <- 'Below Min Fraction Active'
   }
 
   # Only apply to IsActive:
