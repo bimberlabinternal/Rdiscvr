@@ -532,10 +532,11 @@ ApplyCloneFilters <- function(dat, minCellsPerClone = 2, minFoldChangeAboveNoSti
 #' @param groupingField A field, present in dataToTest+controlData, used to group samples.
 #' @param cloneFieldName A field, present in dataToTest+controlData, holding the clonotype value
 #' @param contrastField A field, present in dataToTest+controlData, used to contrast data. Typically this is isActive.
+#' @param cloneSizeField A field, present in dataToTest+controlData, denoting the number of cells from this clonotype
 #' @param showProgress If TRUE, a progress bar will be shown
 #' @export
-CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField = 'Stim', cloneFieldName = 'Clonotype', contrastField = 'IsActive', showProgress = FALSE) {
-  for (fn in c('SubjectId', cloneFieldName, groupingField, contrastField)) {
+CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField = 'cDNA_ID', cloneFieldName = 'Clonotype', contrastField = 'IsActive', cloneSizeField = 'TotalCellsForCloneAndState', showProgress = FALSE) {
+  for (fn in c(cloneFieldName, groupingField, contrastField, cloneSizeField)) {
     if (!fn %in% names(dataToTest)) {
       stop(paste0('Missing field in dataToTest: ', fn))
     }
@@ -570,14 +571,28 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
   print(paste0('Total clonotypes: ', length(uniqueClones)))
 
   df <- rbind(
-    dataToTest %>% select(all_of(c(cloneFieldName, groupingField, contrastField))) %>% mutate(Category = 'Experiment'),
-    controlData %>% select(all_of(c(cloneFieldName, groupingField, contrastField))) %>% mutate(Category = 'Control')
+    dataToTest %>% select(all_of(c(cloneFieldName, groupingField, contrastField, cloneSizeField))) %>% mutate(Category = 'Experiment'),
+    controlData %>% select(all_of(c(cloneFieldName, groupingField, contrastField, cloneSizeField))) %>% mutate(Category = 'Control')
   )
+
+  df <- as.data.frame(lapply(df, rep, df[[cloneSizeField]]))
+
+  # TODO: consider factor levels??
   df[[groupingField]][df$Category == 'Control'] <- 'Control'
+
   df <- df %>% rename(
     'Clonotype' = cloneFieldName,
     'GroupName' = groupingField
   )
+
+  ctlGroup <- unique(controlData[[groupingField]])
+  if (length(ctlGroup) > 1) {
+    stop('controlData can only have one value for groupingField')
+  }
+
+  # Set control group to intercept:
+  df$GroupName <- as.factor(df$GroupName)
+  df$GroupName <- forcats::fct_relevel(df$GroupName, ctlGroup, after = 0)
 
   doWork <- function(df, uniqueClones, pb = NULL) {
     results <- future.apply::future_lapply(seq_along(uniqueClones), future.seed = CellMembrane::GetSeed(), FUN = function(i) {
@@ -614,7 +629,8 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
 
       model <- logistf::logistf(IsActive ~ GroupName, family = "binomial", data = dat)
       groupNames <- gsub(names(coef(model)), pattern = 'GroupName', replacement = '')
-      groupNames[1] <- 'Control'
+      groupNames[1] <- 'CONTROL'
+
       model_results <- data.frame(Clonotype = cdr3,
                                   GroupName = groupNames,
                                   coefficients = coef(model),
@@ -638,6 +654,8 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
 
   results <- do.call(rbind, results)
   rownames(results) <- NULL
+
+  results$GroupName[results$GroupName == 'CONTROL'] <- ctlGroup
 
   results$FDR <- NA
   for (groupName in unique(results$GroupName)) {

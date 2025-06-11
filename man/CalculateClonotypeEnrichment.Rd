@@ -7,9 +7,10 @@
 CalculateClonotypeEnrichment(
   dataToTest,
   controlData,
-  groupingField = "Stim",
+  groupingField = "cDNA_ID",
   cloneFieldName = "Clonotype",
   contrastField = "IsActive",
+  cloneSizeField = "TotalCellsForCloneAndState",
   showProgress = FALSE
 )
 }
@@ -23,6 +24,8 @@ CalculateClonotypeEnrichment(
 \item{cloneFieldName}{A field, present in dataToTest+controlData, holding the clonotype value}
 
 \item{contrastField}{A field, present in dataToTest+controlData, used to contrast data. Typically this is isActive.}
+
+\item{cloneSizeField}{A field, present in dataToTest+controlData, denoting the number of cells from this clonotype}
 
 \item{showProgress}{If TRUE, a progress bar will be shown}
 }
