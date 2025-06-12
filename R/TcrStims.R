@@ -606,9 +606,14 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
 
   # Set control group to intercept:
   df$GroupName <- as.factor(df$GroupName)
-  df$GroupName <- forcats::fct_expand(df$GroupName, as.character(ctlGroup), after = 0)
-  if (ctlGroup != levels(df$GroupName)[1]) {
-    stop('intercept not properly set!')
+  if (!ctlGroup %in% levels(df$GroupName)) {
+    df$GroupName <- forcats::fct_expand(df$GroupName, as.character(ctlGroup), after = 0)
+  } else {
+    df$GroupName <- forcats::fct_relevel(df$GroupName, as.character(ctlGroup), after = 0)
+  }
+
+  if (as.character(ctlGroup) != levels(df$GroupName)[1]) {
+    stop(paste0('intercept not properly set! levels: ', paste0(levels(df$GroupName), collapse = ','), ', expected: ', ctlGroup))
   }
 
   doWork <- function(df, uniqueClones, pb = NULL) {
