@@ -694,7 +694,6 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
 AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
   dataWithPVal <- NULL
   for (ctlId in unique(dat$NoStimId)) {
-
     dataToTest <- dat %>%
       filter(NoStimId == ctlId & cDNA_ID != ctlId) %>%
       select(SubjectId, cDNA_ID, Clonotype, IsActive, TotalCellsForCloneAndState)
@@ -715,15 +714,13 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     results <- Rdiscvr::CalculateClonotypeEnrichment(dataToTest, controlData, showProgress = showProgress)
 
     dataWithPVal <- rbind(dataWithPVal, dat %>% filter(IsActive) %>% left_join(results, by = c('cDNA_ID', 'Clonotype')))
-
-    return(dataWithPVal)
   }
 
   # Set a floor:
   dataWithPVal$FDR[dataWithPVal$FDR == 0] <- 0.0001
-  volcano_plot <- ggplot(dataWithPVal %>% filter(!is.na(FDR) & !IsControlSample), aes(x = coefficients, y = -log10(FDR), color = Stim, label = Clonotype)) +
+  P1 <- ggplot(dataWithPVal %>% filter(!is.na(FDR) & !IsControlSample), aes(x = coefficients, y = -log10(FDR), color = Stim, label = Clonotype)) +
     geom_point() +
-    ggrepel::geom_label_repel(show.legend = FALSE) +
+    ggrepel::geom_label_repel(show.legend = FALSE, size = 3) +
     geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
     geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "black") +
     egg::theme_article() +
@@ -731,7 +728,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     ylab("-log10(FDR)") +
     ggtitle('Clonotype Enrichment')
 
-  print(volcano_plot)
+  print(P1)
 
   return(dataWithPVal)
 }
