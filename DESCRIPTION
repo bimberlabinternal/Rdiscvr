@@ -31,7 +31,11 @@ Imports:
     RColorBrewer,
     grDevices,
     ComplexHeatmap,
-    nimbleR
+    nimbleR,
+    progressr,
+    logistf,
+    future.apply,
+    ggrepel
 Suggests:
     devtools,
     testthat (>= 2.1.0)
