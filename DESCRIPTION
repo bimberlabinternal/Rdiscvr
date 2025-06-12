@@ -34,7 +34,8 @@ Imports:
     nimbleR,
     progressr,
     logistf,
-    future.apply
+    future.apply,
+    ggrepel
 Suggests:
     devtools,
     testthat (>= 2.1.0)

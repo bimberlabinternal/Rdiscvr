@@ -7,7 +7,7 @@ utils::globalVariables(
   names = c('Clonotype','FDR','FractionOfCloneInSample','FractionOfCloneWithStateInSample','GroupName','IsControlSample','LabelText',
             'NoStimFractionOfCloneInSample','NoStimId','NoStimTotalCells','NoStimTotalCellsActive','OriginalClone','PatternField','Stim','TNK_Type',
             'Tcell_EffectorDifferentiation','TotalCellsForClone','TotalCellsForCloneAndState','TotalCellsForSample','TotalCellsForSampleAndState','V_Gene',
-            'cDNA_ID','coefficients'),
+            'cDNA_ID','coefficients', 'p_val'),
   package = 'Rdiscvr',
   add = TRUE
 )
@@ -41,7 +41,7 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   groupingFields <- c('cDNA_ID', 'SubjectId')
 
   if (typeof(seuratObjOrDf) == 'S4') {
-    dat <- seuratObj@meta.data
+    dat <- seuratObjOrDf@meta.data
   } else if (typeof(seuratObjOrDf) == 'list') {
     dat <- seuratObjOrDf
   } else {
@@ -633,7 +633,7 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
         return(data.frame(Clonotype = cdr3,
                           GroupName = dat$GroupName,
                           coefficients = NA,
-                          p_values = NA,
+                          p_val = NA,
                           error = "Too few cells"
 
         ))
@@ -643,7 +643,7 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
         return(data.frame(Clonotype = cdr3,
                           GroupName = dat$GroupName,
                           coefficients = NA,
-                          p_values = NA,
+                          p_val = NA,
                           error = "Single Group"
 
         ))
@@ -655,8 +655,8 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
 
       model_results <- data.frame(Clonotype = cdr3,
                                   GroupName = groupNames,
-                                  coefficients = coef(model),
-                                  p_values = model$prob,
+                                  coefficients = stats::coef(model),
+                                  p_val = model$prob,
                                   error = "No"
       )
 
@@ -681,11 +681,11 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
 
   results$FDR <- NA
   for (groupName in unique(results$GroupName)) {
-      results$FDR[results$GroupName == groupName] <- stats::p.adjust(results$p_values[results$GroupName == groupName], method = "fdr")
+      results$FDR[results$GroupName == groupName] <- stats::p.adjust(results$p_val[results$GroupName == groupName], method = "fdr")
   }
 
   results <- results %>%
-    select(Clonotype, GroupName, coefficients, p_values, FDR) %>%
+    select(Clonotype, GroupName, coefficients, p_val, FDR) %>%
     unique()
 
   # Restore original datatype
