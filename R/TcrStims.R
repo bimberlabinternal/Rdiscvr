@@ -731,7 +731,8 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
   }
 
   # Set a floor:
-  dataWithPVal$FDR[dataWithPVal$FDR == 0] <- 0.0001
+  maxNonInfiniteTransformedFDR <- max(-log10(dataWithPVal$FDR[!is.infinite(-log10(dataWithPVal$FDR))]), na.rm = TRUE)
+  dataWithPVal$FDR[dataWithPVal$FDR == 0] <- maxNonInfiniteTransformedFDR + 0.0001
   P1 <- ggplot(dataWithPVal %>% filter(!is.na(FDR) & !IsControlSample), aes(x = coefficients, y = -log10(FDR), color = Stim, label = Clonotype)) +
     geom_point() +
     ggrepel::geom_label_repel(show.legend = FALSE, size = 3) +
