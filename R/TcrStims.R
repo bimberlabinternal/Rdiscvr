@@ -3,6 +3,15 @@
 #' @import utils
 
 
+utils::globalVariables(
+  names = c('Clonotype','FDR','FractionOfCloneInSample','FractionOfCloneWithStateInSample','GroupName','IsControlSample','LabelText',
+            'NoStimFractionOfCloneInSample','NoStimId','NoStimTotalCells','NoStimTotalCellsActive','OriginalClone','PatternField','Stim','TNK_Type',
+            'Tcell_EffectorDifferentiation','TotalCellsForClone','TotalCellsForCloneAndState','TotalCellsForSample','TotalCellsForSampleAndState','V_Gene',
+            'cDNA_ID','coefficients'),
+  package = 'Rdiscvr',
+  add = TRUE
+)
+
 
 .ScoreFns <- list(
   TandNK_Activation_UCell = function(df) {
@@ -373,7 +382,7 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
     ggpattern::scale_pattern_manual(values = patternValues) +
     scale_fill_manual(values = cols) +
     labs(y = 'Pct of Cells', x = '', fill = 'Clone') +
-    scale_y_continuous(label = scales::percent, expand = expansion(add = c(0, min(0.02, max(dat$FractionOfCloneWithStateInSample[dat$IsActive])*0.2)))) +
+    scale_y_continuous(labels = scales::percent, expand = expansion(add = c(0, min(0.02, max(dat$FractionOfCloneWithStateInSample[dat$IsActive])*0.2)))) +
     egg::theme_article(base_size = 14) +
     theme(
       legend.position = 'none',
@@ -636,7 +645,7 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
       }
 
       model <- logistf::logistf(IsActive ~ GroupName, family = "binomial", data = dat)
-      groupNames <- gsub(names(coef(model)), pattern = 'GroupName', replacement = '')
+      groupNames <- gsub(names(stats::coef(model)), pattern = 'GroupName', replacement = '')
       groupNames[1] <- 'CONTROL'
 
       model_results <- data.frame(Clonotype = cdr3,
@@ -667,7 +676,7 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
 
   results$FDR <- NA
   for (groupName in unique(results$GroupName)) {
-      results$FDR[results$GroupName == groupName] <- p.adjust(results$p_values[results$GroupName == groupName], method = "fdr")
+      results$FDR[results$GroupName == groupName] <- stats::p.adjust(results$p_values[results$GroupName == groupName], method = "fdr")
   }
 
   results <- results %>%
