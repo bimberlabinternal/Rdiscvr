@@ -35,7 +35,8 @@ Imports:
     progressr,
     logistf,
     future.apply,
-    ggrepel
+    ggrepel,
+    patchwork
 Suggests:
     devtools,
     testthat (>= 2.1.0)

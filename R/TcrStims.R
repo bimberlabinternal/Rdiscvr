@@ -7,7 +7,7 @@ utils::globalVariables(
   names = c('Clonotype','FDR','FractionOfCloneInSample','FractionOfCloneWithStateInSample','GroupName','IsControlSample','LabelText',
             'NoStimFractionOfCloneInSample','NoStimId','NoStimTotalCells','NoStimTotalCellsActive','OriginalClone','PatternField','Stim','TNK_Type',
             'Tcell_EffectorDifferentiation','TotalCellsForClone','TotalCellsForCloneAndState','TotalCellsForSample','TotalCellsForSampleAndState','V_Gene',
-            'cDNA_ID','coefficients', 'p_val'),
+            'cDNA_ID','coefficients', 'p_val', 'error', 'FractionOfCloneWithState'),
   package = 'Rdiscvr',
   add = TRUE
 )
@@ -77,11 +77,10 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     print(paste0('cells after filter: ', nrow(dat), ', original: ', origCells))
   }
 
-  # TODO: generalize!
   allStims <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
-    folderPath="/Labs/Bimber/1297",
-    schemaName="lists",
+    folderPath="/Labs/Bimber/",
+    schemaName="tcrdb",
     queryName="TCR_Stims",
     colSelect="cDNA_ID,NoStimId",
     colFilter=makeFilter(
@@ -739,7 +738,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
   return(dataWithPVal)
 }
 
-.GenerateTcrQcPlots <- function(dat) {
+.GenerateTcrQcPlots <- function(dat, subjectId) {
   filterPlot1 <- dat %>%
     filter(IsActive) %>%
     mutate(Filter = {ifelse(is.na(Filter), yes = 'Pass', no = Filter)}) %>%
@@ -747,7 +746,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     ggplot(aes(x = Stim, y = Fraction, fill = Filter)) +
     geom_col(color = 'black') +
     facet_grid(. ~ SampleDate, scales = 'free', space = 'free_x') +
-    scale_y_continuous(label = scales::percent) +
+    scale_y_continuous(labels = scales::percent) +
     egg::theme_article() +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1)
@@ -765,7 +764,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     geom_boxplot(color = 'black', outlier.shape = NA) +
     geom_jitter(aes(color = Filter, size = TotalCellsForCloneAndState)) +
     facet_grid(IsActiveLabel ~ SampleDate, scales = 'free', space = 'free') +
-    scale_y_continuous(label = scales::percent) +
+    scale_y_continuous(labels = scales::percent) +
     egg::theme_article() +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1)
@@ -783,8 +782,8 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     mutate(Filter = {ifelse(is.na(Filter), yes = 'Pass', no = Filter)}) %>%
     ggplot(aes(x = FractionOfCloneWithStateInSample, y = FractionOfCloneWithState)) +
     geom_jitter(aes(color = Filter, size = TotalCellsForCloneAndState)) +
-    scale_x_continuous(label = scales::percent) +
-    scale_y_continuous(label = scales::percent) +
+    scale_x_continuous(labels = scales::percent) +
+    scale_y_continuous(labels = scales::percent) +
     egg::theme_article() +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1)
@@ -802,8 +801,8 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     mutate(Filter = {ifelse(is.na(Filter), yes = 'Pass', no = Filter)}) %>%
     ggplot(aes(x = TotalCellsForClone/TotalCellsForSample, y = FractionOfCloneWithState)) +
     geom_jitter(aes(color = Filter, size = TotalCellsForCloneAndState)) +
-    scale_x_continuous(label = scales::percent) +
-    scale_y_continuous(label = scales::percent) +
+    scale_x_continuous(labels = scales::percent) +
+    scale_y_continuous(labels = scales::percent) +
     egg::theme_article() +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1)
@@ -817,7 +816,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     )
   P <- ((filterPlot1 + filterPlot2) / (filterPlot3 + filterPlot4)) +
     patchwork::plot_layout(guides = 'collect') +
-    patchwork::plot_annotation(title = paste0(animalId, ': Filter QC'))
+    patchwork::plot_annotation(title = paste0(subjectId, ': Filter QC'))
 
   return(P)
 }
