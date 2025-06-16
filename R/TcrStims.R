@@ -177,7 +177,8 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
       FractionOfSampleWithState = TotalCellsForSampleAndState / TotalCellsForSample
     ) %>%
     group_by(across(all_of(c('SubjectId', 'Clonotype')))) %>%
-    mutate(MaxFractionInSubject = max(FractionOfCloneWithStateInSample))
+    mutate(MaxFractionInSubject = max(FractionOfCloneWithStateInSample)) %>%
+    as.data.frame()
 
   dat$OrigClonotype <- dat$Clonotype
   dat$Clonotype <- as.character(dat$Clonotype)
@@ -454,8 +455,10 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
       }
     }
 
-    # Re-group:
+    # Re-group. Separate Low Freq so we dont artificially lump these:
+    lowFreq <- dat %>% filter(Clonotype == 'Low Freq')
     dat <- dat %>%
+      filter(Clonotype != 'Low Freq') %>%
       group_by(across(all_of(unique(c(groupingFields, 'TotalCellsForSample', 'TotalCellsForSampleAndState', 'IsActive', 'Clonotype'))))) %>%
       summarise(
         TotalCellsForClone = sum(TotalCellsForClone),
@@ -463,7 +466,7 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
         NoStimTotalCellsActive = sum(NoStimTotalCellsActive),
         NoStimFractionOfCloneInSample = sum(NoStimFractionOfCloneInSample),
         NoStimTotalCells = sum(NoStimTotalCells),
-        OrigCloneNames = paste0(sort(unique(OriginalClone)), collapse = '|'),
+        OrigClonotype = paste0(sort(unique(OriginalClone)), collapse = '|'),
         V_Gene = paste0(sort(unique(V_Gene)), collapse = ',')
       ) %>%
       as.data.frame() %>%
@@ -478,9 +481,12 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
 
     dat <- dat %>%
       select(all_of(c(groupingFields, 'TotalCellsForSample', 'TotalCellsForSampleAndState', 'IsActive', 'Clonotype', 'TotalCellsForClone', 'TotalCellsForCloneAndState',
-                      'NoStimTotalCellsActive', 'NoStimTotalCells', 'NoStimFractionOfCloneInSample', 'OrigCloneNames', 'V_Gene',
+                      'NoStimTotalCellsActive', 'NoStimTotalCells', 'NoStimFractionOfCloneInSample', 'OrigClonotype', 'V_Gene',
                       'FractionOfCloneWithStateInSample', 'FractionOfCloneWithState', 'FractionOfSampleWithState', 'NoStimFractionActive', 'MaxFractionInSubject'
       )))
+
+    lowFreq <- lowFreq %>% select(all_of(names(dat)))
+    dat <- rbind(dat, lowFreq)
   } else {
     print('No multi-CDR3 clonotypes present')
   }
@@ -738,7 +744,8 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
   return(dataWithPVal)
 }
 
-.GenerateTcrQcPlots <- function(dat, subjectId) {
+.GenerateTcrQcPlots <- function(dat) {
+  subjectId <- paste0(dat %>% select(SubjectId) %>% unique() %>% as.character(), collapse = ',')
   filterPlot1 <- dat %>%
     filter(IsActive) %>%
     mutate(Filter = {ifelse(is.na(Filter), yes = 'Pass', no = Filter)}) %>%
