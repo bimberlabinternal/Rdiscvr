@@ -28,7 +28,7 @@ utils::globalVariables(
 #'
 #' @param seuratObjOrDf Either a Seurat object or the meta.data dataframe from an object
 #' @param subjectId The subjectId to process
-#' @param enforceAllDataPresent If true, the function will error unless all stims defined in lists.tcr_stims are present in the input object
+#' @param enforceAllDataPresent If true, the function will error unless all stims listed in tcrdb.stims for the subjectId are present in the input object
 #' @param chain The chain to summarize
 #' @param minEDS If provided, cells with EDS less than this value will be discarded
 #' @param dropUnknownTNK_Type If true, cells with Ambiguous or Unknown TNK_Type will be dropped
@@ -81,8 +81,8 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/",
     schemaName="tcrdb",
-    queryName="TCR_Stims",
-    colSelect="cDNA_ID,NoStimId",
+    queryName="stims",
+    colSelect="cDNA_ID,controlStimId",
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "EQUALS", subjectId),
       c("cDNA_ID/readsetId/totalFiles", "GT", 0)
@@ -91,7 +91,7 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   ) %>%
     rename(
       cDNA_ID = 'cdna_id',
-      NoStimId = 'nostimid'
+      NoStimId = 'controlstimid'
     )
 
   print(paste0('Found ', nrow(allStims), ' known stims'))

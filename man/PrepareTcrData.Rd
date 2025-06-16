@@ -22,7 +22,7 @@ PrepareTcrData(
 
 \item{minEDS}{If provided, cells with EDS less than this value will be discarded}
 
-\item{enforceAllDataPresent}{If true, the function will error unless all stims defined in lists.tcr_stims are present in the input object}
+\item{enforceAllDataPresent}{If true, the function will error unless all stims listed in tcrdb.stims for the subjectId are present in the input object}
 
 \item{chain}{The chain to summarize}
 
