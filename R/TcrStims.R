@@ -79,10 +79,10 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
 
   allStims <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
-    folderPath="/Labs/Bimber/",
+    folderPath="/Labs/Bimber",
     schemaName="tcrdb",
     queryName="stims",
-    colSelect="cDNA_ID,controlStimId",
+    colSelect="cdna_id,controlStimId",
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "EQUALS", subjectId),
       c("cDNA_ID/readsetId/totalFiles", "GT", 0)
