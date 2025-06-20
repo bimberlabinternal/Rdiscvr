@@ -6,7 +6,7 @@
 utils::globalVariables(
   names = c('Clonotype','FDR','FractionOfCloneInSample','FractionOfCloneWithStateInSample','GroupName','IsControlSample','LabelText',
             'NoStimFractionOfCloneInSample','NoStimId','NoStimTotalCells','NoStimTotalCellsActive','OriginalClone','PatternField','Stim','TNK_Type',
-            'Tcell_EffectorDifferentiation','TotalCellsForClone','TotalCellsForCloneAndState','TotalCellsForSample','TotalCellsForSampleAndState','V_Gene',
+            'Tcell_EffectorDifferentiation','TotalCellsForClone','TotalCellsForCloneAndState','TotalCellsForSample','TotalCellsForSampleAndState','V_Gene', 'J_Gene',
             'cDNA_ID','coefficients', 'p_val', 'error', 'FractionOfCloneWithState'),
   package = 'Rdiscvr',
   add = TRUE
@@ -132,6 +132,7 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
 
   dat$Clonotype <- dat[[chain]]
   dat$V_Gene <- dat[[paste0(chain, '_V')]]
+  dat$J_Gene <- dat[[paste0(chain, '_J')]]
 
   if (retainRowsWithoutCDR3) {
     dat$Clonotype <- as.character(dat$Clonotype)
@@ -168,7 +169,8 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     group_by(across(all_of(c(groupingFields, 'Clonotype', 'TotalCellsForSample', 'TotalCellsForSampleAndState', 'TotalCellsForClone', 'IsActive')))) %>%
     summarize(
       TotalCellsForCloneAndState = n(),
-      V_Gene = paste0(sort(unique(V_Gene)), collapse = ',')
+      V_Gene = paste0(sort(unique(V_Gene)), collapse = ','),
+      J_Gene = paste0(sort(unique(J_Gene)), collapse = ',')
     ) %>%
     as.data.frame() %>%
     mutate(
@@ -179,6 +181,14 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     group_by(across(all_of(c('SubjectId', 'Clonotype')))) %>%
     mutate(MaxFractionInSubject = max(FractionOfCloneWithStateInSample)) %>%
     as.data.frame()
+
+  dat$V_Gene <- sapply(dat$V_Gene, function(x){
+    return(paste0(sort(unique(unlist(strsplit(x, split = ',')))), collapse = ','))
+  })
+
+  dat$J_Gene <- sapply(dat$J_Gene, function(x){
+    return(paste0(sort(unique(unlist(strsplit(x, split = ',')))), collapse = ','))
+  })
 
   dat$OrigClonotype <- dat$Clonotype
   dat$Clonotype <- as.character(dat$Clonotype)
@@ -467,7 +477,8 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
         NoStimFractionOfCloneInSample = sum(NoStimFractionOfCloneInSample),
         NoStimTotalCells = sum(NoStimTotalCells),
         OrigClonotype = paste0(sort(unique(OriginalClone)), collapse = '|'),
-        V_Gene = paste0(sort(unique(V_Gene)), collapse = ',')
+        V_Gene = paste0(sort(unique(V_Gene)), collapse = ','),
+        J_Gene = paste0(sort(unique(J_Gene)), collapse = ',')
       ) %>%
       as.data.frame() %>%
       mutate(
@@ -479,9 +490,17 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
       group_by(across(all_of(c('SubjectId', 'Clonotype')))) %>%
       mutate(MaxFractionInSubject = max(FractionOfCloneWithStateInSample))
 
+    dat$V_Gene <- sapply(dat$V_Gene, function(x){
+      return(paste0(sort(unique(unlist(strsplit(x, split = ',')))), collapse = ','))
+    })
+
+    dat$J_Gene <- sapply(dat$J_Gene, function(x){
+      return(paste0(sort(unique(unlist(strsplit(x, split = ',')))), collapse = ','))
+    })
+
     dat <- dat %>%
       select(all_of(c(groupingFields, 'TotalCellsForSample', 'TotalCellsForSampleAndState', 'IsActive', 'Clonotype', 'TotalCellsForClone', 'TotalCellsForCloneAndState',
-                      'NoStimTotalCellsActive', 'NoStimTotalCells', 'NoStimFractionOfCloneInSample', 'OrigClonotype', 'V_Gene',
+                      'NoStimTotalCellsActive', 'NoStimTotalCells', 'NoStimFractionOfCloneInSample', 'OrigClonotype', 'V_Gene', 'J_Gene',
                       'FractionOfCloneWithStateInSample', 'FractionOfCloneWithState', 'FractionOfSampleWithState', 'NoStimFractionActive', 'MaxFractionInSubject'
       )))
 
