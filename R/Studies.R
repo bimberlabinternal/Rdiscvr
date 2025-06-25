@@ -48,8 +48,8 @@ ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
 
   metadata$ViremicCategory <- NA
   metadata$ViremicCategory[is.na(metadata$ChallengeDate) & !is.na(metadata$ART_Initiation)] <- 'ART-Only'
-  metadata$ViremicCategory[!is.na(metadata$ChallengeDate) & metadata$Nx_pVL == 0] <- 'Aviremic'
-  metadata$ViremicCategory[!is.na(metadata$ChallengeDate) & metadata$Nx_pVL > 0] <- 'Viremic'
+  metadata$ViremicCategory[!is.na(metadata$ChallengeDate) & metadata$Nx_pVL == 1] <- 'Aviremic'
+  metadata$ViremicCategory[!is.na(metadata$ChallengeDate) & metadata$Nx_pVL > 1] <- 'Viremic'
   metadata$ViremicCategory[!is.na(metadata$ChallengeDate) & metadata$PC475_Group == 'ON-ART'] <- 'On-ART'
 
   if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
@@ -212,8 +212,14 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     }
   }
 
+  cDNA$IsChallengedSide <- case_when(
+    cDNA$ChallengedSide == 'Left' & grepl(cDNA$Tissue, pattern = 'Left') ~ TRUE,
+    cDNA$ChallengedSide == 'Right' & grepl(cDNA$Tissue, pattern = 'Right') ~ TRUE,
+    .default = FALSE
+  )
+
   # TODO: make a field that is group + timepoint
-  
+
   cDNA <- merge(cDNA, metadata, by = 'SubjectId', all.x = T)
   
   return(cDNA)
