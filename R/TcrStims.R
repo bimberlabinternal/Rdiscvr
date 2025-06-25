@@ -597,6 +597,10 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
     stop('Found NA values for clonotype in dataToTest')
   }
 
+  if (nrow(controlData) == 0) {
+    stop('There are no rows in controlData')
+  }
+
   if (any(is.na(controlData[[cloneFieldName]]))) {
     stop('Found NA values for clonotype in controlData')
   }
@@ -618,12 +622,20 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
   )
 
   ctlGroup <- unique(controlData[[groupingField]])
+  if (all(is.na(ctlGroup)) || all(is.null(ctlGroup))) {
+    stop(paste0('controlData did not have any values for groupingField: ', groupingField))
+  }
+
   if (length(ctlGroup) > 1) {
     stop('controlData can only have one value for groupingField')
   }
 
   # Set control group to intercept:
   df$GroupName <- as.factor(df$GroupName)
+  if (all(is.na(levels(df$GroupName))) || length(levels(df$GroupName)) == 0) {
+    stop(paste0('The grouping variable did not have any values: ', groupingField))
+  }
+
   if (!ctlGroup %in% levels(df$GroupName)) {
     df$GroupName <- forcats::fct_expand(df$GroupName, as.character(ctlGroup), after = 0)
   } else {
@@ -733,6 +745,11 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 
     if (nrow(dataToTest) == 0) {
       print(paste0('No rows, skipping: '))
+      next
+    }
+
+    if (nrow(controlData) == 0) {
+      print(paste0('There are no rows in controlData, skipping: ' , ctlId))
       next
     }
 
