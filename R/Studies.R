@@ -590,7 +590,7 @@ ApplyPPG_Stim_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reA
     schemaName="tcrdb",
     queryName="stims",
     colNameOpt="rname",
-    colSelect = 'cDNA_ID,controlStimId,flowQuantification,cDNA_ID/sortId/sampleId/subjectId'
+    colSelect = 'cdna_id,controlStimId,flowQuantification,cDNA_ID/sortId/sampleId/subjectId'
   )
   names(metadata2) <- c('cDNA_ID', 'NoStim_cDNA_ID', 'IFNG_TNF_ICS', 'SubjectId')
 
