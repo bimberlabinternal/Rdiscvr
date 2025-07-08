@@ -586,13 +586,13 @@ ApplyPPG_Stim_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reA
 
   metadata2 <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
-    folderPath="/Labs/Bimber/1297",
-    schemaName="lists",
-    queryName="TCR_Stims",
+    folderPath="/Labs/Bimber",
+    schemaName="tcrdb",
+    queryName="stims",
     colNameOpt="rname",
-    colSelect = 'cDNA_ID,CD4_IFNG_TNF,CD4_IFNG_TNF_BS,CD8_IFNG_TNF,CD8_IFNG_TNF_BS,status,cDNA_ID/sortId/sampleId/subjectId,nostimid'
+    colSelect = 'cDNA_ID,controlStimId,flowQuantification,cDNA_ID/sortId/sampleId/subjectId'
   )
-  names(metadata2) <- c('cDNA_ID', 'CD4_IFNG_TNF', 'CD4_IFNG_TNF_BS', 'CD8_IFNG_TNF', 'CD8_IFNG_TNF_BS', 'StimStatus', 'SubjectId', 'NoStim_cDNA_ID')
+  names(metadata2) <- c('cDNA_ID', 'NoStim_cDNA_ID', 'IFNG_TNF_ICS', 'SubjectId')
 
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
