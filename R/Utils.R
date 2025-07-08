@@ -235,7 +235,7 @@ UploadSeuratObject <- function(localPath, workbook, name, category, description,
 #' @export
 DownloadMetadataForSeuratObject <- function(outputFileId, outFile, overwrite = TRUE, returnDataFrame = FALSE, deleteFile = returnDataFrame, showProgressBar = FALSE) {
 	DownloadOutputFile(outputFileId = outputFileId, outFile = outFile, overwrite = overwrite, pathTranslator = function(x){
-		return(gsub(x, pattern = 'seurat.rds', replacement = 'seurat.meta.txt.gz'))
+		return(gsub(x, pattern = 'seurat.rds$', replacement = 'seurat.meta.txt.gz'))
 	}, showProgressBar = showProgressBar)
 
 	if (returnDataFrame) {
