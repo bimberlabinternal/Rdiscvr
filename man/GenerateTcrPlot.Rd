@@ -11,7 +11,8 @@ GenerateTcrPlot(
   yFacetField = "IsActiveLabel",
   patternField = "IsShared",
   dropInactive = FALSE,
-  labelUsingCounts = TRUE
+  labelUsingCounts = TRUE,
+  groupLowFreq = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ GenerateTcrPlot(
 \item{dropInactive}{If true, cells where IsActive=FALSE will be dropped}
 
 \item{labelUsingCounts}{If true, the cell total will be listed above the bars}
+
+\item{groupLowFreq}{If true, all rows where clonotype is 'Low Freq' will be grouped to simplify plotting}
 }
 \description{
 This will plot TCR data created by PrepareTcrData

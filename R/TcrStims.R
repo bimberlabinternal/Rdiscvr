@@ -300,9 +300,10 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
 #' @param patternField An optional field used for the pattern aesthetic
 #' @param dropInactive If true, cells where IsActive=FALSE will be dropped
 #' @param labelUsingCounts If true, the cell total will be listed above the bars
+#' @param groupLowFreq If true, all rows where clonotype is 'Low Freq' will be grouped to simplify plotting
 #' @export
 #' @import dplyr
-GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField = 'IsActiveLabel', patternField = 'IsShared', dropInactive = FALSE, labelUsingCounts = TRUE) {
+GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField = 'IsActiveLabel', patternField = 'IsShared', dropInactive = FALSE, labelUsingCounts = TRUE, groupLowFreq = FALSE) {
   if (dropInactive) {
     dat <- dat %>%
       filter(IsActive)
@@ -380,6 +381,26 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
   if (nrow(dat) == 0) {
     print('No passing data, skipping plot')
     return()
+  }
+
+  if (groupLowFreq && 'Low Freq' %in% dat$Clonotype) {
+    fields <- unique(c(groupFields, 'PatternField', 'Clonotype'))
+    lf <- dat %>%
+      filter(Clonotype == 'Low Freq') %>%
+      group_by(across(all_of(fields))) %>%
+      summarise(FractionOfCloneWithStateInSample = sum(FractionOfCloneWithStateInSample))
+
+    dat <- dat %>%
+      filter(Clonotype != 'Low Freq')
+
+    fields <- c(fields, 'FractionOfCloneWithStateInSample')
+    lf <- lf %>%
+      select(all_of(fields))
+
+    dat <- dat %>%
+      select(all_of(fields))
+
+    dat <- rbind(dat, lf)
   }
 
   PT <- ggplot(dat, aes(x = Stim, y = FractionOfCloneWithStateInSample)) +
