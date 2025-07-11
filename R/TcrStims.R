@@ -765,7 +765,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
       select(SubjectId, cDNA_ID, Clonotype, IsActive, TotalCellsForCloneAndState)
 
     if (nrow(dataToTest) == 0) {
-      print(paste0('No rows, skipping: '))
+      print(paste0('No experimental rows, skipping control ID: ', ctlId))
       next
     }
 
