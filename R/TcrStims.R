@@ -735,7 +735,10 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
 
   # Restore original datatype
   if (is.integer(dataToTest[[groupingField]])) {
-    results$GroupName <- as.integer(results$GroupName)
+    results$GroupName <- as.integer(as.character(results$GroupName))
+    if (any(is.na(results$GroupName))) {
+      stop('NAs introduced into GroupName after conversion')
+    }
   }
 
   names(results)[names(results) == 'GroupName'] <- groupingField
