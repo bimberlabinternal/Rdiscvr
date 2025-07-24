@@ -510,7 +510,8 @@ ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMe
   seuratObj <- .AppendDemographics(seuratObj)
 
   cDNA <- seuratObj@meta.data %>%
-    select(cDNA_ID, SubjectId, SampleDate)
+    select(cDNA_ID, SubjectId, SampleDate) %>%
+    unique()
 
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
