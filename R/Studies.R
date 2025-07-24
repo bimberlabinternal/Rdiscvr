@@ -452,6 +452,8 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     stop('Unable to find either BarcodePrefix or cDNA_ID in meta.data')
   }
 
+  seuratObj$SampleDate <- as.Date(seuratObj$SampleDate)
+
   return(seuratObj)
 }
 
@@ -507,6 +509,9 @@ ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMe
   }
   seuratObj <- .AppendDemographics(seuratObj)
 
+  cDNA <- seuratObj@meta.data %>%
+    select(cDNA_ID, SubjectId, SampleDate)
+
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1619",
@@ -517,29 +522,47 @@ ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMe
   )
   names(metadata) <- c('SubjectId', 'Genotype', 'ChallengeDate', 'Category')
 
-  metadata2 <- labkey.selectRows(
-    baseUrl="https://prime-seq.ohsu.edu",
-    folderPath="/Labs/Bimber/1619",
-    schemaName="lists",
-    queryName="EC_Libraries",
-    colNameOpt="rname",
-    colSelect = 'cDNA_ID,Timepoint,cDNA_ID/sortId/sampleId/subjectId'
-  )
-  names(metadata2) <- c('cDNA_ID', 'Timepoint', 'SubjectId')
-
-  metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
-  metadata <- metadata[names(metadata) != 'SubjectId']
-
-  if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
-    if (any(is.na(seuratObj$cDNA_ID))) {
-      stop('There were missing cDNA_IDs in the seurat object')
+  if (errorIfUnknownIdsFound && (any(is.na(seuratObj$SubjectId)) || !all(seuratObj$SubjectId %in% metadata$SubjectId))) {
+    if (any(is.na(seuratObj$SubjectId))) {
+      stop('There were missing SubjectIds in the seurat object')
     }
-    missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
-    stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
+    missing <- sort(unique(seuratObj$SubjectId[!seuratObj$SubjectId %in% metadata$SubjectId]))
+    stop(paste0('There were SubjectId in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
 
-  if (any(duplicated(metadata$cDNA_ID))) {
-    dups <- metadata$cDNA_ID[duplicated(metadata$cDNA_ID)]
+  cDNA <- cDNA %>%
+    left_join(metadata, by = 'SubjectId')
+
+  metadata2 <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/Collaborations/EC_Project",
+    schemaName="study",
+    queryName="additionalDatatypes",
+    viewName="",
+    colSelect="Id,date,timePostSivChallenge/daysPostInfection",
+    colSort="Id",
+    colFilter=makeFilter(c("category", "EQUAL", "scRNA-seq")),
+    containerFilter=NULL,
+    colNameOpt="rname"
+  ) %>%
+    rename(
+      SubjectId = 'id',
+      SampleDate = 'date',
+      DPI = 'timepostsivchallenge_dayspostinfection'
+    )
+
+  metadata2$Timepoint <- case_when(
+    metadata2$dpi < 0 ~ 'Baseline',
+    metadata2$dpi == 0 ~ 'D0',
+    metadata2$dpi < 32 ~ 'Acute',
+    .default = 'OTHER'
+  )
+
+  cDNA <- cDNA %>%
+    left_join(metadata2, by = c('SubjectId', 'SampleDate'))
+
+  if (any(duplicated(cDNA$cDNA_ID))) {
+    dups <- cDNA$cDNA_ID[duplicated(cDNA$cDNA_ID)]
     stop(paste0('There were duplicated cDNA_IDs in the metadata: ', paste0(dups, collapse = ',')))
   }
 
@@ -548,7 +571,7 @@ ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMe
   toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
-  toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId')]
+  toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId', 'SampleDate')]
 
   if (any(rownames(toAdd) != rownames(seuratObj@meta.data))) {
     stop('Row names not equal on metadata')
