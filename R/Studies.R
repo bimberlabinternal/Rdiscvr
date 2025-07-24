@@ -138,10 +138,10 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     folderPath="/Labs/Bimber/627",
     schemaName="lists",
     queryName="TB_Studies",
-    colSelect="subjectid,study,vaccine,challenge,ChallengeType,NecropsyDate,PID,PathScore,LungPathScore,ChallengeDate,R_Caudal_Lung_1_Disease,LeftLungPathScore,ChallengeSide",
+    colSelect="subjectid,study,vaccine,challenge,ChallengeType,NecropsyDate,PID,PathScore,LungPathScore,ChallengeDate,R_Caudal_Lung_1_Disease,LeftLungPathScore,ChallengeSide,RCaudalPathScoreLongTerm,TotalRightLungPathScoreLongTerm,TotalLeftLungPathScoreLongTerm",
     colNameOpt="rname"
   )
-  names(metadata) <- c('SubjectId', 'TB_Study', 'Vaccine', 'Challenge', 'ChallengeType', 'NecropsyDate', 'PID', 'PathScore', 'LungPathScore', 'ChallengeDate', 'R_Caudal_Lung_1_Disease', 'LeftLungPathScore', 'ChallengeSide')
+  names(metadata) <- c('SubjectId', 'TB_Study', 'Vaccine', 'Challenge', 'ChallengeType', 'NecropsyDate', 'PID', 'PathScore', 'LungPathScore', 'ChallengeDate', 'R_Caudal_Lung_1_Disease', 'LeftLungPathScore', 'ChallengeSide', 'RCaudalPathScoreLongTerm', 'TotalRightLungPathScoreLongTerm', 'TotalLeftLungPathScoreLongTerm')
 
   # CFU_Tissue_Rescaled
   cDNA$CFU_Homogenate[is.na(cDNA$CFU_Homogenate)] <- 0
