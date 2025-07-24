@@ -569,7 +569,7 @@ ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMe
 
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
   toAdd$SortOrder <- seq_len(nrow(toAdd))
-  toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
+  toAdd <- merge(toAdd, cDNA, by.x = 'cDNA_ID', all.x = TRUE)
   toAdd <- arrange(toAdd, SortOrder)
   rownames(toAdd) <- toAdd$CellBarcode
   toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder', 'cDNA_ID', 'SubjectId', 'SampleDate')]
