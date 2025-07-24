@@ -552,9 +552,9 @@ ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMe
     )
 
   metadata2$Timepoint <- case_when(
-    metadata2$dpi < 0 ~ 'Baseline',
-    metadata2$dpi == 0 ~ 'D0',
-    metadata2$dpi < 32 ~ 'Acute',
+    metadata2$DPI < 0 ~ 'Baseline',
+    metadata2$DPI == 0 ~ 'D0',
+    metadata2$DPI < 35 ~ 'Acute',
     .default = 'OTHER'
   )
 
