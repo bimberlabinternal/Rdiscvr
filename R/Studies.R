@@ -515,13 +515,28 @@ ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMe
 
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
-    folderPath="/Labs/Bimber/1619",
-    schemaName="lists",
-    queryName="EC_Subjects",
-    colNameOpt="rname",
-    colSelect = 'subjectid,genotype,challengedate,category',
+    folderPath="/Labs/Bimber/Collaborations/EC_Project",
+    schemaName="study",
+    queryName="Demographics",
+    colSelect="Id,mhcGenotypes/A01,mhcGenotypes/A02,mhcGenotypes/B08,mhcGenotypes/B17,outcomes/outcomes,sivART/infectionDate",
+    colNameOpt="rname"
+  ) %>%
+    rename(
+      SubjectId = id,
+      Outcome = 'outcomes_outcomes',
+      A01 = 'mhcgenotypes_a01',
+      A02 = 'mhcgenotypes_a02',
+      B08 = 'mhcgenotypes_b08',
+      B17 = 'mhcgenotypes_b17',
+      InfectionDate = 'sivart_infectiondate'
+    )
+
+  metadata$Genotype <- case_when(
+    !is.na(metadata$B08) & !is.na(metadata$B17) ~ 'B08-B17',
+    !is.na(metadata$B08) ~ 'B08',
+    !is.na(metadata$B17) ~ 'B17',
+    .default = 'OTHER'
   )
-  names(metadata) <- c('SubjectId', 'Genotype', 'ChallengeDate', 'Category')
 
   if (errorIfUnknownIdsFound && (any(is.na(seuratObj$SubjectId)) || !all(seuratObj$SubjectId %in% metadata$SubjectId))) {
     if (any(is.na(seuratObj$SubjectId))) {
