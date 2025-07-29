@@ -212,6 +212,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     }
   }
 
+  cDNA$ChallengedSide[is.na(cDNA$ChallengedSide)] <- 'Unknown'
   cDNA$IsChallengedSide <- case_when(
     cDNA$ChallengedSide == 'Left' & grepl(cDNA$Tissue, pattern = 'Left') ~ TRUE,
     cDNA$ChallengedSide == 'Right' & grepl(cDNA$Tissue, pattern = 'Right') ~ TRUE,
