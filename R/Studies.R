@@ -159,6 +159,8 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   metadata$Timepoint[!is.na(metadata$Timepoint)] <- round(metadata$Timepoint[!is.na(metadata$Timepoint)]/7, 0)*7
   metadata$Timepoint[!is.na(metadata$Timepoint)] <- paste0('Day ', metadata$Timepoint[!is.na(metadata$Timepoint)])
 
+  metadata$ChallengeSide[is.na(metadata$ChallengeSide)] <- 'Unknown'
+
   # NOTE: make a simpler timepoint/mock field that lumps Mock-challenged samples into a different timepoint level
   if (any(!is.na(metadata$IsMockChallenged) & metadata$IsMockChallenged)) {
     metadata$Timepoint[!is.na(metadata$IsMockChallenged) & metadata$IsMockChallenged] <- paste0('Mock / ', metadata$Vaccine[!is.na(metadata$IsMockChallenged) & metadata$IsMockChallenged])
@@ -212,7 +214,8 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     }
   }
 
-  cDNA$ChallengeSide[is.na(cDNA$ChallengeSide)] <- 'Unknown'
+  cDNA <- merge(cDNA, metadata, by = 'SubjectId', all.x = T)
+
   cDNA$IsChallengeSide <- case_when(
     cDNA$ChallengeSide == 'Left' & grepl(cDNA$Tissue, pattern = 'Left') ~ TRUE,
     cDNA$ChallengeSide == 'Right' & grepl(cDNA$Tissue, pattern = 'Right') ~ TRUE,
@@ -221,8 +224,6 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
 
   # TODO: make a field that is group + timepoint
 
-  cDNA <- merge(cDNA, metadata, by = 'SubjectId', all.x = T)
-  
   return(cDNA)
 }
 
