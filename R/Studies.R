@@ -128,10 +128,10 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     folderPath="/Labs/Bimber/627",
     schemaName="lists",
     queryName="TB_cDNA_Libraries",
-    colSelect="cDNA_ID,SampleType,TimepointLabel,CFU_Homogenate,CFU_Tissue,cDNA_ID/sortid/sampleid/subjectid",
+    colSelect="cDNA_ID,SampleType,TimepointLabel,CFU_Homogenate,CFU_Tissue,Imputed_CFU_Tissue,cDNA_ID/sortid/sampleid/subjectid",
     colNameOpt="rname"
   )
-  names(cDNA) <- c('cDNA_ID', 'SampleType', 'TimepointLabel', 'CFU_Homogenate', 'CFU_Tissue', 'SubjectId')
+  names(cDNA) <- c('cDNA_ID', 'SampleType', 'TimepointLabel', 'CFU_Homogenate', 'CFU_Tissue', 'Imputed_CFU_Tissue', 'SubjectId')
 
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
