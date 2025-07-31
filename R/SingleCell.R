@@ -27,6 +27,8 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
     stop('All values for fieldSelect must be unique')
   }
 
+  httr::set_config(httr::timeout(60000))
+
   #spike in readset, since we need this to join dataframes
   fieldSelect <- tolower(fieldSelect)
   readsetAdded <- F
