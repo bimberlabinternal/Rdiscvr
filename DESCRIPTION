@@ -36,7 +36,8 @@ Imports:
     logistf,
     future.apply,
     ggrepel,
-    patchwork
+    patchwork,
+    httr
 Suggests:
     devtools,
     testthat (>= 2.1.0)
