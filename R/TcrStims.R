@@ -78,8 +78,8 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   }
 
   allStims <- labkey.selectRows(
-    baseUrl="https://prime-seq.ohsu.edu",
-    folderPath="/Labs/Bimber",
+    baseUrl=.getBaseUrl(),
+    folderPath=.getLabKeyDefaultFolder(),
     schemaName="tcrdb",
     queryName="stims",
     colSelect="cdna_id,controlStimId",
@@ -263,8 +263,8 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   }
 
   meta <- labkey.selectRows(
-    baseUrl="https://prime-seq.ohsu.edu",
-    folderPath="/Labs/Bimber/",
+    baseUrl=.getBaseUrl(),
+    folderPath=.getLabKeyDefaultFolder(),
     schemaName="singlecell",
     queryName="cdna_libraries",
     colSelect="rowid,sortId/sampleId/subjectId,sortId/sampleId/sampledate,sortId/sampleId/stim,sortId/sampleId/assayType,sortId/sampleId/tissue,sortId/population",
@@ -886,4 +886,133 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     patchwork::plot_annotation(title = paste0(subjectId, ': Filter QC'))
 
   return(P)
+}
+
+#' @title ApplyKnownClonotypicData
+#' @description This will query the clone_responses table and append a column tagging each cell for matching antigens (based on clonotype)
+#'
+#' @param seuratObj The seurat object
+#' @export
+ApplyKnownClonotypicData <- function(seuratObj) {
+  subjectIds <- sort(unique(seuratObj$SubjectId))
+
+  dat <- labkey.selectRows(
+    baseUrl=.getBaseUrl(),
+    folderPath=.getLabKeyDefaultFolder(),
+    schemaName="tcrdb",
+    queryName="clone_responses",
+    colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,chain,clonotype,totalclonesize,fractioncloneactivated",
+    colFilter=makeFilter(c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';'))),
+    colNameOpt="rname"
+  )
+
+  names(dat) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated')
+
+  dat <- dat %>%
+    filter(Clonotype != 'No TCR') %>%
+    mutate(
+      IsNoStim = grepl(Stim, pattern = '^NoStim'),
+      IsIE = grepl(Stim, pattern = 'IE-')
+    ) %>%
+    group_by(SubjectId, Clonotype) %>%
+    summarize(
+      Chain = paste0(sort(unique(Chain)), collapse = ','),
+      Antigens = paste0(sort(unique(Stim)), collapse = ','),
+      HasIE = sum(IsIE)>0,
+      HasNoStim = sum(IsNoStim)>0,
+      maxTotalCloneSize = max(totalclonesize),
+      meanCloneSize = mean(totalclonesize),
+      maxFractionCloneActivated = max(fractioncloneactivated),
+      meanFractionCloneActivated = mean(fractioncloneactivated)
+    ) %>%
+    as.data.frame()
+
+  toAppend <- NULL
+  for (subjectId in subjectIds) {
+    dat2 <- dat %>% filter(SubjectId == subjectId)
+    if (nrow(dat2) == 0) {
+      next
+    }
+
+    for (idx in seq_len(nrow(dat2))) {
+      clonotype <- dat2$Clonotype[idx]
+      chain  <- NA
+      if (any(grepl(x = clonotype, pattern = ':'))) {
+        tokens <- unlist(strsplit(x = clonotype, split = ':'))
+        chain <- tokens[1]
+        clonotype <- tokens[2]
+      } else {
+        chain <- dat2$Chain[idx]
+        warning(paste0('Expected clonotype to contain a colon: ', clonotype, ' using chain ', chain))
+      }
+
+      #clonotypes <- unlist(strsplit(clonotype, split = ','))
+      sel <- seuratObj$SubjectId == subjectId & grepl(pattern = paste0("(?:^|,)", clonotype, "(?:$|,)"), x = seuratObj[[chain]][[1]])
+      if (any(sel)) {
+        toAdd <- dat2[rep(idx, sum(sel)),]
+        toAdd$ChainsForAntigenMatch <- chain
+        toAdd$CellBarcode <- rownames(seuratObj@meta.data)[sel]
+
+        toAppend <- rbind(toAppend, toAdd)
+      }
+    }
+  }
+
+  if (any(duplicated(toAppend$CellBarcode))) {
+    warning('Duplicated cell barcodes, regrouping')
+    toAppend <- toAppend %>%
+      group_by(CellBarcode) %>%
+      summarize(
+        Antigens = paste0(sort(unique(Antigens)), collapse = ','),
+        ChainsForAntigenMatch = paste0(sort(unique(ChainsForAntigenMatch)), collapse = ','),
+        HasIE = max(HasIE),
+        HasNoStim = max(HasNoStim),
+        maxTotalCloneSize = max(maxTotalCloneSize),
+        # TODO: this is not quite right
+        meanCloneSize = max(meanCloneSize),
+        maxFractionCloneActivated = max(maxFractionCloneActivated),
+        # TODO: this is not quite right
+        meanFractionCloneActivated = max(meanFractionCloneActivated)
+      ) %>%
+      as.data.frame()
+
+    toAppend$Antigens <- unlist(sapply(toAppend$Antigens, function(x){
+      if (is.na(x)) {
+        return(NA)
+      }
+
+      x <- sort(unique(unlist(strsplit(x, split = ','))))
+
+      return(paste0(x, collapse = ','))
+    }))
+
+    toAppend$ChainsForAntigenMatch <- unlist(sapply(toAppend$ChainsForAntigenMatch, function(x){
+      if (is.na(x)) {
+        return(NA)
+      }
+
+      x <- sort(unique(unlist(strsplit(x, split = ','))))
+
+      return(paste0(x, collapse = ','))
+    }))
+  }
+
+  rownames(toAppend) <- toAppend$CellBarcode
+  toAppend$CellBarcode <- NULL
+  toAppend$Clonotype <- NULL
+  toAppend$Chain <- NULL
+
+  toAppend$NumAntigens <- sapply(toAppend$Antigens, function(x){
+    if (is.na(x) || x == '') {
+      return(0)
+    }
+
+    x <- unique(unlist(strsplit(x, split = ',')))
+
+    return(length(x))
+  })
+
+  seuratObj <- Seurat::AddMetaData(seuratObj, toAppend)
+
+  return(seuratObj)
 }
