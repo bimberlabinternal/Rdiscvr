@@ -7,7 +7,8 @@ utils::globalVariables(
   names = c('Clonotype','FDR','FractionOfCloneInSample','FractionOfCloneWithStateInSample','GroupName','IsControlSample','LabelText',
             'NoStimFractionOfCloneInSample','NoStimId','NoStimTotalCells','NoStimTotalCellsActive','OriginalClone','PatternField','Stim','TNK_Type',
             'Tcell_EffectorDifferentiation','TotalCellsForClone','TotalCellsForCloneAndState','TotalCellsForSample','TotalCellsForSampleAndState','V_Gene', 'J_Gene',
-            'cDNA_ID','coefficients', 'p_val', 'error', 'FractionOfCloneWithState'),
+            'cDNA_ID','coefficients', 'p_val', 'error', 'FractionOfCloneWithState', 'Antigens', 'Chain', 'ChainsForAntigenMatch', 'HasIE', 'HasNoStim', 'IsIE', 'IsNoStim',
+            'SampleDate', 'Tissue', 'fractioncloneactivated', 'maxFractionCloneActivated', 'maxTotalCloneSize', 'meanCloneSize', 'meanFractionCloneActivated', 'totalclonesize'),
   package = 'Rdiscvr',
   add = TRUE
 )
