@@ -938,8 +938,8 @@ CalculateAndStoreTcrRepertioreStats <- function(seuratObj) {
         value = 'Value',
         #qualvalue = '',
         #comment = '',
-        sampleSize = '',
-        cellType = ''
+        #sampleSize = 'sampleSize',
+        cellType = 'population'
       )
 
     inserted <- labkey.insertRows(
