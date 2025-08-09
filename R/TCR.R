@@ -3,7 +3,7 @@
 #' @import utils
 
 utils::globalVariables(
-  names = c('sortOrder', 'SampleName', 'SubjectId', 'c_gene', 'cdna', 'count', 'd_gene', 'j_gene', 'population', 'raw_clonotype_id', 'raw_consensus_id', 'v_gene', 'CellBarcode', 'IsActive', 'IsActiveLabel', 'GroupField', 'Fraction', 'Label', 'IsShared'),
+  names = c('sortOrder', 'SampleName', 'SubjectId', 'c_gene', 'cdna', 'count', 'd_gene', 'j_gene', 'population', 'raw_clonotype_id', 'raw_consensus_id', 'v_gene', 'CellBarcode', 'IsActive', 'IsActiveLabel', 'GroupField', 'Fraction', 'Label', 'IsShared', 'Tissue'),
   package = 'Rdiscvr',
   add = TRUE
 )
@@ -478,6 +478,8 @@ utils::globalVariables(
 
   tcr <- merge(tcr, labelDf, by.x = c('chain', 'cdr3'), by.y = c('chain', 'cdr3'), all.x = TRUE, all.y = FALSE)
 
+  # TODO: smarter join accounting for A/B and also commas
+
   # Add chain-specific columns:
   tcr$ChainCDR3s <- paste0(tcr$chain, ':', tcr$cdr3)
   for (l in c('TRA', 'TRB', 'TRD', 'TRG')){
@@ -876,4 +878,76 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
   }
 
   PT
+}
+
+#' @title CalculateAndStoreTcrRepertioreStats
+#' @description Calculates  a summary plot of clonotype data
+#' @param seuratObj A Seurat object
+#' @importFrom magrittr %>%
+#' @return The dataframe with results
+#' @export
+CalculateAndStoreTcrRepertioreStats <- function(seuratObj) {
+  df <- CellMembrane::CalculateTcrRepertioreStatsByPopulation(seuratObj@meta.data)
+
+  existingCDNA <- labkey.selectRows(
+    baseUrl=.getBaseUrl(),
+    folderPath=.getLabKeyDefaultFolder(),
+    schemaName="singlecell",
+    queryName="cdna_libraries",
+    colSelect="rowid,container",
+    colFilter=makeFilter(c("rowid", "EQUAL", paste0(unique(df$cDNA_ID), collapse = ';'))),
+    colNameOpt="rname"
+  )
+
+  for (rowid in unique(df$cDNA_ID)) {
+    if (! rowid %in% existingCDNA$rowid) {
+      stop(paste0('Unknown cDNA ID: ', rowid))
+    }
+
+    containerId <- existingCDNA$container[existingCDNA$rowid == rowid]
+
+    existingRows <- labkey.selectRows(
+      baseUrl=.getBaseUrl(),
+      folderPath=.getLabKeyDefaultFolder(),
+      schemaName="tcrdb",
+      queryName="repertoire_stats",
+      colSelect="rowid,container",
+      colFilter=makeFilter(
+        c("cdna_id", "EQUAL", rowid)
+      ),
+      colNameOpt="rname"
+    )
+
+    if (nrow(existingRows) > 0) {
+      print(paste0('Deleting ', nrow(existingRows), ' existing rows'))
+      deleted <- labkey.deleteRows(
+        baseUrl=.getBaseUrl(),
+        folderPath=.getLabKeyDefaultFolder(),
+        schemaName="tcrdb",
+        queryName="repertoire_stats",
+        toDelete = existingRows
+      )
+    }
+
+    toInsert <- df %>%
+      filter(cDNA_ID == rowid) %>%
+      mutate(container = containerId)
+      rename(
+        cdna_id = 'sampleId',
+        metricName = 'MetricName',
+        value = 'Value',
+        #qualvalue = '',
+        #comment = '',
+        #sampleSize = 'sampleSize',
+        cellType = 'population'
+      )
+
+    inserted <- labkey.insertRows(
+      baseUrl=.getBaseUrl(),
+      folderPath=.getLabKeyDefaultFolder(),
+      schemaName="tcrdb",
+      queryName="repertoire_stats",
+      toInsert = toInsert
+    )
+  }
 }
