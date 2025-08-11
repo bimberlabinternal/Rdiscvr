@@ -880,14 +880,14 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
   PT
 }
 
-#' @title CalculateAndStoreTcrRepertioreStats
+#' @title CalculateAndStoreTcrRepertoireStats
 #' @description Calculates  a summary plot of clonotype data
 #' @param seuratObj A Seurat object
 #' @importFrom magrittr %>%
 #' @return The dataframe with results
 #' @export
-CalculateAndStoreTcrRepertioreStats <- function(seuratObj) {
-  df <- CellMembrane::CalculateTcrRepertioreStatsByPopulation(seuratObj@meta.data)
+CalculateAndStoreTcrRepertoireStats <- function(seuratObj) {
+  df <- CellMembrane::CalculateTcrRepertoireStatsByPopulation(seuratObj@meta.data)
 
   existingCDNA <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
