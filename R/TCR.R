@@ -931,7 +931,7 @@ CalculateAndStoreTcrRepertoireStats <- function(seuratObj) {
 
     toInsert <- df %>%
       filter(cDNA_ID == rowid) %>%
-      mutate(container = containerId)
+      mutate(container = containerId) %>%
       rename(
         cdna_id = 'sampleId',
         metricName = 'MetricName',
