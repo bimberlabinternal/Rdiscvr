@@ -883,10 +883,11 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
 #' @title CalculateAndStoreTcrRepertoireStats
 #' @description Calculates  a summary plot of clonotype data
 #' @param seuratObj A Seurat object
+#' @param outputFile An optional filepath, where the complete results will be written as a TSV
 #' @importFrom magrittr %>%
 #' @return The dataframe with results
 #' @export
-CalculateAndStoreTcrRepertoireStats <- function(seuratObj) {
+CalculateAndStoreTcrRepertoireStats <- function(seuratObj, outputFile = NULL) {
   df <- CellMembrane::CalculateTcrRepertoireStatsByPopulation(seuratObj@meta.data, groupField = 'cDNA_ID')
 
   existingCDNA <- labkey.selectRows(
@@ -936,11 +937,16 @@ CalculateAndStoreTcrRepertoireStats <- function(seuratObj) {
         cdna_id = 'cDNA_ID',
         metricName = 'MetricName',
         value = 'Value',
-        #qualvalue = '',
-        #comment = '',
-        #sampleSize = 'sampleSize',
         cellType = 'population'
       )
+
+    if (!is.null(outputFile)) {
+      write.table(toInsert, file = outputFile, sep = '\t', quote = FALSE, row.names = FALSE)
+    }
+
+    # Added to limit the number of 'TopX' record we import:
+    toInsert <- toInsert %>%
+      filter(!grepl(MetricName, pattern = '_Top') | grepl(MetricName, pattern = '_Top5') | grepl(MetricName, pattern = '_Top10')) %>%
 
     inserted <- labkey.insertRows(
       baseUrl=.getBaseUrl(),

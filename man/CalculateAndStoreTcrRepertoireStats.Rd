@@ -4,10 +4,12 @@
 \alias{CalculateAndStoreTcrRepertoireStats}
 \title{CalculateAndStoreTcrRepertoireStats}
 \usage{
-CalculateAndStoreTcrRepertoireStats(seuratObj)
+CalculateAndStoreTcrRepertoireStats(seuratObj, outputFile = NULL)
 }
 \arguments{
 \item{seuratObj}{A Seurat object}
+
+\item{outputFile}{An optional filepath, where the complete results will be written as a TSV}
 }
 \value{
 The dataframe with results
