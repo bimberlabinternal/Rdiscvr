@@ -887,7 +887,7 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
 #' @return The dataframe with results
 #' @export
 CalculateAndStoreTcrRepertoireStats <- function(seuratObj) {
-  df <- CellMembrane::CalculateTcrRepertoireStatsByPopulation(seuratObj@meta.data)
+  df <- CellMembrane::CalculateTcrRepertoireStatsByPopulation(seuratObj@meta.data, groupField = 'cDNA_ID')
 
   existingCDNA <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
@@ -933,7 +933,7 @@ CalculateAndStoreTcrRepertoireStats <- function(seuratObj) {
       filter(cDNA_ID == rowid) %>%
       mutate(container = containerId) %>%
       rename(
-        cdna_id = 'sampleId',
+        cdna_id = 'cDNA_ID',
         metricName = 'MetricName',
         value = 'Value',
         #qualvalue = '',
