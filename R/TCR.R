@@ -894,6 +894,10 @@ CalculateAndStoreTcrRepertoireStats <- function(seuratObj, outputFile = NULL) {
     return(NULL)
   }
 
+  if (! 'cDNA_ID' %in% names(df)) {
+    stop(paste0('Expected cDNA_ID in column names. Found: ', paste0(names(df), collapse = ',')))
+  }
+
   existingCDNA <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),

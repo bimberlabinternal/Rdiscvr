@@ -427,7 +427,7 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj$SampleDate <- as.Date(seuratObj$SampleDate)
-  seuratObj$SampleType <- ifelse(seuratObj$SampleDate < seuratObj$NxDate, yes = 'Pre-infection', no = 'Necropsy')
+  seuratObj$SampleType <- ifelse(seuratObj$SampleDate == seuratObj$NxDate, yes = 'Necropsy', no = ifelse(seuratObj$SampleDate <= seuratObj$InfectionDate, yes = 'Pre-infection', no = 'Unknown'))
 
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
 
