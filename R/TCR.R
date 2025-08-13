@@ -898,13 +898,17 @@ CalculateAndStoreTcrRepertoireStats <- function(seuratObj, outputFile = NULL) {
     stop(paste0('Expected cDNA_ID in column names. Found: ', paste0(names(df), collapse = ',')))
   }
 
+  if (any(is.na(df$cDNA_ID))) {
+    stop('Found NA values for cDNA_ID')
+  }
+
   existingCDNA <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="singlecell",
     queryName="cdna_libraries",
     colSelect="rowid,container",
-    colFilter=makeFilter(c("rowid", "EQUAL", paste0(unique(df$cDNA_ID), collapse = ';'))),
+    colFilter=makeFilter(c("rowid", "IN", paste0(unique(df$cDNA_ID), collapse = ';'))),
     colNameOpt="rname"
   )
 
