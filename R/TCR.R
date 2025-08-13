@@ -889,6 +889,10 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
 #' @export
 CalculateAndStoreTcrRepertoireStats <- function(seuratObj, outputFile = NULL) {
   df <- CellMembrane::CalculateTcrRepertoireStatsByPopulation(seuratObj@meta.data, groupField = 'cDNA_ID')
+  if (all(is.null(df))) {
+    print('No results returned by CalculateTcrRepertoireStatsByPopulation')
+    return(NULL)
+  }
 
   existingCDNA <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
