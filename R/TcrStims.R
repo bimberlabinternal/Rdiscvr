@@ -1015,5 +1015,10 @@ ApplyKnownClonotypicData <- function(seuratObj) {
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAppend)
 
+  if (length(names(seuratObj@reductions)) > 0) {
+    print(DimPlot(seuratObj, group.by = 'Antigens'))
+    print(DimPlot(seuratObj, group.by = 'NumAntigens'))
+  }
+
   return(seuratObj)
 }
