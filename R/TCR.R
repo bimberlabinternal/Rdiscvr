@@ -958,7 +958,7 @@ CalculateAndStoreTcrRepertoireStats <- function(seuratObj, outputFile = NULL) {
 
     # Added to limit the number of 'TopX' record we import:
     toInsert <- toInsert %>%
-      filter(!grepl(MetricName, pattern = '_Top') | grepl(MetricName, pattern = '_Top5') | grepl(MetricName, pattern = '_Top10')) %>%
+      filter(!grepl(MetricName, pattern = '_Top') | grepl(MetricName, pattern = '_Top5') | grepl(MetricName, pattern = '_Top10'))
 
     inserted <- labkey.insertRows(
       baseUrl=.getBaseUrl(),
