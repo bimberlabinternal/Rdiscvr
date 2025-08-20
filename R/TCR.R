@@ -888,6 +888,21 @@ MakeClonotypePlot <- function(seuratObj, outFile = NULL, subjectId, chain, xFace
 #' @return The dataframe with results
 #' @export
 CalculateAndStoreTcrRepertoireStats <- function(seuratObj, outputFile = NULL) {
+  if (! 'BarcodePrefix' %in% names(seuratObj@meta.data)) {
+    stop(paste0('Column BarcodePrefix missing from the seuratObj'))
+  }
+
+  if (!'TRA' %in% names(seuratObj@meta.data) || !'TRB' %in% names(seuratObj@meta.data)) {
+    prefixes <- unique(seuratObj$BarcodePrefix)
+    if (length(prefixes) == 1) {
+      hasTcr <- .HasTcrLibrary(prefixes[1])
+      if (hasTcr == FALSE) {
+        print('The seurat object does not include a VDJ library, skipping CalculateTcrRepertoireStatsByPopulation')
+        return(NULL)
+      }
+    }
+  }
+
   df <- CellMembrane::CalculateTcrRepertoireStatsByPopulation(seuratObj@meta.data, groupField = 'cDNA_ID')
   if (all(is.null(df))) {
     print('No results returned by CalculateTcrRepertoireStatsByPopulation')
