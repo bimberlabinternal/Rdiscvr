@@ -398,16 +398,6 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     stop('There were blank cDNA_IDs in the seurat object')
   }
 
-  # TODO: restore this after cDNA_IDs added to metadata
-  # if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
-  #   if (any(is.na(seuratObj$cDNA_ID))) {
-  #     stop('There were missing cDNA_IDs in the seurat object')
-  #   }
-  #
-  #   missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
-  #   stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
-  # }
-
   if (any(duplicated(metadata$cDNA_ID))) {
    dups <- metadata$cDNA_ID[duplicated(metadata$cDNA_ID)]
    stop(paste0('There were duplicated cDNA_IDs in the metadata: ', paste0(dups, collapse = ',')))
@@ -427,7 +417,12 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj$SampleDate <- as.Date(seuratObj$SampleDate)
-  seuratObj$SampleType <- ifelse(seuratObj$SampleDate == seuratObj$NxDate, yes = 'Necropsy', no = ifelse(seuratObj$SampleDate <= seuratObj$InfectionDate, yes = 'Pre-infection', no = 'Unknown'))
+  seuratObj$Timepoint <- dplyr::case_when(
+    !is.na(seuratObj$NxDate) & seuratObj$SampleDate == seuratObj$NxDate ~ 'Necropsy',
+    !is.na(seuratObj$NxDate) & seuratObj$SampleDate < seuratObj$NxDate ~ 'POST-NX!',
+    !is.na(seuratObj$InfectionDate) & seuratObj$SampleDate <= seuratObj$InfectionDate ~ 'Pre-infection',
+    .default = 'UNKNOWN'
+  )
 
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
 
