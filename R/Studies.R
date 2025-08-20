@@ -419,7 +419,8 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   seuratObj$SampleDate <- as.Date(seuratObj$SampleDate)
   seuratObj$Timepoint <- dplyr::case_when(
     !is.na(seuratObj$NxDate) & seuratObj$SampleDate == seuratObj$NxDate ~ 'Necropsy',
-    !is.na(seuratObj$NxDate) & seuratObj$SampleDate < seuratObj$NxDate ~ 'POST-NX!',
+    !is.na(seuratObj$NxDate) & seuratObj$SampleDate > seuratObj$NxDate ~ 'POST-NX!',
+    !is.na(seuratObj$InfectionDate) & seuratObj$SampleDate > seuratObj$InfectionDate ~ 'Post-challenge',
     !is.na(seuratObj$InfectionDate) & seuratObj$SampleDate <= seuratObj$InfectionDate ~ 'Pre-infection',
     .default = 'UNKNOWN'
   )
