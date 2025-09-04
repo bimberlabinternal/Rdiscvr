@@ -1022,3 +1022,321 @@ ApplyKnownClonotypicData <- function(seuratObj) {
 
   return(seuratObj)
 }
+
+
+#' @title IdentifyAndStoreActiveClonotypes
+#' @description This is a very specialized method designed to score and summarize activated TCR clonotypes
+#'
+#' @param seuratObj The seurat object. This expects
+#' @param chain The chain to summarize
+#' @param method Either 'Cluster-Based' or 'sPLS'
+#' @param storeStimLevelData If true, activation levels will be stord in tcrtb.stims
+#' @export
+#' @import Rlabkey
+#' @import dplyr
+IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', storeStimLevelData = TRUE) {
+  allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method)
+  .UpdateTcrStimDb(allDataWithPVal, chain = chain, methodName = method, storeStimLevelData = storeStimLevelData)
+}
+
+.IdentifyActivatedCluster <- function(dat, resolutions = c('0.2', '0.4', '0.6', '0.8', '1.2')) {
+  foundHit <- FALSE
+  for (threshold in c(0.3, 0.25)) {
+    for (res in resolutions) {
+      fieldName <- paste0('ClusterNames_', res)
+      if (!fieldName %in% names(dat)) {
+        stop(paste0('Missing: ', fieldName))
+      }
+
+      if (!'TandNK_ActivationCore_UCell' %in% names(dat)) {
+        stop('Missing TandNK_ActivationCore_UCell')
+      }
+
+      if (!'TandNK_Activation_UCell' %in% names(dat)) {
+        stop('Missing TandNK_Activation_UCell')
+      }
+
+      if (!'TandNK_Activation3_UCell' %in% names(dat)) {
+        stop('Missing TandNK_Activation3_UCell')
+      }
+
+      df <- dat %>%
+        group_by(across(all_of(fieldName))) %>%
+        summarize(
+          TandNK_ActivationCore_UCell = mean(TandNK_ActivationCore_UCell),
+          TandNK_Activation_UCell = mean(TandNK_Activation_UCell),
+          TandNK_Activation3_UCell = mean(TandNK_Activation3_UCell)
+        )
+
+      df$CombinedScore <- pmax(df$TandNK_Activation_UCell, df$TandNK_Activation3_UCell, df$TandNK_ActivationCore_UCell)
+
+      df[[fieldName]] <- naturalsort::naturalfactor(df[[fieldName]])
+      P1 <- ggplot(df, aes_string(x = fieldName, y = 'TandNK_Activation3_UCell'), fill = fieldName) +
+        geom_col(color = 'black') +
+        egg::theme_article() +
+        geom_hline(yintercept = threshold, color = 'red') +
+        ggtitle('TandNK_Activation3_UCell') +
+        NoLegend()
+
+      P2 <- ggplot(df, aes_string(x = fieldName, y = 'TandNK_Activation_UCell'), fill = fieldName) +
+        geom_col(color = 'black') +
+        egg::theme_article() +
+        geom_hline(yintercept = threshold, color = 'red') +
+        ggtitle('TandNK_Activation_UCell') +
+        NoLegend()
+
+      P4 <- ggplot(df, aes_string(x = fieldName, y = 'TandNK_ActivationCore_UCell'), fill = fieldName) +
+        geom_col(color = 'black') +
+        egg::theme_article() +
+        geom_hline(yintercept = threshold, color = 'red') +
+        ggtitle('TandNK_ActivationCore_UCell') +
+        NoLegend()
+
+      P3 <- ggplot(df, aes_string(x = fieldName, y = 'CombinedScore'), fill = fieldName) +
+        geom_col(color = 'black') +
+        egg::theme_article() +
+        geom_hline(yintercept = threshold, color = 'red') +
+        ggtitle('CombinedScore') +
+        NoLegend()
+
+      P <- P1 + P2 + P4 + P3 + plot_annotation(title = res)
+      print(P)
+
+      if (max(df$CombinedScore) < threshold) {
+        next
+      }
+
+      return(data.frame(resolution = fieldName, cluster = as.character(df[[fieldName]][which(df$CombinedScore == max(df$CombinedScore))]), value = max(df$CombinedScore), threshold = threshold))
+    }
+
+    if (foundHit) {
+      return(NULL)
+    }
+  }
+}
+
+.IdentifyActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS') {
+  if (method == 'Cluster-Based') {
+    activatedCluster <- .IdentifyActivatedCluster(dat)
+    if (all(is.null(activatedCluster))) {
+      print('Unable to find activated cluster')
+      return(NULL)
+    }
+
+    print(paste0('Activated cluster: ', activatedCluster$resolution, ', ', activatedCluster$cluster))
+    seuratObj$IsActive <- seuratObj@meta.data[[activatedCluster$resolution]] == activatedCluster$cluster
+    print(paste0('Active cluster: ', activatedCluster$cluster, '. Total cells: ', sum(seuratObj$IsActive)))
+  } else if (method == 'sPLS') {
+    seuratObj$IsActive <- seuratObj$sPLS_class == 'AgSpecificActivated'
+    print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
+  }
+
+  allData <- NULL
+  allDataWithPVal <- NULL
+  for (subjectId in sort(unique(seuratObj$SubjectId))) {
+    dat <- seuratObj@meta.data %>%
+      filter(SubjectId == subjectId)
+
+    if (!is.integer(dat$cDNA_ID)) {
+      print('Converting cDNA_ID to an integer')
+      converted <- as.integer(dat$cDNA_ID)
+      if (any(is.na(converted))) {
+        stop('Non-numeric cDNA_IDs found: ', paste0(unique(dat$cDNA_ID[is.na(converted)])))
+      }
+
+      dat$cDNA_ID <- converted
+    }
+
+    dat <- PrepareTcrData(dat, subjectId = subjectId, minEDS = 2, retainRowsWithoutCDR3 = TRUE, chain = chain, enforceAllDataPresent = FALSE)
+    dat$MethodString <- method
+
+    dat <- GroupOverlappingClones(dat, dataMask = dat$IsActive, groupingFields = c('cDNA_ID', 'SubjectId', 'SampleDate', 'Stim', 'NoStimId', 'IsControlSample', 'IsActiveLabel', 'MethodString', 'AssayType'))
+    dat <- ApplyCloneFilters(dat, minCellsPerClone = 2, minFractionOfCloneActive = 0.025, minFoldChangeAboveNoStim = NA)
+    dat$IsFiltered <- ifelse(is.na(dat$Filter), yes = 'No', no = 'Yes')
+
+    filterPlots <- .GenerateTcrQcPlots(dat)
+    print(filterPlots)
+
+    P1 <- GenerateTcrPlot(dat, xFacetField = 'SampleDate', dropInactive = FALSE, patternField = 'IsFiltered', plotTitle = paste0(unique(dat$SubjectId), ": EDS > 2, Unfiltered"), groupLowFreq = TRUE)
+
+    P1 <- P1 + patchwork::plot_annotation(title = paste0(animalId, ': Unfiltered Clonotypes and ICS'))
+    print(P1)
+
+    dataWithPVal <- AppendClonotypeEnrichmentPVals(dat %>% filter(IsFiltered == 'No'))
+    dataWithPVal$EnrichedStatus <- dataWithPVal$coefficients < 1
+
+    passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'EnrichedStatus', plotTitle = paste0(unique(dat$SubjectId), ": EDS > 2, Passing Enrichment"), groupLowFreq = FALSE)
+    if (!all(is.null(passingClones))){
+      passingClones <- passingClones +
+        geom_hline(yintercept = 0.005, linetype = 'dotted', colour = 'red', linewidth = 1) +
+        theme(
+          legend.position = ifelse(n_distinct(dataWithPVal$Clonotype) > 15, yes = 'none', no = 'right'),
+          legend.text = element_text(size = rel(0.5)),
+          legend.title = element_text(size = rel(0.75))
+        ) +
+        labs(pattern = 'Failed Significance?')
+
+      # Reset the fill colors:
+      if (n_distinct(dataWithPVal$Clonotype) < 10) {
+        passingClones <- passingClones + scale_fill_discrete()
+      }
+
+      print(passingClones)
+    }
+
+    allData <- rbind(allData, dat %>% filter(IsFiltered == 'No'))
+    allDataWithPVal <- rbind(allDataWithPVal, dataWithPVal)
+  }
+
+  return(allDataWithPVal)
+}
+
+.UpdateTcrStimDb <- function(allDataWithPVal, chain, methodName = NULL, storeStimLevelData = TRUE) {
+  toUpdate <- allDataWithPVal %>%
+    group_by(cDNA_ID) %>%
+    filter(IsActive) %>%
+    filter(!EnrichedStatus) %>%
+    summarise(quantification = unique(FractionOfSampleWithState)*100, nClones = n()) %>%
+    mutate(QuantificationMethod = methodName)
+
+  containerInfo <- labkey.selectRows(
+    baseUrl=.getBaseUrl(),
+    folderPath=.getLabKeyDefaultFolder(),
+    schemaName="tcrdb",
+    queryName="stims",
+    colSelect="rowid,cdna_id,container",
+    colFilter=makeFilter(
+      c("cdna_id/rowid", "IN", paste0(toUpdate$cDNA_ID, collapse = ';'))
+    ),
+    colNameOpt="rname"
+  )
+
+  toUpdate <- toUpdate %>%
+    left_join(containerInfo, by = c('cDNA_ID' = 'cdna_id'))
+
+  if (storeStimLevelData) {
+    print(paste0('Updating ', nrow(toUpdate), ' rows in tcrdb.stims'))
+    updated <- labkey.updateRows(
+      baseUrl=.getBaseUrl(),
+      folderPath=.getLabKeyDefaultFolder(),
+      schemaName="tcrdb",
+      queryName="stims",
+      toUpdate = toUpdate
+    )
+  }
+
+  # Now clone data:
+  toInsertOrUpdate <- allDataWithPVal %>%
+    filter(IsActive) %>%
+    filter(is.na(EnrichedStatus) | !EnrichedStatus) %>%
+    rename(
+      activationFrequency = 'FractionOfCloneWithStateInSample',
+      totalCells = 'TotalCellsForCloneAndState',
+      vGene = 'V_Gene',
+      jGene = 'J_Gene',
+      totalCloneSize = 'TotalCellsForClone',
+      fractionCloneActivated = 'FractionOfCloneWithState',
+      totalCellsForSample = 'TotalCellsForSample',
+      oddsRatio = 'coefficients',
+      enrichmentFDR = 'FDR',
+      comments = 'MethodString'
+    ) %>%
+    mutate(chain = chain)
+
+  existingRows <- labkey.selectRows(
+    baseUrl=.getBaseUrl(),
+    folderPath=.getLabKeyDefaultFolder(),
+    schemaName="tcrdb",
+    queryName="clone_responses",
+    colSelect="rowid,clonotype,cdna_id,container",
+    colFilter=makeFilter(
+      c("cdna_id", "IN", paste0(unique(toInsertOrUpdate$cDNA_ID), collapse = ';')),
+      c('chain', 'EQUALS', chain)
+    ),
+    containerFilter=NULL,
+    colNameOpt="rname"
+  )
+
+  # This seems to occur if there are zero rows:
+  if (is.numeric(existingRows$clonotype)) {
+    existingRows$clonotype <- as.character(existingRows$clonotype)
+  }
+
+  # And Clones/Responses:
+  toDelete <- existingRows %>%
+    left_join(toInsertOrUpdate, by = c('cdna_id' = 'cDNA_ID', 'clonotype' = 'Clonotype')) %>%
+    filter(is.na(SubjectId))
+
+  toInsertOrUpdate <- toInsertOrUpdate %>%
+    left_join(existingRows, by = c('cDNA_ID' = 'cdna_id', 'Clonotype' = 'clonotype'))
+
+  toInsert <- toInsertOrUpdate %>%
+    filter(is.na(rowid)) %>%
+    select(-rowid) %>%
+    select(-container)
+
+  if (nrow(toInsert) > 0) {
+    existingLibraries <- labkey.selectRows(
+      baseUrl=.getBaseUrl(),
+      folderPath=.getLabKeyDefaultFolder(),
+      schemaName="singlecell",
+      queryName="cdna_libraries",
+      colSelect="rowid,container",
+      colFilter=makeFilter(
+        c("rowid", "IN", paste0(unique(toUpdate$cDNA_ID), collapse = ';'))
+      ),
+      containerFilter=NULL,
+      colNameOpt="rname"
+    )
+    toInsert <- toInsert %>% left_join(existingLibraries, by = c('cDNA_ID' = 'rowid'))
+    for (fieldName in names(toInsert)) {
+      if (all(is.na(toInsert[[fieldName]]))) {
+        print(paste0('dropping all-NA: ', fieldName))
+        toInsert[[fieldName]] <- NULL
+      }
+    }
+
+    print(paste0('Inserting ', nrow(toInsert), ' rows in tcrdb.clone_responses'))
+    added <- labkey.insertRows(
+      baseUrl=.getBaseUrl(),
+      folderPath=.getLabKeyDefaultFolder(),
+      schemaName="tcrdb",
+      queryName="clone_responses",
+      toInsert = toInsert
+    )
+  }
+
+  toUpdate <- toInsertOrUpdate %>% filter(!is.na(container))
+  if (nrow(toUpdate) > 0) {
+    if (any(is.na(toUpdate$enrichmentFDR))) {
+      toUpdate$enrichmentFDR[is.na(toUpdate$enrichmentFDR)] <- ''
+    }
+
+    if (any(is.na(toUpdate$oddsRatio))) {
+      toUpdate$oddsRatio[is.na(toUpdate$oddsRatio)] <- ''
+    }
+
+    print(paste0('Updating ', nrow(toUpdate), ' rows in tcrdb.clone_responses'))
+    added <- labkey.updateRows(
+      baseUrl=.getBaseUrl(),
+      folderPath=.getLabKeyDefaultFolder(),
+      schemaName="tcrdb",
+      queryName="clone_responses",
+      toUpdate = toUpdate
+    )
+  }
+
+  if (nrow(toDelete) > 0) {
+    toDelete <- toDelete %>%
+      select(rowid, container)
+
+    print(paste0('Deleting ', nrow(toDelete), ' rows in tcrdb.clone_responses'))
+    deleted <- labkey.deleteRows(
+      baseUrl=.getBaseUrl(),
+      folderPath=.getLabKeyDefaultFolder(),
+      schemaName="tcrdb",
+      queryName="clone_responses",
+      toDelete = toDelete
+    )
+  }
+}
