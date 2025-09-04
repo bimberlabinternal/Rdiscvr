@@ -217,8 +217,8 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   cDNA <- merge(cDNA, metadata, by = 'SubjectId', all.x = T)
 
   cDNA$IsChallengeSide <- case_when(
-    cDNA$ChallengeSide == 'Left' & grepl(cDNA$Tissue, pattern = 'Left') ~ TRUE,
-    cDNA$ChallengeSide == 'Right' & grepl(cDNA$Tissue, pattern = 'Right') ~ TRUE,
+    cDNA$ChallengeSide == 'Left' & grepl(cDNA$Tissue, pattern = '-L$') ~ TRUE,
+    cDNA$ChallengeSide == 'Right' & grepl(cDNA$Tissue, pattern = '-R$') ~ TRUE,
     .default = FALSE
   )
 
