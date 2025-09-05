@@ -1297,6 +1297,10 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       }
     }
 
+    if (any(is.na(toInsert$enrichmentFDR))) {
+      toUpdate$enrichmentFDR[is.na(toInsert$enrichmentFDR)] <- ''
+    }
+
     print(paste0('Inserting ', nrow(toInsert), ' rows in tcrdb.clone_responses'))
     added <- labkey.insertRows(
       baseUrl=.getBaseUrl(),
