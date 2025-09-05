@@ -1157,15 +1157,16 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     filterPlots <- .GenerateTcrQcPlots(dat)
     print(filterPlots)
 
-    P1 <- GenerateTcrPlot(dat, xFacetField = 'SampleDate', dropInactive = FALSE, patternField = 'IsFiltered', plotTitle = paste0(unique(dat$SubjectId), ": EDS > 2, Unfiltered"), groupLowFreq = TRUE)
+    subjectId <- paste0(sort(unique(dat$SubjectId)), collapse = ',')
+    P1 <- GenerateTcrPlot(dat, xFacetField = 'SampleDate', dropInactive = FALSE, patternField = 'IsFiltered', plotTitle = paste0(subjectId, ": EDS > 2, Unfiltered"), groupLowFreq = TRUE)
 
-    P1 <- P1 + patchwork::plot_annotation(title = paste0(animalId, ': Unfiltered Clonotypes and ICS'))
+    P1 <- P1 + patchwork::plot_annotation(title = paste0(subjectId, ': Unfiltered Clonotypes and ICS'))
     print(P1)
 
     dataWithPVal <- AppendClonotypeEnrichmentPVals(dat %>% filter(IsFiltered == 'No'))
     dataWithPVal$EnrichedStatus <- dataWithPVal$coefficients < 1
 
-    passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'EnrichedStatus', plotTitle = paste0(unique(dat$SubjectId), ": EDS > 2, Passing Enrichment"), groupLowFreq = FALSE)
+    passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'EnrichedStatus', plotTitle = paste0(subjectId, ": EDS > 2, Passing Enrichment"), groupLowFreq = FALSE)
     if (!all(is.null(passingClones))){
       passingClones <- passingClones +
         geom_hline(yintercept = 0.005, linetype = 'dotted', colour = 'red', linewidth = 1) +
