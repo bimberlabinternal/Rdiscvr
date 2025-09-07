@@ -1297,8 +1297,10 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       }
     }
 
-    if (any(is.na(toInsert$enrichmentFDR))) {
-      toInsert$enrichmentFDR[is.na(toInsert$enrichmentFDR)] <- ''
+    for (fn in c('enrichmentFDR', 'oddsRatio')) {
+      if (any(is.na(toInsert[[fn]]))) {
+        toInsert[[fn]][is.na(toInsert[[fn]])] <- ''
+      }
     }
 
     print(paste0('Inserting ', nrow(toInsert), ' rows in tcrdb.clone_responses'))
@@ -1313,12 +1315,10 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
   toUpdate <- toInsertOrUpdate %>% filter(!is.na(container))
   if (nrow(toUpdate) > 0) {
-    if (any(is.na(toUpdate$enrichmentFDR))) {
-      toUpdate$enrichmentFDR[is.na(toUpdate$enrichmentFDR)] <- ''
-    }
-
-    if (any(is.na(toUpdate$oddsRatio))) {
-      toUpdate$oddsRatio[is.na(toUpdate$oddsRatio)] <- ''
+    for (fn in c('enrichmentFDR', 'oddsRatio')) {
+      if (any(is.na(toUpdate[[fn]]))) {
+        toUpdate[[fn]][is.na(toUpdate[[fn]])] <- ''
+      }
     }
 
     print(paste0('Updating ', nrow(toUpdate), ' rows in tcrdb.clone_responses'))
