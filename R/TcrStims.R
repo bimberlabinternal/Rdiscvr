@@ -1321,6 +1321,9 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       }
     }
 
+    # TODO: remove this after debug
+    saveRDS(toUpdate, file = 'toUpdate.rds')
+
     print(paste0('Updating ', nrow(toUpdate), ' rows in tcrdb.clone_responses'))
     added <- labkey.updateRows(
       baseUrl=.getBaseUrl(),
@@ -1329,6 +1332,8 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       queryName="clone_responses",
       toUpdate = toUpdate
     )
+
+    unlink('toUpdate.rds')
   }
 
   if (nrow(toDelete) > 0) {
