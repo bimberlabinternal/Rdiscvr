@@ -755,6 +755,10 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
 #' @param showProgress If TRUE, a progress bar will be shown
 #' @export
 AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
+  if (nrow(dat) == 0) {
+    return(NULL)
+  }
+
   dataWithPVal <- NULL
   for (ctlId in unique(dat$NoStimId)) {
     inputData <- dat %>%
@@ -785,6 +789,10 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     results <- CalculateClonotypeEnrichment(dataToTest, controlData, showProgress = showProgress)
 
     dataWithPVal <- rbind(dataWithPVal, inputData %>% filter(IsActive) %>% left_join(results, by = c('cDNA_ID', 'Clonotype')))
+  }
+
+  if (all(is.null(dataWithPVal))) {
+    return(NULL)
   }
 
   # Set a floor:
@@ -1152,7 +1160,6 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   }
 
-  allData <- NULL
   allDataWithPVal <- NULL
   for (subjectId in sort(unique(seuratObj$SubjectId))) {
     dat <- seuratObj@meta.data %>%
@@ -1184,7 +1191,12 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     P1 <- P1 + patchwork::plot_annotation(title = paste0(subjectId, ': Unfiltered Clonotypes and ICS'))
     print(P1)
 
-    dataWithPVal <- AppendClonotypeEnrichmentPVals(dat %>% filter(IsFiltered == 'No'))
+    passingRows <- dat %>% filter(IsFiltered == 'No')
+    if (nrow(passingRows) == 0) {
+      next
+    }
+
+    dataWithPVal <- AppendClonotypeEnrichmentPVals(passingRows)
     dataWithPVal$EnrichedStatus <- dataWithPVal$coefficients < 1
 
     passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'EnrichedStatus', plotTitle = paste0(subjectId, ": EDS > 2, Passing Enrichment"), groupLowFreq = FALSE)
@@ -1206,7 +1218,6 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       print(passingClones)
     }
 
-    allData <- rbind(allData, dat %>% filter(IsFiltered == 'No'))
     allDataWithPVal <- rbind(allDataWithPVal, dataWithPVal)
   }
 
@@ -1214,6 +1225,11 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 }
 
 .UpdateTcrStimDb <- function(allDataWithPVal, chain, methodName = NULL, storeStimLevelData = TRUE) {
+  if (all(is.null(allDataWithPVal))) {
+    print('No data, skipping import')
+    return()
+  }
+
   toUpdate <- allDataWithPVal %>%
     group_by(cDNA_ID) %>%
     filter(IsActive) %>%
