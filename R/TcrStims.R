@@ -807,81 +807,102 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 
 .GenerateTcrQcPlots <- function(dat) {
   subjectId <- paste0(dat %>% select(SubjectId) %>% unique() %>% as.character(), collapse = ',')
-  filterPlot1 <- dat %>%
+  toPlot <- dat %>%
     filter(IsActive) %>%
     mutate(Filter = {ifelse(is.na(Filter), yes = 'Pass', no = Filter)}) %>%
-    mutate(Fraction = TotalCellsForCloneAndState / TotalCellsForSample) %>%
-    ggplot(aes(x = Stim, y = Fraction, fill = Filter)) +
-    geom_col(color = 'black') +
-    facet_grid(. ~ SampleDate, scales = 'free', space = 'free_x') +
-    scale_y_continuous(labels = scales::percent) +
-    egg::theme_article() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1)
-    ) +
-    labs(
-      y = '% Activated',
-      x = ''
-    ) +
-    ggtitle('Filter Summary')
+    mutate(Fraction = TotalCellsForCloneAndState / TotalCellsForSample)
 
-  filterPlot2 <- dat %>%
-    filter(IsActive & !IsControlSample) %>%
-    mutate(Filter = {ifelse(is.na(Filter), yes = 'Pass', no = Filter)}) %>%
-    ggplot(aes(x = Stim, y = FractionOfCloneWithState)) +
-    geom_boxplot(color = 'black', outlier.shape = NA) +
-    geom_jitter(aes(color = Filter, size = TotalCellsForCloneAndState)) +
-    facet_grid(IsActiveLabel ~ SampleDate, scales = 'free', space = 'free') +
-    scale_y_continuous(labels = scales::percent) +
-    egg::theme_article() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1)
-    ) +
-    labs(
-      y = '% Active (of clonotype)',
-      x = '',
-      size = '# Cells',
-      color = 'Filter',
-      title = '% Activated By Clone and Stim'
-    )
+  if (nrow(toPlot) == 0) {
+    filterPlot1 <- patchwork::plot_spacer()
+  } else {
+    filterPlot1 <- ggplot(toPlot, aes(x = Stim, y = Fraction, fill = Filter)) +
+      geom_col(color = 'black') +
+      facet_grid(. ~ SampleDate, scales = 'free', space = 'free_x') +
+      scale_y_continuous(labels = scales::percent) +
+      egg::theme_article() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1)
+      ) +
+      labs(
+        y = '% Activated',
+        x = ''
+      ) +
+      ggtitle('Filter Summary')
+  }
 
-  filterPlot3 <- dat %>%
+  toPlot <- dat %>%
     filter(IsActive & !IsControlSample) %>%
-    mutate(Filter = {ifelse(is.na(Filter), yes = 'Pass', no = Filter)}) %>%
-    ggplot(aes(x = FractionOfCloneWithStateInSample, y = FractionOfCloneWithState)) +
-    geom_jitter(aes(color = Filter, size = TotalCellsForCloneAndState)) +
-    scale_x_continuous(labels = scales::percent) +
-    scale_y_continuous(labels = scales::percent) +
-    egg::theme_article() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1)
-    ) +
-    labs(
-      y = '% Active (of clonotype)',
-      x = '% Activated (of total cells)',
-      size = '# Cells',
-      color = 'Filter',
-      title = '% Active/Clone vs. % Activation'
-    )
+    mutate(Filter = {ifelse(is.na(Filter), yes = 'Pass', no = Filter)})
 
-  filterPlot4 <- dat %>%
+  if (nrow(toPlot) == 0) {
+    filterPlot2 <- patchwork::plot_spacer()
+  } else {
+    filterPlot2 <- ggplot(toPlot, aes(x = Stim, y = FractionOfCloneWithState)) +
+      geom_boxplot(color = 'black', outlier.shape = NA) +
+      geom_jitter(aes(color = Filter, size = TotalCellsForCloneAndState)) +
+      facet_grid(IsActiveLabel ~ SampleDate, scales = 'free', space = 'free') +
+      scale_y_continuous(labels = scales::percent) +
+      egg::theme_article() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1)
+      ) +
+      labs(
+        y = '% Active (of clonotype)',
+        x = '',
+        size = '# Cells',
+        color = 'Filter',
+        title = '% Activated By Clone and Stim'
+      )
+  }
+
+  toPlot <- dat %>%
     filter(IsActive & !IsControlSample) %>%
-    mutate(Filter = {ifelse(is.na(Filter), yes = 'Pass', no = Filter)}) %>%
-    ggplot(aes(x = TotalCellsForClone/TotalCellsForSample, y = FractionOfCloneWithState)) +
-    geom_jitter(aes(color = Filter, size = TotalCellsForCloneAndState)) +
-    scale_x_continuous(labels = scales::percent) +
-    scale_y_continuous(labels = scales::percent) +
-    egg::theme_article() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1)
-    ) +
-    labs(
-      y = '% Active (of clonotype)',
-      x = '% of Total Cells',
-      size = '# Cells',
-      color = 'Filter',
-      title = '% Active/Clone vs. Total Clone Size'
-    )
+    mutate(Filter = {ifelse(is.na(Filter), yes = 'Pass', no = Filter)})
+
+  if (nrow(toPlot) == 0) {
+    filterPlot3 <- patchwork::plot_spacer()
+  } else {
+    filterPlot3 <- ggplot(toPlot, aes(x = FractionOfCloneWithStateInSample, y = FractionOfCloneWithState)) +
+      geom_jitter(aes(color = Filter, size = TotalCellsForCloneAndState)) +
+      scale_x_continuous(labels = scales::percent) +
+      scale_y_continuous(labels = scales::percent) +
+      egg::theme_article() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1)
+      ) +
+      labs(
+        y = '% Active (of clonotype)',
+        x = '% Activated (of total cells)',
+        size = '# Cells',
+        color = 'Filter',
+        title = '% Active/Clone vs. % Activation'
+      )
+  }
+
+  toPlot <- dat %>%
+    filter(IsActive & !IsControlSample) %>%
+    mutate(Filter = {ifelse(is.na(Filter), yes = 'Pass', no = Filter)})
+
+  if (nrow(toPlot) == 0) {
+    filterPlot4 <- patchwork::plot_spacer()
+  } else {
+    filterPlot4 <- ggplot(toPlot, aes(x = TotalCellsForClone/TotalCellsForSample, y = FractionOfCloneWithState)) +
+      geom_jitter(aes(color = Filter, size = TotalCellsForCloneAndState)) +
+      scale_x_continuous(labels = scales::percent) +
+      scale_y_continuous(labels = scales::percent) +
+      egg::theme_article() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1)
+      ) +
+      labs(
+        y = '% Active (of clonotype)',
+        x = '% of Total Cells',
+        size = '# Cells',
+        color = 'Filter',
+        title = '% Active/Clone vs. Total Clone Size'
+      )
+  }
+
   P <- ((filterPlot1 + filterPlot2) / (filterPlot3 + filterPlot4)) +
     patchwork::plot_layout(guides = 'collect') +
     patchwork::plot_annotation(title = paste0(subjectId, ': Filter QC'))
