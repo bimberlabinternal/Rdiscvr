@@ -221,7 +221,7 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
         }
       }
 
-      d <- as.integer(nimbleTable$V2)
+      d <- as.integer(as.character(nimbleTable$V2))
       if (any(is.na(d))){
         stop(paste0('Non-integer count values found, were: ', paste0(head(unique(df$nimbleTable[is.na(d)])), collapse = ',')))
       }

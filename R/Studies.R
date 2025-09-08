@@ -444,7 +444,7 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
 }
 
 .ApplyMetadata <- function(seuratObj) {
-  if ('BarcodePrefix' %in% names(seuratObj@meta.data) && !any(is.na(as.integer(seuratObj$BarcodePrefix)))) {
+  if ('BarcodePrefix' %in% names(seuratObj@meta.data) && !any(is.na(as.integer(as.character(seuratObj$BarcodePrefix))))) {
     seuratObj <- QueryAndApplyCdnaMetadata(seuratObj)
   } else if ('cDNA_ID' %in% names(seuratObj@meta.data)) {
     seuratObj <- QueryAndApplyMetadataUsingCDNA(seuratObj)
