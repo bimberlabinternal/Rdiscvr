@@ -1217,6 +1217,10 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
   if (storeStimLevelData) {
     print(paste0('Updating ', nrow(toUpdate), ' rows in tcrdb.stims'))
+
+    # TODO: remove this after debug
+    saveRDS(toUpdate, file = 'toUpdateStims.rds')
+
     updated <- labkey.updateRows(
       baseUrl=.getBaseUrl(),
       folderPath=.getLabKeyDefaultFolder(),
@@ -1224,6 +1228,8 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       queryName="stims",
       toUpdate = toUpdate
     )
+
+    unlink('toUpdateStims.rds')
   }
 
   # Now clone data:
@@ -1322,7 +1328,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     }
 
     # TODO: remove this after debug
-    saveRDS(toUpdate, file = 'toUpdate.rds')
+    saveRDS(toUpdate, file = 'toUpdateResponses.rds')
 
     print(paste0('Updating ', nrow(toUpdate), ' rows in tcrdb.clone_responses'))
     added <- labkey.updateRows(
@@ -1333,7 +1339,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       toUpdate = toUpdate
     )
 
-    unlink('toUpdate.rds')
+    unlink('toUpdateResponses.rds')
   }
 
   if (nrow(toDelete) > 0) {
