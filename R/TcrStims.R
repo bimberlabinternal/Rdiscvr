@@ -1167,7 +1167,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
     if (!is.integer(dat$cDNA_ID)) {
       print('Converting cDNA_ID to an integer')
-      converted <- as.integer(dat$cDNA_ID)
+      converted <- as.integer(levels(dat$cDNA_ID))[dat$cDNA_ID]
       if (any(is.na(converted))) {
         stop('Non-numeric cDNA_IDs found: ', paste0(unique(dat$cDNA_ID[is.na(converted)])))
       }
@@ -1191,12 +1191,18 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     P1 <- P1 + patchwork::plot_annotation(title = paste0(subjectId, ': Unfiltered Clonotypes and ICS'))
     print(P1)
 
-    passingRows <- dat %>% filter(IsFiltered == 'No')
+    passingRows <- dat %>%
+      filter(IsFiltered == 'No')
     if (nrow(passingRows) == 0) {
+      print('No rows passed filters, skipping')
       next
     }
 
     dataWithPVal <- AppendClonotypeEnrichmentPVals(passingRows)
+    if (all(is.null(dataWithPVal))){
+      next
+    }
+
     dataWithPVal$EnrichedStatus <- dataWithPVal$coefficients < 1
 
     passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'EnrichedStatus', plotTitle = paste0(subjectId, ": EDS > 2, Passing Enrichment"), groupLowFreq = FALSE)
