@@ -1041,6 +1041,7 @@ ApplyKnownClonotypicData <- function(seuratObj) {
 
     return(length(x))
   })
+  toAppend$NumAntigens[is.na(toAppend$NumAntigens)] <- 0
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAppend)
 
