@@ -37,7 +37,7 @@ PerformMhcDimRedux <- function(seuratObj, sourceAssay = 'MHC', groupField = 'Sub
 
   print(Seurat::DimPlot(seuratObj, group.by = fn, reduction = 'mhc.umap'))
 
-  if (! is.null(groupField)) {
+  if (! is.null(groupField) & groupField %in% names(seuratObj@meta.data) {
     print(CellMembrane::PlotSeuratVariables(seuratObj, xvar = fn, yvar = groupField, labelDimplot = TRUE, reduction = 'mhc.umap'))
   }
 
