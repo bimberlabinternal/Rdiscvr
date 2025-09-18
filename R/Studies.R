@@ -56,11 +56,11 @@ ApplyPC475Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     if (any(is.na(seuratObj$cDNA_ID))) {
       stop('There were missing cDNA_IDs in the seurat object')
     }
-
+    
     missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
     stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
-  
+
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
   toAdd$SortOrder <- seq_len(nrow(toAdd))
   toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
@@ -98,7 +98,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     if (any(is.na(seuratObj$cDNA_ID))) {
       stop('There were missing cDNA_IDs in the seurat object')
     }
-
+    
     missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
     stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
@@ -128,20 +128,20 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     folderPath="/Labs/Bimber/627",
     schemaName="lists",
     queryName="TB_cDNA_Libraries",
-    colSelect="cDNA_ID,SampleType,TimepointLabel,CFU_Homogenate,CFU_Tissue,Imputed_CFU_Tissue,cDNA_ID/sortid/sampleid/subjectid,cDNA_ID/sortid/sampleid/tissue",
+    colSelect="cDNA_ID,SampleType,TimepointLabel,CFU_Homogenate,CFU_Tissue,cDNA_ID/sortid/sampleid/subjectid",
     colNameOpt="rname"
   )
-  names(cDNA) <- c('cDNA_ID', 'SampleType', 'TimepointLabel', 'CFU_Homogenate', 'CFU_Tissue', 'Imputed_CFU_Tissue', 'SubjectId', 'Tissue')
+  names(cDNA) <- c('cDNA_ID', 'SampleType', 'TimepointLabel', 'CFU_Homogenate', 'CFU_Tissue', 'SubjectId')
 
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/627",
     schemaName="lists",
     queryName="TB_Studies",
-    colSelect="subjectid,study,vaccine,vaccinationdate,challenge,ChallengeType,NecropsyDate,PID,PathScore,LungPathScore,ChallengeDate,R_Caudal_Lung_1_Disease,LeftLungPathScore,ChallengeSide,RCaudalPathScoreLongTerm,TotalRightLungPathScoreLongTerm,TotalLeftLungPathScoreLongTerm",
+    colSelect="subjectid,study,vaccine,challenge,ChallengeType,NecropsyDate,PID,PathScore,LungPathScore,ChallengeDate,R_Caudal_Lung_1_Disease,LeftLungPathScore,ChallengeSide",
     colNameOpt="rname"
   )
-  names(metadata) <- c('SubjectId', 'TB_Study', 'Vaccine', 'VaccinationDate', 'Challenge', 'ChallengeType', 'NecropsyDate', 'PID', 'PathScore', 'LungPathScore', 'ChallengeDate', 'R_Caudal_Lung_1_Disease', 'LeftLungPathScore', 'ChallengeSide', 'RCaudalPathScoreLongTerm', 'TotalRightLungPathScoreLongTerm', 'TotalLeftLungPathScoreLongTerm')
+  names(metadata) <- c('SubjectId', 'TB_Study', 'Vaccine', 'Challenge', 'ChallengeType', 'NecropsyDate', 'PID', 'PathScore', 'LungPathScore', 'ChallengeDate', 'R_Caudal_Lung_1_Disease', 'LeftLungPathScore', 'ChallengeSide')
 
   # CFU_Tissue_Rescaled
   cDNA$CFU_Homogenate[is.na(cDNA$CFU_Homogenate)] <- 0
@@ -158,8 +158,6 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   metadata$Timepoint <- metadata$PID
   metadata$Timepoint[!is.na(metadata$Timepoint)] <- round(metadata$Timepoint[!is.na(metadata$Timepoint)]/7, 0)*7
   metadata$Timepoint[!is.na(metadata$Timepoint)] <- paste0('Day ', metadata$Timepoint[!is.na(metadata$Timepoint)])
-
-  metadata$ChallengeSide[is.na(metadata$ChallengeSide)] <- 'Unknown'
 
   # NOTE: make a simpler timepoint/mock field that lumps Mock-challenged samples into a different timepoint level
   if (any(!is.na(metadata$IsMockChallenged) & metadata$IsMockChallenged)) {
@@ -207,13 +205,13 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     'RhCMV-TB/6Ag',
     'RhCMV-TB/9Ag'
   )
-  
+
   for (l in rev(expectedOrder)) {
     if (l %in% unique(metadata$Group)) {
       metadata$Group <- forcats::fct_relevel(metadata$Group, l, after = 0)
     }
   }
-
+  # TODO: make a field that is group + timepoint
   cDNA <- merge(cDNA, metadata, by = 'SubjectId', all.x = T)
 
   cDNA$IsChallengeSide <- case_when(
@@ -224,7 +222,12 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
 
   cDNA <- cDNA %>% select(-Tissue)
 
-  # TODO: make a field that is group + timepoint
+
+  #Make a baseline timepoint exception for the timepoints
+  timepointLevels <- levels(cDNA$Timepoint)
+  cDNA$Timepoint <- as.character(cDNA$Timepoint)
+  cDNA[!is.na(cDNA$SampleType) & cDNA$SampleType == 'Baseline', 'Timepoint'] <- "Baseline"
+  cDNA$Timepoint <- naturalsort::naturalfactor(cDNA$Timepoint, levels = c('Baseline', timepointLevels))
 
   return(cDNA)
 }
@@ -244,7 +247,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     seuratObj <- .ApplyMetadata(seuratObj)
   }
   seuratObj <- .AppendDemographics(seuratObj)
-  
+
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1172",
@@ -254,7 +257,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     colSelect = 'subjectid,sex,groupname,mmr,d0,mmr_date,cvac1,cvac2,cvac3,challengedate,PreExposureDate,ChallengeType,Protection',
   )
   names(metadata) <- c('SubjectId', 'Sex', 'GroupName', 'MMR', 'D0', 'MMR_Date', 'CVac1', 'CVac2', 'CVac3', 'ChallengeDate', 'PreExposureDate', 'ChallengeType', 'Protection')
-  
+
   metadata2 <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1172",
@@ -264,7 +267,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     colSelect = 'libraryid,timepointlabel,LibraryId/sortId/sampleId/subjectId'
   )
   names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'SubjectId')
-  
+
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
 
@@ -276,7 +279,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
     stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
-  
+
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
   toAdd$SortOrder <- seq_len(nrow(toAdd))
   toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
@@ -316,7 +319,7 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     seuratObj <- .ApplyMetadata(seuratObj)
   }
   seuratObj <- .AppendDemographics(seuratObj)
-  
+
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1297",
@@ -326,7 +329,7 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     colSelect = 'subjectid,VaccinationDate,InfectionDate,Outcome,VaccineType',
   )
   names(metadata) <- c('SubjectId', 'VaccinationDate', 'InfectionDate', 'Outcome', 'VaccineType')
-  
+
   metadata2 <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1297",
@@ -336,10 +339,10 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     colSelect = 'cDNA_ID,Label,DPV,PID,cDNA_ID/sortId/sampleId/subjectId,pvl'
   )
   names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'DPV', 'PID', 'SubjectId', 'PVL')
-  
+
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
-  
+
   if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
     if (any(is.na(seuratObj$cDNA_ID))) {
       stop('There were missing cDNA_IDs in the seurat object')
@@ -366,7 +369,7 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
-  
+
   return(seuratObj)
 }
 
@@ -399,8 +402,8 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   }
 
   if (any(duplicated(metadata$cDNA_ID))) {
-   dups <- metadata$cDNA_ID[duplicated(metadata$cDNA_ID)]
-   stop(paste0('There were duplicated cDNA_IDs in the metadata: ', paste0(dups, collapse = ',')))
+    dups <- metadata$cDNA_ID[duplicated(metadata$cDNA_ID)]
+    stop(paste0('There were duplicated cDNA_IDs in the metadata: ', paste0(dups, collapse = ',')))
   }
 
   toAdd <- data.frame(SubjectId = seuratObj$SubjectId, CellBarcode = colnames(seuratObj))
