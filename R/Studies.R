@@ -181,11 +181,11 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     }
   }
 
-  metadata$Group <- as.character(metadata$Vaccine)
+  metadata$VaccineAndChallenge <- as.character(metadata$Vaccine)
   if ('Mock-challenged' %in% metadata$Challenge) {
-    metadata$Group[!is.na(metadata$Challenge) & metadata$Challenge == 'Mock-challenged'] <- paste0(metadata$Vaccine[!is.na(metadata$Challenge) & metadata$Challenge == 'Mock-challenged'], '-Mock')
+    metadata$VaccineAndChallenge[!is.na(metadata$Challenge) & metadata$Challenge == 'Mock-challenged'] <- paste0(metadata$Vaccine[!is.na(metadata$Challenge) & metadata$Challenge == 'Mock-challenged'], '-Mock')
   }
-  metadata$Group <- naturalsort::naturalfactor(metadata$Group)
+  metadata$VaccineAndChallenge <- naturalsort::naturalfactor(metadata$VaccineAndChallenge)
 
   # Establish order:
   expectedOrder <- c(
@@ -209,8 +209,8 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   )
   
   for (l in rev(expectedOrder)) {
-    if (l %in% unique(metadata$Group)) {
-      metadata$Group <- forcats::fct_relevel(metadata$Group, l, after = 0)
+    if (l %in% unique(metadata$VaccineAndChallenge)) {
+      metadata$VaccineAndChallenge <- forcats::fct_relevel(metadata$VaccineAndChallenge, l, after = 0)
     }
   }
 
@@ -224,7 +224,11 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
 
   cDNA <- cDNA %>% select(-Tissue)
 
-  # TODO: make a field that is group + timepoint
+  #Make a baseline timepoint exception for the timepoints
+  timepointLevels <- levels(cDNA$Timepoint)
+  cDNA$Timepoint <- as.character(cDNA$Timepoint)
+  cDNA[!is.na(cDNA$SampleType) & cDNA$SampleType == 'Baseline', 'Timepoint'] <- "Baseline"
+  cDNA$Timepoint <- naturalsort::naturalfactor(cDNA$Timepoint, levels = c('Baseline', timepointLevels))
 
   return(cDNA)
 }
