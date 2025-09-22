@@ -216,8 +216,8 @@ QueryAndApplyCdnaMetadata <- function(seuratObj,
 #' @export
 #' @importFrom dplyr %>% group_by_at summarise_at arrange
 QueryAndApplyMetadataUsingCDNA <- function(seuratObj,
-                                      fieldSelect = c('rowid', 'sortid/population', 'sortid/sampleid/subjectid', 'sortid/sampleid/sampledate', 'sortid/sampleid/stim', 'sortid/sampleid/tissue', 'plateid', 'workbook/workbookid'),
-                                      fieldNames = c('cDNA_ID', 'Population', 'SubjectId', 'SampleDate', 'Stim', 'Tissue', 'PlateId', 'WorkbookId'), overwriteExisting = TRUE) {
+                                      fieldSelect = c('rowid', 'sortid/population', 'sortid/sampleid/subjectid', 'sortid/sampleid/sampledate', 'sortid/sampleid/stim', 'sortid/sampleid/tissue', 'plateid', 'workbook/workbookid', 'sortid/sampleid/assayType'),
+                                      fieldNames = c('cDNA_ID', 'Population', 'SubjectId', 'SampleDate', 'Stim', 'Tissue', 'PlateId', 'WorkbookId', 'AssayType'), overwriteExisting = TRUE) {
   if (length(fieldSelect) != length(fieldNames)) {
     stop('The length of fields must equal the length of fieldNames')
   }
