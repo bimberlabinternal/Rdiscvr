@@ -46,7 +46,7 @@ Remotes:
     bimberlabinternal/CellMembrane,
     bimberlab/RIRA,
     bimberlab/nimbleR
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 URL: https://github.com/BimberLabInternal/Rdiscvr
 BugReports: https://github.com/BimberLabInternal/Rdiscvr/issues
 Collate: 
