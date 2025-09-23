@@ -222,6 +222,8 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     .default = FALSE
   )
 
+  cDNA$SideType <- ifelse(cDNA$IsChallengeSide, yes = 'Challenged Lung', 'Contralateral Lung')
+
   cDNA <- cDNA %>% select(-Tissue)
 
   #Make a baseline timepoint exception for the timepoints
