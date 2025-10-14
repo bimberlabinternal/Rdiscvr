@@ -232,6 +232,18 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   cDNA[!is.na(cDNA$SampleType) & cDNA$SampleType == 'Baseline', 'Timepoint'] <- "Baseline"
   cDNA$Timepoint <- naturalsort::naturalfactor(cDNA$Timepoint, levels = c('Baseline', timepointLevels))
 
+  cDNA$TimepointWithMock <- cDNA$Timepoint
+  cDNA$TimepointWithMock <- forcats::fct_expand(cDNA$TimepointWithMock, 'Mock', after = 1)
+  cDNA$TimepointWithMock[cDNA$Challenge == 'Mock-challenged'] <- 'Mock'
+  cDNA$TimepointWithMock <- forcats::fct_drop(cDNA$TimepointWithMock)
+
+  cDNA$VaccineGroup <- cDNA$Vaccine
+  cDNA$VaccineGroup <- forcats::fct_expand(cDNA$VaccineGroup, 'RhCMV/TB', after = 4)
+  cDNA$VaccineGroup <- forcats::fct_expand(cDNA$VaccineGroup, 'ID-BCG', after = 1)
+  cDNA$VaccineGroup[cDNA$Vaccine %in% c("RhCMV-TB/6Ag", "RhCMV-TB/9Ag")] <- "RhCMV/TB"
+  cDNA$VaccineGroup[cDNA$Vaccine %in% c("BCG (adult)", "BCG (at birth)")] <- "ID-BCG"
+  cDNA$VaccineGroup <- forcats::fct_drop(cDNA$VaccineGroup)
+
   return(cDNA)
 }
 
