@@ -244,7 +244,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   cDNA$VaccineGroup[cDNA$Vaccine %in% c("BCG (adult)", "BCG (at birth)")] <- "ID-BCG"
   cDNA$VaccineGroup <- forcats::fct_drop(cDNA$VaccineGroup)
 
-  cDNA$TB_Immunized <- ifelse(grepl(cDNA$VaccineGroup, pattern = 'BCG') | grepl(cDNA$VaccineGroup, pattern = '/TB') | grepl(cDNA$VaccineGroup, pattern = '-TB'), yes = 'TB-Immunized', no = 'Not Immunized')
+  cDNA$TB_Immunized <- ifelse(grepl(cDNA$VaccineGroup, pattern = 'BCG') | grepl(cDNA$VaccineGroup, pattern = '/TB') | grepl(cDNA$VaccineGroup, pattern = '-TB'), yes = 'TB-Immunized', no = 'Not TB-Immunized')
 
   return(cDNA)
 }
