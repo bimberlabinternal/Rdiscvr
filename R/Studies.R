@@ -685,3 +685,42 @@ ApplyPPG_Stim_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reA
 
   return(seuratObj)
 }
+
+#' @title ApplyIMPAC_TB_Human_Metadata
+#' @description Applies standard metadata related to the IMPAC_TB Study
+#'
+#' @param seuratObj A Seurat object.
+#' @param reApplyMetadata If true, QueryAndApplyCdnaMetadata will be re-run
+#' @return A modified Seurat object.
+#' @export
+ApplyIMPAC_TB_Human_Metadata <- function(seuratObj, reApplyMetadata = TRUE) {
+  if (reApplyMetadata) {
+    seuratObj <- .ApplyMetadata(seuratObj)
+  }
+
+  metadata <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/Collaborations/Lewinsohn/98",
+    schemaName="lists",
+    queryName="IMPACTB",
+    colNameOpt="rname",
+    colSelect = 'PatientID,Group,GroupName,Cohort,PET_Status,Progressor',
+  )
+  names(metadata) <- c('SubjectId', 'Group', 'GroupName', 'Cohort', 'PET_Status', 'Progressor')
+
+  toAdd <- data.frame(SubjectId = seuratObj$SubjectId, CellBarcode = colnames(seuratObj))
+  toAdd$SortOrder <- seq_len(nrow(toAdd))
+  toAdd <- merge(toAdd, metadata, by.x = 'SubjectId', all.x = TRUE)
+  toAdd <- arrange(toAdd, SortOrder)
+  rownames(toAdd) <- toAdd$CellBarcode
+  toAdd <- toAdd[!names(toAdd) %in% c('CellBarcode', 'SortOrder')]
+
+  if (any(rownames(toAdd) != rownames(seuratObj@meta.data))) {
+    stop('Row names not equal on metadata')
+  }
+
+  seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
+  seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
+
+  return(seuratObj)
+}
