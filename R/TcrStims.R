@@ -1159,6 +1159,9 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   } else if (method == 'sPLS') {
     seuratObj$IsActive <- seuratObj$sPLS_class == 'AgSpecificActivated'
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
+  } else if (method == 'sPLS_And_CD4') {
+    seuratObj$IsActive <- seuratObj$sPLS_class == 'AgSpecificActivated' | seuratObj$CD4_Activation_Axis > 8
+    print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   }
 
   allDataWithPVal <- NULL
@@ -1168,9 +1171,10 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
     if (!is.integer(dat$cDNA_ID)) {
       print('Converting cDNA_ID to an integer')
-      converted <- as.integer(levels(dat$cDNA_ID))[dat$cDNA_ID]
+      dat$cDNA_ID <- as.character(dat$cDNA_ID)
+      converted <- as.integer(dat$cDNA_ID)
       if (any(is.na(converted))) {
-        stop('Non-numeric cDNA_IDs found: ', paste0(unique(dat$cDNA_ID[is.na(converted)])))
+        stop('Non-numeric cDNA_IDs found: ', paste0(unique(dat$cDNA_ID[is.na(converted)]), collapse = ','))
       }
 
       dat$cDNA_ID <- converted
