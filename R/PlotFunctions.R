@@ -153,12 +153,28 @@ ConvertAxesToArrows <- function(
   ), class = "bimber_arrows")
 }
 
+#' @title ggplot_add method for bimber_arrows
+#'
+#' @description Internal helper used to add arrow-based axes and their labels to
+#'   ggplot objects when a \code{bimber_arrows} object is added with \code{+}.
+#'
+#' @param object A \code{bimber_arrows} object created by \code{ConvertAxesToArrows()},
+#'   containing arrow and label parameters.
+#' @param plot A ggplot object to which the arrow-based axes and labels will be added.
+#' @param object_name Character. The name of the \code{bimber_arrows} object
+#'   being added (supplied by ggplot2; typically not used directly).
+#'
+#' @return A ggplot object with arrow-based axes and corresponding labels added.
+#'
+#' @method ggplot_add bimber_arrows
+#' @export
+
 
 ggplot_add.bimber_arrows <- function(object, plot, object_name){
   plot <- plot +
     coord_cartesian(clip = "off") +
     theme(axis.line = element_blank(),
-                   plot.margin = margin(6, 6, 16, 6))
+          plot.margin = margin(6, 6, 16, 6))
   
   gb <- ggplot_build(plot)
   pp <- gb$layout$panel_params[[1]]
@@ -185,12 +201,12 @@ ggplot_add.bimber_arrows <- function(object, plot, object_name){
   
   plot +
     annotate("segment",
-                      x = x0, y = y0, xend = x0 + dx, yend = y0,
-                      linewidth = object$arrowLinewidth, arrow = arrow_spec
+             x = x0, y = y0, xend = x0 + dx, yend = y0,
+             linewidth = object$arrowLinewidth, arrow = arrow_spec
     ) +
     annotate("segment",
-                      x = x0, y = y0, xend = x0, yend = y0 + dy,
-                      linewidth = object$arrowLinewidth, arrow = arrow_spec
+             x = x0, y = y0, xend = x0, yend = y0 + dy,
+             linewidth = object$arrowLinewidth, arrow = arrow_spec
     ) +
     annotate(
       "text", x = xm, y = xLabel_y, label = object$xLabel,
