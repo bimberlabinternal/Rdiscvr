@@ -15,7 +15,7 @@ FormatUmapForPresentation <- function(P1) {
 #' @return A plot object
 #' @export
 FormatFeaturePlotColorScale <- function(P1) {
-  return(FormatUmapForPresentation(P1) + ggplot2::scale_colour_gradientn(colours = c("navy", "dodgerblue", "gold", "red")))
+  return(FormatUmapForPresentation(P1) + scale_colour_gradientn(colours = c("navy", "dodgerblue", "gold", "red")))
 }
 
 #' @title theme_bimber
@@ -61,48 +61,48 @@ theme_bimber <- function(
     hjust <- 0
   }
   
-  common_layer <- ggplot2::theme(
-    text               = ggplot2::element_text(family = "Helvetica"),
+  common_layer <- theme(
+    text               = element_text(family = "Helvetica"),
     legend.position    = legendPosition,
-    legend.title       = ggplot2::element_text(size = 16, face = face),
-    legend.text        = ggplot2::element_text(size = 14),
-    plot.title         = ggplot2::element_text(size = 22, face = face, hjust = hjust),
-    plot.subtitle      = ggplot2::element_text(size = 18, face = face, hjust = hjust),
-    strip.text.x       = ggplot2::element_text(size = 16, color = "black", face = face),
-    strip.text.y       = ggplot2::element_text(size = 16, color = "black", face = face),
-    strip.background   = ggplot2::element_rect(fill = "white", linewidth = 2)
+    legend.title       = element_text(size = 16, face = face),
+    legend.text        = element_text(size = 14),
+    plot.title         = element_text(size = 22, face = face, hjust = hjust),
+    plot.subtitle      = element_text(size = 18, face = face, hjust = hjust),
+    strip.text.x       = element_text(size = 16, color = "black", face = face),
+    strip.text.y       = element_text(size = 16, color = "black", face = face),
+    strip.background   = element_rect(fill = "white", linewidth = 2)
   )
   
   if (standardPlot) {
     base_theme <- egg::theme_article(base_size = baseSize)
   } else {
-    base_theme <- ggplot2::theme_void(base_size = baseSize)
+    base_theme <- theme_void(base_size = baseSize)
   }
   
   if (!(standardPlot)) {
-    axis_layer <- ggplot2::theme(
-      axis.title  = ggplot2::element_blank(),
-      axis.text   = ggplot2::element_blank(),
-      axis.ticks  = ggplot2::element_blank(),
-      axis.line   = ggplot2::element_blank(),
-      panel.grid  = ggplot2::element_blank()
+    axis_layer <- theme(
+      axis.title  = element_blank(),
+      axis.text   = element_blank(),
+      axis.ticks  = element_blank(),
+      axis.line   = element_blank(),
+      panel.grid  = element_blank()
     )
   } else {
-    axis_layer <- ggplot2::theme(
-      axis.title  = ggplot2::element_text(size = axisTextsize),
-      axis.text.x = ggplot2::element_text(size = axisTextsize, color = "black"),
-      axis.text.y = ggplot2::element_text(size = axisTextsize, color = "black")
+    axis_layer <- theme(
+      axis.title  = element_text(size = axisTextsize),
+      axis.text.x = element_text(size = axisTextsize, color = "black"),
+      axis.text.y = element_text(size = axisTextsize, color = "black")
     )
   }
   
   if (forceLegendAlpha) {
-    guides_layer <- ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(alpha = 1)))
+    guides_layer <- guides(color = guide_legend(override.aes = list(alpha = 1)))
   } else {
     guides_layer <- NULL
   }
   
   if (adjustLegendKeySize) {
-    legend_key_layer <- ggplot2::theme(
+    legend_key_layer <- theme(
       legend.key.height = grid::unit(10, "pt"),
       legend.key.width  = grid::unit(10, "pt")
     )
@@ -154,13 +154,13 @@ ConvertAxesToArrows <- function(
 }
 
 
-ggplot2::ggplot_add.bimber_arrows <- function(object, plot, object_name){
+ggplot_add.bimber_arrows <- function(object, plot, object_name){
   plot <- plot +
-    ggplot2::coord_cartesian(clip = "off") +
-    ggplot2::theme(axis.line = ggplot2::element_blank(),
-                   plot.margin = ggplot2::margin(6, 6, 16, 6))
+    coord_cartesian(clip = "off") +
+    theme(axis.line = element_blank(),
+                   plot.margin = margin(6, 6, 16, 6))
   
-  gb <- ggplot2::ggplot_build(plot)
+  gb <- ggplot_build(plot)
   pp <- gb$layout$panel_params[[1]]
   
   xr <- if (!is.null(pp$x.range)) pp$x.range else pp$x$range$range
@@ -184,19 +184,19 @@ ggplot2::ggplot_add.bimber_arrows <- function(object, plot, object_name){
   )
   
   plot +
-    ggplot2::annotate("segment",
+    annotate("segment",
                       x = x0, y = y0, xend = x0 + dx, yend = y0,
                       linewidth = object$arrowLinewidth, arrow = arrow_spec
     ) +
-    ggplot2::annotate("segment",
+    annotate("segment",
                       x = x0, y = y0, xend = x0, yend = y0 + dy,
                       linewidth = object$arrowLinewidth, arrow = arrow_spec
     ) +
-    ggplot2::annotate(
+    annotate(
       "text", x = xm, y = xLabel_y, label = object$xLabel,
       vjust = 1, hjust = 0.5
     ) +
-    ggplot2::annotate(
+    annotate(
       "text", x = yLabel_x, y = ym, label = object$yLabel,
       vjust = 0.5, hjust = 0.5, angle = object$arrowYlabelAngle
     )

@@ -82,5 +82,5 @@ label (set to `90` for vertical).}
 ggplot object
 }
 \description{
-Formats ggplot objects using a standardized theme.
+Wrapper for Rdiscvr plotting themes that formats ggplot objects using a standardized theme.
 }
