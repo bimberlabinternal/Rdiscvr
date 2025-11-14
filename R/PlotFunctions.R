@@ -119,9 +119,9 @@ ApplyBimberTheme <- function(plot = NULL,
   ### Options  ###
   #################
   if (standardPlot) {
-    base_theme <- egg::theme_article(baseSize = baseSize)
+    base_theme <- egg::theme_article(base_size = baseSize)
   } else {
-    base_theme <- theme_void(baseSize = baseSize)
+    base_theme <- theme_void(base_size = baseSize)
   }
   
   if (!(standardPlot)) {
