@@ -18,9 +18,194 @@ FormatFeaturePlotColorScale <- function(P1) {
   return(FormatUmapForPresentation(P1) + ggplot2::scale_colour_gradientn(colours = c("navy", "dodgerblue", "gold", "red")))
 }
 
+#' @title theme_bimber
+#'
+#' @description Base theme for formatting ggplot objects using a standardized theme.
+#'
+#' @param standardPlot Logical. If TRUE, applies a cartesian article-style theme
+#'   with axis titles/ticks/text; if FALSE, applies a minimal theme suited to
+#'   donut/pie or other non-standard panels without axes.
+#' @param legendPosition Character. Position of the legend; e.g., "right",
+#'   "left", "top", "bottom", or "none".
+#' @param face Character. Font face for titles, subtitles, and facet strips
+#'   (e.g., "plain", "bold", "italic", "bold.italic").
+#' @param titleJust Character. Title/subtitle horizontal justification:
+#'   "left", "center", or "right".
+#' @param baseSize Numeric. Base font size passed to the base theme.
+#' @param axisTextsize Numeric. Font size for axis titles and tick labels when
+#'   standardPlot = TRUE.
+#' @param forceLegendAlpha Logical. If TRUE, forces legend keys to full opacity
+#'   (override.aes alpha = 1).
+#' @param adjustLegendKeySize Logical. If TRUE, enlarges legend key width/height
+#'   for readability.
+#'
+#' @return ggplot object
+#' @export
+
+
+theme_bimber <- function(
+    standardPlot = TRUE,
+    legendPosition = "right",
+    face = "bold",
+    titleJust = "center",
+    baseSize = 12,
+    axisTextsize = 16,
+    forceLegendAlpha = TRUE,
+    adjustLegendKeySize = TRUE
+){
+  if(titleJust == "center"){
+    hjust <-  .5
+  } else if(titleJust == "right"){
+    hjust <- 1
+  } else if(titleJust == "left"){
+    hjust <- 0
+  }
+  
+  common_layer <- ggplot2::theme(
+    text               = ggplot2::element_text(family = "Helvetica"),
+    legend.position    = legendPosition,
+    legend.title       = ggplot2::element_text(size = 16, face = face),
+    legend.text        = ggplot2::element_text(size = 14),
+    plot.title         = ggplot2::element_text(size = 22, face = face, hjust = hjust),
+    plot.subtitle      = ggplot2::element_text(size = 18, face = face, hjust = hjust),
+    strip.text.x       = ggplot2::element_text(size = 16, color = "black", face = face),
+    strip.text.y       = ggplot2::element_text(size = 16, color = "black", face = face),
+    strip.background   = ggplot2::element_rect(fill = "white", linewidth = 2)
+  )
+  
+  if (standardPlot) {
+    base_theme <- egg::theme_article(base_size = baseSize)
+  } else {
+    base_theme <- ggplot2::theme_void(base_size = baseSize)
+  }
+  
+  if (!(standardPlot)) {
+    axis_layer <- ggplot2::theme(
+      axis.title  = ggplot2::element_blank(),
+      axis.text   = ggplot2::element_blank(),
+      axis.ticks  = ggplot2::element_blank(),
+      axis.line   = ggplot2::element_blank(),
+      panel.grid  = ggplot2::element_blank()
+    )
+  } else {
+    axis_layer <- ggplot2::theme(
+      axis.title  = ggplot2::element_text(size = axisTextsize),
+      axis.text.x = ggplot2::element_text(size = axisTextsize, color = "black"),
+      axis.text.y = ggplot2::element_text(size = axisTextsize, color = "black")
+    )
+  }
+  
+  if (forceLegendAlpha) {
+    guides_layer <- ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(alpha = 1)))
+  } else {
+    guides_layer <- NULL
+  }
+  
+  if (adjustLegendKeySize) {
+    legend_key_layer <- ggplot2::theme(
+      legend.key.height = grid::unit(10, "pt"),
+      legend.key.width  = grid::unit(10, "pt")
+    )
+  } else {
+    legend_key_layer <- NULL
+  }
+  
+  list(base_theme, common_layer, axis_layer, guides_layer, legend_key_layer)
+}
+
+#' @title ConvertAxesToArrows
+#'
+#' @description Replaces standard x/y axis lines with short, arrow-based axes and
+#'   adds labels at their midpoints (useful for UMAPs and other DR plots).
+#'
+#' @param arrowLength Numeric. Shaft length as a fraction of the axis range.
+#' @param arrowLinewidth Numeric. Line width of the arrow shafts.
+#' @param arrowHeadLenMm Numeric. Arrowhead length in millimeters.
+#' @param arrowHeadAngle Numeric. Arrowhead angle in degrees (larger = “fatter” head).
+#' @param xLabel Character. Text label placed at the midpoint of the x-axis arrow.
+#' @param yLabel Character. Text label placed at the midpoint of the y-axis arrow.
+#' @param arrowLabelOffset Numeric. Offset of labels from the arrow line as a
+#'   fraction of the respective axis range (vertical for x label, horizontal for y label).
+#' @param arrowYlabelAngle Numeric. Rotation angle (degrees) for the y-axis arrow label.
+#'
+#' @return ggplot object
+#' @export
+
+ConvertAxesToArrows <- function(
+    arrowLength = 0.3,
+    arrowLinewidth = 1.5,
+    arrowHeadLenMm = 2,
+    arrowHeadAngle = 50,
+    xLabel = "X_Axis",
+    yLabel = "Y_Axis",
+    arrowLabelOffset = 0.02,
+    arrowYlabelAngle = 90
+){
+  structure(list(
+    arrowLength = arrowLength,
+    arrowLinewidth = arrowLinewidth,
+    arrowHeadLenMm = arrowHeadLenMm,
+    arrowHeadAngle = arrowHeadAngle,
+    xLabel = xLabel,
+    yLabel = yLabel,
+    arrowLabelOffset = arrowLabelOffset,
+    arrowYlabelAngle = arrowYlabelAngle
+  ), class = "bimber_arrows")
+}
+
+
+ggplot2::ggplot_add.bimber_arrows <- function(object, plot, object_name){
+  plot <- plot +
+    ggplot2::coord_cartesian(clip = "off") +
+    ggplot2::theme(axis.line = ggplot2::element_blank(),
+                   plot.margin = ggplot2::margin(6, 6, 16, 6))
+  
+  gb <- ggplot2::ggplot_build(plot)
+  pp <- gb$layout$panel_params[[1]]
+  
+  xr <- if (!is.null(pp$x.range)) pp$x.range else pp$x$range$range
+  yr <- if (!is.null(pp$y.range)) pp$y.range else pp$y$range$range
+  
+  x0 <- xr[1]; y0 <- yr[1]
+  dx <- diff(xr) * object$arrowLength
+  dy <- diff(yr) * (object$arrowLength + 0.05)
+  
+  xm <- x0 + dx/2
+  ym <- y0 + dy/2
+  
+  # below x-axis arrow, left of y-axis arrow
+  xLabel_y <- y0 - diff(yr) * object$arrowLabelOffset
+  yLabel_x <- x0 - diff(xr) * object$arrowLabelOffset
+  
+  arrow_spec <- grid::arrow(
+    type = "closed", ends = "last",
+    length = grid::unit(object$arrowHeadLenMm, "mm"),
+    angle = object$arrowHeadAngle
+  )
+  
+  plot +
+    ggplot2::annotate("segment",
+                      x = x0, y = y0, xend = x0 + dx, yend = y0,
+                      linewidth = object$arrowLinewidth, arrow = arrow_spec
+    ) +
+    ggplot2::annotate("segment",
+                      x = x0, y = y0, xend = x0, yend = y0 + dy,
+                      linewidth = object$arrowLinewidth, arrow = arrow_spec
+    ) +
+    ggplot2::annotate(
+      "text", x = xm, y = xLabel_y, label = object$xLabel,
+      vjust = 1, hjust = 0.5
+    ) +
+    ggplot2::annotate(
+      "text", x = yLabel_x, y = ym, label = object$yLabel,
+      vjust = 0.5, hjust = 0.5, angle = object$arrowYlabelAngle
+    )
+}
+
+
 #' @title ApplyBimberTheme
 #' 
-#' @description Formats ggplot objects using a standardized theme.
+#' @description Wrapper for Rdiscvr plotting themes that formats ggplot objects using a standardized theme.
 #' @param  plot a ggplot object
 #' @param  standardPlot boolean controls theming defaults dependant on a plot is a UMAP, DonutPlot, or other non-Standard plot
 #' @param legendPosition character, default `"right"`. Legend position passed to
@@ -60,6 +245,7 @@ FormatFeaturePlotColorScale <- function(P1) {
 #' @return ggplot object
 #' @export
 #' 
+
 ApplyBimberTheme <- function(plot = NULL,
                              standardPlot = TRUE,
                              legendPosition = "right",
@@ -70,16 +256,14 @@ ApplyBimberTheme <- function(plot = NULL,
                              forceLegendAlpha = TRUE,
                              adjustLegendKeySize = TRUE,
                              useArrows = FALSE,
-                             # --- arrow controls ---
-                             arrowLength = 0.3,          
-                             arrowLinewidth = 1.5,      
-                             arrowHeadLenMm = 2,      
-                             arrowHeadAngle = 50,      
-                             # --- NEW: labels on arrows ---
+                             arrowLength = 0.3,
+                             arrowLinewidth = 1.5,
+                             arrowHeadLenMm = 2,
+                             arrowHeadAngle = 50,
                              xLabel = "X_Axis",
                              yLabel = "Y_Axis",
-                             arrowLabelOffset = 0.02,  
-                             arrowYlabelAngle = 90) {
+                             arrowLabelOffset = 0.02,
+                             arrowYlabelAngle = 90){
   
   #################
   ### Sanitize  ###
@@ -91,124 +275,27 @@ ApplyBimberTheme <- function(plot = NULL,
     stop("standardPlot argument is not logical. Please set to TRUE/FALSE")
   }
   
-  
-  if(titleJust == "center"){
-    hjust <-  .5
-  } else if(titleJust == "right"){
-    hjust <- 1
-  } else if(titleJust == "left"){
-    hjust <- 0
-  }
-  
-  #################
-  ### BasePlot Layer  ###
-  #################
-  common_layer <- theme(
-    text               = element_text(family = "Helvetica"),
-    legend.position    = legendPosition,
-    legend.title       = element_text(size = 16, face = face),
-    legend.text        = element_text(size = 14),
-    plot.title         = element_text(size = 22, face = face, hjust = hjust),
-    plot.subtitle      = element_text(size = 18, face = face, hjust = hjust),
-    strip.text.x       = element_text(size = 16, color = "black", face = face),
-    strip.text.y       = element_text(size = 16, color = "black", face = face),
-    strip.background   = element_rect(fill = "white", linewidth = 2)
-  )
-  
-  #################
-  ### Options  ###
-  #################
-  if (standardPlot) {
-    base_theme <- egg::theme_article(base_size = baseSize)
-  } else {
-    base_theme <- theme_void(base_size = baseSize)
-  }
-  
-  if (!(standardPlot)) {
-    axis_layer <- theme(
-      axis.title  = element_blank(),
-      axis.text   = element_blank(),
-      axis.ticks  = element_blank(),
-      axis.line   = element_blank(),
-      panel.grid  = element_blank()
-    )
-  } else {
-    axis_layer <- theme(
-      axis.title  = element_text(size = axisTextsize),
-      axis.text.x = element_text(size = axisTextsize, color = "black"),
-      axis.text.y = element_text(size = axisTextsize, color = "black")
-    )
-  } 
-  
-  if (forceLegendAlpha) {
-    guides_layer <- ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(alpha = 1)))
-  } else {
-    guides_layer <- NULL
-  }
-  
-   if (adjustLegendKeySize) {
-    legend_key_layer <- ggplot2::theme(
-      legend.key.height = grid::unit(10, "pt"),
-      legend.key.width  = grid::unit(10, "pt")
-    )
-   } else {
-     legend_key_layer <- NULL
-   }
-  
-  plot <- plot + base_theme + common_layer + axis_layer + guides_layer + legend_key_layer
+  plot <- plot +
+    theme_bimber(standardPlot = standardPlot,
+                 legendPosition = legendPosition,
+                 face = face,
+                 titleJust = titleJust,
+                 baseSize = baseSize,
+                 axisTextsize = axisTextsize,
+                 forceLegendAlpha = forceLegendAlpha,
+                 adjustLegendKeySize = adjustLegendKeySize)
   
   if (useArrows) {
-    # allow drawing outside panel; hide default axis lines
-    plot <- plot +
-      ggplot2::coord_cartesian(clip = "off") +
-      ggplot2::theme(axis.line = ggplot2::element_blank())
-    
-    # build to get panel ranges
-    gb <- ggplot2::ggplot_build(plot)
-    pp <- gb$layout$panel_params[[1]]
-    
-    xr <- if (!is.null(pp$x.range)) pp$x.range else pp$x$range$range
-    yr <- if (!is.null(pp$y.range)) pp$y.range else pp$y$range$range
-    
-    x0 <- xr[1]; y0 <- yr[1]
-    dx <- diff(xr) * arrowLength
-    dy <- diff(yr) * (arrowLength + 0.05)
-    
-    # midpoints of the shafts
-    
-    xm <- x0 + dx/2
-    ym <- y0 + dy/2
-    
-    # put X label *below* the x-axis arrow (negative offset from y0)
-    xLabel_y <- y0 - diff(yr) * arrowLabelOffset   
-    yLabel_x <- x0 - diff(xr) * arrowLabelOffset
-    
-    # make sure there is room below for the text
-    plot <- plot + ggplot2::theme(plot.margin = ggplot2::margin(6, 6, 16, 6))
-    
-    arrow_spec <- grid::arrow(type = "closed", ends = "last",
-                              length = grid::unit(arrowHeadLenMm, "mm"),
-                              angle = arrowHeadAngle)
-    
-    plot <- plot +
-      # shafts with heads
-      ggplot2::annotate("segment",
-                        x = x0, y = y0, xend = x0 + dx, yend = y0,
-                        linewidth = arrowLinewidth, arrow = arrow_spec
-      ) +
-      ggplot2::annotate("segment",
-                        x = x0, y = y0, xend = x0, yend = y0 + dy,
-                        linewidth = arrowLinewidth, arrow = arrow_spec
-      ) +
-      # centered labels
-      ggplot2::annotate(
-        "text", x = xm, y = xLabel_y, label = xLabel,
-        size = axisTextsize/3, vjust = 1, hjust = 0.5
-      ) +
-      ggplot2::annotate(
-        "text", x = yLabel_x, y = ym, label = yLabel,
-        size = axisTextsize/3, vjust = 0.5, hjust = 0.5, angle = arrowYlabelAngle
-      )
+    plot <- plot + ConvertAxesToArrows(
+      arrowLength = arrowLength,
+      arrowLinewidth = arrowLinewidth,
+      arrowHeadLenMm = arrowHeadLenMm,
+      arrowHeadAngle = arrowHeadAngle,
+      xLabel = xLabel,
+      yLabel = yLabel,
+      arrowLabelOffset = arrowLabelOffset,
+      arrowYlabelAngle = arrowYlabelAngle
+    )
   }
   
   return(plot)
