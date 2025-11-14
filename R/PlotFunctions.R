@@ -96,7 +96,7 @@ theme_bimber <- function(
   }
   
   if (forceLegendAlpha) {
-    guides_layer <- guides(color = guide_legend(override.aes = list(alpha = 1)))
+    guides_layer <- guides(color = guide_legend(override.aes = list(size = 6, alpha = 1)))
   } else {
     guides_layer <- NULL
   }
