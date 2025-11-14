@@ -2,6 +2,7 @@
 
 export(AppendClonotypeEnrichmentPVals)
 export(ApplyAcuteNxMetadata)
+export(ApplyBimberTheme)
 export(ApplyCloneFilters)
 export(ApplyEC_Metadata)
 export(ApplyIMPAC_TB_Human_Metadata)
