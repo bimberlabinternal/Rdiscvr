@@ -121,7 +121,7 @@ theme_bimber <- function(
 #' @param arrowLength Numeric. Shaft length as a fraction of the axis range.
 #' @param arrowLinewidth Numeric. Line width of the arrow shafts.
 #' @param arrowHeadLenMm Numeric. Arrowhead length in millimeters.
-#' @param arrowHeadAngle Numeric. Arrowhead angle in degrees (larger = “fatter” head).
+#' @param arrowHeadAngle Numeric. Arrowhead angle in degrees (larger = “bigger” head).
 #' @param xLabel Character. Text label placed at the midpoint of the x-axis arrow.
 #' @param yLabel Character. Text label placed at the midpoint of the y-axis arrow.
 #' @param arrowLabelOffset Numeric. Offset of labels from the arrow line as a
@@ -156,12 +156,11 @@ ConvertAxesToArrows <- function(
 #' @title ggplot_add method for bimber_arrows
 #'
 #' @description Internal helper used to add arrow-based axes and their labels to
-#'   ggplot objects when a \code{bimber_arrows} object is added with \code{+}.
+#'   ggplot objects.
 #'
-#' @param object A \code{bimber_arrows} object created by \code{ConvertAxesToArrows()},
-#'   containing arrow and label parameters.
+#' @param object A code object created by {ConvertAxesToArrows()},containing arrow and label parameters.
 #' @param plot A ggplot object to which the arrow-based axes and labels will be added.
-#' @param object_name Character. The name of the \code{bimber_arrows} object
+#' @param object_name Character. The name of the {bimber_arrows} object
 #'   being added (supplied by ggplot2; typically not used directly).
 #'
 #' @return A ggplot object with arrow-based axes and corresponding labels added.
@@ -242,12 +241,12 @@ ggplot_add.bimber_arrows <- function(object, plot, object_name){
 #'   lines and draws perpendicular x/y arrows at the lower-left
 #'   of the panel with customizable head/shaft and centered labels.
 #'
-#' @param arrowLength numeric in (0,1), default `0.3`. Arrow **shaft length** as
+#' @param arrowLength numeric in (0,1), default `0.3`. Arrow length as
 #'   a fraction of the respective axis range (x and y independently).
 #' @param arrowLinewidth numeric, default `1.5`. Line width of the arrow shafts.
 #' @param arrowHeadLenMm numeric, default `2`. Arrowhead length in millimeters.
 #' @param arrowHeadAngle numeric, default `50`. Arrowhead angle (larger =
-#'   “fatter” head).
+#'   “bigger” head).
 #'
 #' @param xLabel character, default `"X_Axis"`. Text shown at the midpoint of
 #'   the x-axis arrow.
