@@ -159,9 +159,9 @@ ConvertAxesToArrows <- function(
 #' @description Internal helper used to add arrow-based axes and their labels to
 #'   ggplot objects.
 #'
-#' @param object A code object created by {ConvertAxesToArrows()},containing arrow and label parameters.
+#' @param object A code object created by \code{ConvertAxesToArrows()},containing arrow and label parameters.
 #' @param plot A ggplot object to which the arrow-based axes and labels will be added.
-#' @param object_name Character. The name of the {bimber_arrows} object
+#' @param object_name Character. The name of the \code{bimber_arrows} object
 #'   being added (supplied by ggplot2; typically not used directly).
 #'
 #' @return A ggplot object with arrow-based axes and corresponding labels added.

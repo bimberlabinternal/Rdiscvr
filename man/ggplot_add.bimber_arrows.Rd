@@ -7,11 +7,11 @@
 \method{ggplot_add}{bimber_arrows}(object, plot, object_name)
 }
 \arguments{
-\item{object}{A code object created by {ConvertAxesToArrows()},containing arrow and label parameters.}
+\item{object}{A code object created by \code{ConvertAxesToArrows()},containing arrow and label parameters.}
 
 \item{plot}{A ggplot object to which the arrow-based axes and labels will be added.}
 
-\item{object_name}{Character. The name of the {bimber_arrows} object
+\item{object_name}{Character. The name of the \code{bimber_arrows} object
 being added (supplied by ggplot2; typically not used directly).}
 }
 \value{
