@@ -691,9 +691,10 @@ ApplyPPG_Stim_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reA
 #'
 #' @param seuratObj A Seurat object.
 #' @param reApplyMetadata If true, QueryAndApplyCdnaMetadata will be re-run
+#' @param errorIfUnknownIdsFound If true, the function will fail if the seurat object contains unknown IDs
 #' @return A modified Seurat object.
 #' @export
-ApplyIMPAC_TB_Human_Metadata <- function(seuratObj, reApplyMetadata = TRUE) {
+ApplyIMPAC_TB_Human_Metadata <- function(seuratObj, reApplyMetadata = TRUE, errorIfUnknownIdsFound = FALSE) {
   if (reApplyMetadata) {
     seuratObj <- .ApplyMetadata(seuratObj)
   }
@@ -707,6 +708,14 @@ ApplyIMPAC_TB_Human_Metadata <- function(seuratObj, reApplyMetadata = TRUE) {
     colSelect = 'PatientID,Group,GroupName,Cohort,PET_Status,Progressor',
   )
   names(metadata) <- c('SubjectId', 'Group', 'GroupName', 'Cohort', 'PET_Status', 'Progressor')
+
+  if (errorIfUnknownIdsFound && (any(is.na(seuratObj$SubjectId)) || !all(seuratObj$SubjectId %in% metadata$SubjectId))) {
+    if (any(is.na(seuratObj$SubjectId))) {
+      stop('There were missing SubjectIds in the seurat object')
+    }
+    missing <- sort(unique(seuratObj$SubjectId[!seuratObj$SubjectId %in% metadata$SubjectId]))
+    stop(paste0('There were SubjectId in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
+  }
 
   toAdd <- data.frame(SubjectId = seuratObj$SubjectId, CellBarcode = colnames(seuratObj))
   toAdd$SortOrder <- seq_len(nrow(toAdd))
