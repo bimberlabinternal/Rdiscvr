@@ -55,7 +55,7 @@ legend key width/height for readability.}
 lines and draws perpendicular x/y arrows at the lower-left
 of the panel with customizable head/shaft and centered labels.}
 
-\item{arrowLength}{numeric in (0,1), default `0.3`. Arrow **shaft length** as
+\item{arrowLength}{numeric in (0,1), default `0.3`. Arrow length as
 a fraction of the respective axis range (x and y independently).}
 
 \item{arrowLinewidth}{numeric, default `1.5`. Line width of the arrow shafts.}
@@ -63,7 +63,7 @@ a fraction of the respective axis range (x and y independently).}
 \item{arrowHeadLenMm}{numeric, default `2`. Arrowhead length in millimeters.}
 
 \item{arrowHeadAngle}{numeric, default `50`. Arrowhead angle (larger =
-“fatter” head).}
+“bigger” head).}
 
 \item{xLabel}{character, default `"X_Axis"`. Text shown at the midpoint of
 the x-axis arrow.}
