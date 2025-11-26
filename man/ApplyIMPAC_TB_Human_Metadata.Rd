@@ -4,12 +4,18 @@
 \alias{ApplyIMPAC_TB_Human_Metadata}
 \title{ApplyIMPAC_TB_Human_Metadata}
 \usage{
-ApplyIMPAC_TB_Human_Metadata(seuratObj, reApplyMetadata = TRUE)
+ApplyIMPAC_TB_Human_Metadata(
+  seuratObj,
+  reApplyMetadata = TRUE,
+  errorIfUnknownIdsFound = FALSE
+)
 }
 \arguments{
 \item{seuratObj}{A Seurat object.}
 
 \item{reApplyMetadata}{If true, QueryAndApplyCdnaMetadata will be re-run}
+
+\item{errorIfUnknownIdsFound}{If true, the function will fail if the seurat object contains unknown IDs}
 }
 \value{
 A modified Seurat object.

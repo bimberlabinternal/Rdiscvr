@@ -973,7 +973,9 @@ ApplyKnownClonotypicData <- function(seuratObj) {
         clonotype <- tokens[2]
       } else {
         chain <- dat2$Chain[idx]
-        warning(paste0('Expected clonotype to contain a colon: ', clonotype, ' using chain ', chain))
+        if (is.na(chain) || is.null(chain)) {
+          stop(paste0('Clone lacks chain info: ', clonotype))
+        }
       }
 
       #clonotypes <- unlist(strsplit(clonotype, split = ','))
