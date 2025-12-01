@@ -607,11 +607,11 @@ CalculateClonotypeEnrichment <- function(dataToTest, controlData, groupingField 
     }
 
     if (any(is.na(dataToTest[[fn]]))) {
-      stop(paste0('dataToTest has NA values for: ', fn))
+      stop(paste0('dataToTest has ', sum(is.na(dataToTest[[fn]])), ' NA values for: ', fn))
     }
 
     if (any(is.na(controlData[[fn]]))) {
-      stop(paste0('controlData has NA values for: ', fn))
+      stop(paste0('controlData has ', sum(is.na(controlData[[fn]])),' NA values for: ', fn))
     }
   }
 
@@ -1160,6 +1160,8 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     print(paste0('Active cluster: ', activatedCluster$cluster, '. Total cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'sPLS') {
     seuratObj$IsActive <- seuratObj$sPLS_class == 'AgSpecificActivated'
+    if (any(is.na(seuratObj$sPLS_class))) {
+    }
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'sPLS_And_CD4') {
     seuratObj$IsActive <- seuratObj$sPLS_class == 'AgSpecificActivated' | seuratObj$CD4_Activation_Axis > 8
