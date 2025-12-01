@@ -1159,7 +1159,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     seuratObj$IsActive <- seuratObj@meta.data[[activatedCluster$resolution]] == activatedCluster$cluster
     print(paste0('Active cluster: ', activatedCluster$cluster, '. Total cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'sPLS') {
-    if (! 'sPLS_TCR_General_v3' %in% names(seuratObj@meta.data) {
+    if (! 'sPLS_TCR_General_v3' %in% names(seuratObj@meta.data)) {
         stop('Missing field: sPLS_TCR_General_v3')
     }
 
