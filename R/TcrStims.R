@@ -1159,13 +1159,17 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     seuratObj$IsActive <- seuratObj@meta.data[[activatedCluster$resolution]] == activatedCluster$cluster
     print(paste0('Active cluster: ', activatedCluster$cluster, '. Total cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'sPLS') {
-    seuratObj$IsActive <- seuratObj$sPLS_class == 'AgSpecificActivated'
-    if (any(is.na(seuratObj$sPLS_class))) {
+    if (! 'sPLS_TCR_General_v3' %in% names(seuratObj@meta.data) {
+        stop('Missing field: sPLS_TCR_General_v3')
+    }
+
+    seuratObj$IsActive <- seuratObj$sPLS_TCR_General_v3 == 'AgSpecificActivated'
+    if (any(!is.na(seuratObj@metadata[[chain]) & is.na(seuratObj$sPLS_TCR_General_v3))) {
+        stop('There were NA values for sPLS_TCR_General_v3 that contained TCR data')
     }
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
-  } else if (method == 'sPLS_And_CD4') {
-    seuratObj$IsActive <- seuratObj$sPLS_class == 'AgSpecificActivated' | seuratObj$CD4_Activation_Axis > 8
-    print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
+  } else {
+    stop(paste0('Unknown method: ', method))
   }
 
   allDataWithPVal <- NULL
