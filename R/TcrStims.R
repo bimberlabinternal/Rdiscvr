@@ -1164,7 +1164,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     }
 
     seuratObj$IsActive <- seuratObj$sPLS_TCR_General_v3 == 'AgSpecificActivated'
-    if (any(!is.na(seuratObj@metadata[[chain]]) & is.na(seuratObj$sPLS_TCR_General_v3))) {
+    if (any(!is.na(seuratObj@meta.data[[chain]]) & is.na(seuratObj$sPLS_TCR_General_v3))) {
         stop('There were NA values for sPLS_TCR_General_v3 that contained TCR data')
     }
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
