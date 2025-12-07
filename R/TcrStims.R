@@ -1163,7 +1163,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
         stop('Missing field: sPLS_TCR_General_v3')
     }
 
-    seuratObj$IsActive <- seuratObj$sPLS_TCR_General_v3 == 'AgSpecificActivated'
+    seuratObj$IsActive <- seuratObj$sPLS_TCR_General_v3 %in% c('Th1', 'Th17', 'AgSpecificActivated')
     if (any(!is.na(seuratObj@meta.data[[chain]]) & is.na(seuratObj$sPLS_TCR_General_v3))) {
         stop('There were NA values for sPLS_TCR_General_v3 that contained TCR data')
     }
