@@ -24,7 +24,7 @@ test_that("Plot extensions do not error", {
     ConvertAxesToArrows()
 
   ThePlot +
-    ConvertAxesToArrows(arrowLabelOffsetX = 0.08, arrowLabelOffsetY = 0.02) +
+    ConvertAxesToArrows() +
     theme_bimberlab()
 
   FP <- FeaturePlot(seuratObj, features = 'IFNG')
