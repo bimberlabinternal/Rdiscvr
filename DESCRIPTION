@@ -16,11 +16,9 @@ Imports:
     Rlabkey (>= 3.4.2),
     cellhashR,
     CellMembrane,
-    Biostrings,
     Matrix,
     tidyr,
     methods,
-    RIRA,
     htmltools,
     magrittr,
     egg,
@@ -44,7 +42,6 @@ Suggests:
 Remotes:
     bimberlab/cellhashR,
     bimberlabinternal/CellMembrane,
-    bimberlab/RIRA,
     bimberlab/nimbleR
 RoxygenNote: 7.3.3
 URL: https://github.com/BimberLabInternal/Rdiscvr

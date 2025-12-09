@@ -198,13 +198,14 @@ ConvertAxesToArrows <- function(
 #' @param object A code object created by \code{ConvertAxesToArrows()},containing arrow and label parameters.
 #' @param plot A ggplot object to which the arrow-based axes and labels will be added.
 #'   being added (supplied by ggplot2; typically not used directly).
+#' @param ... Passed to ggplot__add()
 #'
 #' @return A ggplot object with arrow-based axes and corresponding labels added.
 #'
 #' @method ggplot_add dimplot_arrows
 #' @export
 
-ggplot_add.dimplot_arrows <- function(object, plot){
+ggplot_add.dimplot_arrows <- function(object, plot, ...){
   plot <- plot +
     coord_cartesian(clip = "off") +
     theme(axis.line = element_blank(),

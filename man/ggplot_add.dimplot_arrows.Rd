@@ -4,13 +4,15 @@
 \alias{ggplot_add.dimplot_arrows}
 \title{ggplot_add method for dimplot_arrows}
 \usage{
-\method{ggplot_add}{dimplot_arrows}(object, plot)
+\method{ggplot_add}{dimplot_arrows}(object, plot, ...)
 }
 \arguments{
 \item{object}{A code object created by \code{ConvertAxesToArrows()},containing arrow and label parameters.}
 
 \item{plot}{A ggplot object to which the arrow-based axes and labels will be added.
 being added (supplied by ggplot2; typically not used directly).}
+
+\item{...}{Passed to ggplot__add()}
 }
 \value{
 A ggplot object with arrow-based axes and corresponding labels added.
