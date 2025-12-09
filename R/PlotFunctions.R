@@ -204,7 +204,7 @@ ConvertAxesToArrows <- function(
 #' @method ggplot_add dimplot_arrows
 #' @export
 
-ggplot_add.dimplot_arrows <- function(object, plot, ...){
+ggplot_add.dimplot_arrows <- function(object, plot){
   plot <- plot +
     coord_cartesian(clip = "off") +
     theme(axis.line = element_blank(),

@@ -4,7 +4,7 @@
 \alias{ggplot_add.dimplot_arrows}
 \title{ggplot_add method for dimplot_arrows}
 \usage{
-\method{ggplot_add}{dimplot_arrows}(object, plot, ...)
+\method{ggplot_add}{dimplot_arrows}(object, plot)
 }
 \arguments{
 \item{object}{A code object created by \code{ConvertAxesToArrows()},containing arrow and label parameters.}
