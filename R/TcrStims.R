@@ -8,7 +8,8 @@ utils::globalVariables(
             'NoStimFractionOfCloneInSample','NoStimId','NoStimTotalCells','NoStimTotalCellsActive','OriginalClone','PatternField','Stim','TNK_Type',
             'Tcell_EffectorDifferentiation','TotalCellsForClone','TotalCellsForCloneAndState','TotalCellsForSample','TotalCellsForSampleAndState','V_Gene', 'J_Gene',
             'cDNA_ID','coefficients', 'p_val', 'error', 'FractionOfCloneWithState', 'Antigens', 'Chain', 'ChainsForAntigenMatch', 'HasIE', 'HasNoStim', 'IsIE', 'IsNoStim',
-            'SampleDate', 'Tissue', 'fractioncloneactivated', 'maxFractionCloneActivated', 'maxTotalCloneSize', 'meanCloneSize', 'meanFractionCloneActivated', 'totalclonesize'),
+            'SampleDate', 'Tissue', 'fractioncloneactivated', 'maxFractionCloneActivated', 'maxTotalCloneSize', 'meanCloneSize', 'meanFractionCloneActivated', 'totalclonesize',
+            'TandNK_ActivationCore_UCell', 'TandNK_Activation_UCell', 'TandNK_Activation3_UCell', 'IsFiltered', 'EnrichedStatus', 'FractionOfSampleWithState', 'container'),
   package = 'Rdiscvr',
   add = TRUE
 )
@@ -1131,7 +1132,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
         ggtitle('CombinedScore') +
         NoLegend()
 
-      P <- P1 + P2 + P4 + P3 + plot_annotation(title = res)
+      P <- P1 + P2 + P4 + P3 + patchwork::plot_annotation(title = res)
       print(P)
 
       if (max(df$CombinedScore) < threshold) {
