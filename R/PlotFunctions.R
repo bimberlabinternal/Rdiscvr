@@ -203,7 +203,6 @@ ggplot_add.dimplot_arrows <- function(object, plot, ...){
   plot <- plot +
     coord_cartesian(clip = "off") +
     theme(axis.line = element_blank(),
-          plot.margin = margin(6, 6, 16, 6),
           axis.title  = element_blank(),
           axis.text   = element_blank(),
           axis.ticks  = element_blank(),
