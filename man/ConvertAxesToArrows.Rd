@@ -34,10 +34,6 @@ ConvertAxesToArrows(
 \item{renameUmapAxes}{If true, RenameUmapAxes() will be run}
 
 \item{plotAxisPrefix}{Passed directly to RenameUmapAxes(prefix = plotAxisPrefix)}
-
-\item{xLabel}{Character. Text label placed at the midpoint of the x-axis arrow.}
-
-\item{yLabel}{Character. Text label placed at the midpoint of the y-axis arrow.}
 }
 \value{
 ggplot object

@@ -149,8 +149,6 @@ theme_bimberlab <- function(
 #' @param arrowLinewidth Numeric. Line width of the arrow shafts.
 #' @param arrowHeadLenMm Numeric. Arrowhead length in millimeters.
 #' @param arrowHeadAngle Numeric. Arrowhead angle in degrees (larger = “bigger” head).
-#' @param xLabel Character. Text label placed at the midpoint of the x-axis arrow.
-#' @param yLabel Character. Text label placed at the midpoint of the y-axis arrow.
 #' @param arrowLabelOffsetX Numeric. Offset of labels from the arrow line as a fraction of the x axis range (vertical for x label, horizontal for y label).
 #' @param arrowLabelOffsetY Numeric. Offset of labels from the arrow line as a fraction of the x axis range (vertical for x label, horizontal for y label).
 #' @param arrowYlabelAngle Numeric. Rotation angle (degrees) for the y-axis arrow label.
