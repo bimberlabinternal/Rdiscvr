@@ -106,11 +106,6 @@ theme_bimberlab <- function(
   
   if (minimalPlot) {
     base_theme <- theme_void(base_size = baseSize)
-  } else {
-    base_theme <- egg::theme_article(base_size = baseSize)
-  }
-  
-  if (!minimalPlot) {
     axis_layer <- theme(
       axis.title  = element_blank(),
       axis.text   = element_blank(),
@@ -119,6 +114,7 @@ theme_bimberlab <- function(
       panel.grid  = element_blank()
     )
   } else {
+    base_theme <- egg::theme_article(base_size = baseSize)
     axis_layer <- theme(
       axis.title  = element_text(size = axisTextSize),
       axis.text.x = element_text(size = axisTextSize, color = "black"),
