@@ -1,86 +1,116 @@
-#' @title FormatUmapForPresentation
+#' @title RenameUmapAxes
 #'
-#' @description Calls renames the axes to UMAP_1 and UMAP_2 on a DimPlot/FeaturePlot
-#' @param P1 The plot object
+#' @param prefix The prefix to apply to the axis labels
+#' @description Renames the axes to UMAP_1 and UMAP_2 on a DimPlot/FeaturePlot. Usage: Dimplot() + RenameUmapAxes()
 #' @return A plot object
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' Seurat::DimPlot(seuratObj) +
+#'      RenameUmapAxes()
+#'
+#' Seurat::DimPlot(seuratObj) +
+#'      RenameUmapAxes(prefix = 'tSNE')
+#' }
 
-FormatUmapForPresentation <- function(P1) {
-  return(P1 & labs(x = 'UMAP_1', y = 'UMAP_2'))
+RenameUmapAxes <- function(prefix = 'UMAP') {
+  return(ggplot2::labs(x = paste0(prefix, '_1'), y = paste0(prefix, '_2')))
 }
 
 #' @title FormatFeaturePlotColorScale
 #'
 #' @description Calls FormatFeaturePlotColorScale and sets a navy/red color scale for Seurat FeaturePlot objects
-#' @param P1 The plot object
+#' @param prefix The string prefix for the axes. Passed to RenameUmapAxes()
 #' @return A plot object
 #' @export
-
-FormatFeaturePlotColorScale <- function(P1) {
-  return(FormatUmapForPresentation(P1) + scale_colour_gradientn(colours = c("navy", "dodgerblue", "gold", "red")))
+#' @examples
+#' \dontrun{
+#' Seurat::DimPlot(seuratObj) +
+#'      FormatFeaturePlotColorScale()
+#' }
+FormatFeaturePlotColorScale <- function(prefix = 'UMAP') {
+  return(list(
+           RenameUmapAxes(prefix) &
+           scale_colour_gradientn(colours = c("navy", "dodgerblue", "gold", "red"))
+  ))
 }
 
-#' @title theme_bimber
+#' @title theme_bimberlab
 #'
 #' @description Base theme for formatting ggplot objects using a standardized theme.
 #'
-#' @param standardPlot Logical. If TRUE, applies a cartesian article-style theme
+#' @param minimalPlot Logical. If TRUE, theme_minimal() is applied and many plot elements are hidden.
 #'   with axis titles/ticks/text; if FALSE, applies a minimal theme suited to
 #'   donut/pie or other non-standard panels without axes.
 #' @param legendPosition Character. Position of the legend; e.g., "right",
 #'   "left", "top", "bottom", or "none".
+#' @param fontFamily The default font family for this plot
 #' @param face Character. Font face for titles, subtitles, and facet strips
 #'   (e.g., "plain", "bold", "italic", "bold.italic").
 #' @param titleJust Character. Title/subtitle horizontal justification:
 #'   "left", "center", or "right".
 #' @param baseSize Numeric. Base font size passed to the base theme.
-#' @param axisTextsize Numeric. Font size for axis titles and tick labels when
-#'   standardPlot = TRUE.
+#' @param axisTextSize Numeric. Font size for axis titles and tick labels.
 #' @param forceLegendAlpha Logical. If TRUE, forces legend keys to full opacity
 #'   (override.aes alpha = 1).
 #' @param adjustLegendKeySize Logical. If TRUE, enlarges legend key width/height
 #'   for readability.
+#' @param ... Additional parameters that will be passed to theme()
 #'
 #' @return ggplot object
 #' @export
-
-theme_bimber <- function(
-    standardPlot = TRUE,
+#' @examples
+#' \dontrun{
+#' Seurat::DimPlot(seuratObj) +
+#'      theme_bimberlab()
+#'
+#' # Pass additional theme() arguments like this:
+#' Seurat::DimPlot(seuratObj) +
+#'      theme_bimberlab(
+#'          legend.position = 'none'
+#'      )
+#' }
+theme_bimberlab <- function(
+    minimalPlot = FALSE,
     legendPosition = "right",
+    fontFamily = "Helvetica",
     face = "bold",
     titleJust = "center",
     baseSize = 12,
-    axisTextsize = 16,
+    axisTextSize = 16,
     forceLegendAlpha = TRUE,
-    adjustLegendKeySize = TRUE
+    adjustLegendKeySize = TRUE,
+    ...
 ){
-  if(titleJust == "center"){
-    hjust <-  .5
-  } else if(titleJust == "right"){
-    hjust <- 1
-  } else if(titleJust == "left"){
-    hjust <- 0
-  }
-  
-  common_layer <- theme(
-    text               = element_text(family = "Helvetica"),
-    legend.position    = legendPosition,
-    legend.title       = element_text(size = 16, face = face),
-    legend.text        = element_text(size = 14),
-    plot.title         = element_text(size = 22, face = face, hjust = hjust),
-    plot.subtitle      = element_text(size = 18, face = face, hjust = hjust),
-    strip.text.x       = element_text(size = 16, color = "black", face = face),
-    strip.text.y       = element_text(size = 16, color = "black", face = face),
-    strip.background   = element_rect(fill = "white", linewidth = 2)
+
+  hjust <- switch(titleJust,
+                  "center" = 0.5,
+                  "right" = 1,
+                  "left" = 0,
+                  stop(paste0('Unknown value for titleJust: ', titleJust))
   )
   
-  if (standardPlot) {
-    base_theme <- egg::theme_article(base_size = baseSize)
-  } else {
+  common_layer <- theme(
+    # TODO: on windows this gives the error: Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y,  : font family not found in Windows font database
+    #text               = element_text(family = fontFamily),
+    legend.position    = legendPosition,
+    legend.title       = element_text(face = face),
+    legend.text        = element_text(),
+    plot.title         = element_text(face = face, hjust = hjust),
+    plot.subtitle      = element_text(face = face, hjust = hjust),
+    strip.text.x       = element_text(color = "black", face = face),
+    strip.text.y       = element_text(color = "black", face = face),
+    strip.background   = element_rect(linewidth = 2)
+  )
+  
+  if (minimalPlot) {
     base_theme <- theme_void(base_size = baseSize)
+  } else {
+    base_theme <- egg::theme_article(base_size = baseSize)
   }
   
-  if (!(standardPlot)) {
+  if (!minimalPlot) {
     axis_layer <- theme(
       axis.title  = element_blank(),
       axis.text   = element_blank(),
@@ -90,9 +120,9 @@ theme_bimber <- function(
     )
   } else {
     axis_layer <- theme(
-      axis.title  = element_text(size = axisTextsize),
-      axis.text.x = element_text(size = axisTextsize, color = "black"),
-      axis.text.y = element_text(size = axisTextsize, color = "black")
+      axis.title  = element_text(size = axisTextSize),
+      axis.text.x = element_text(size = axisTextSize, color = "black"),
+      axis.text.y = element_text(size = axisTextSize, color = "black")
     )
   }
   
@@ -111,7 +141,7 @@ theme_bimber <- function(
     legend_key_layer <- NULL
   }
   
-  list(base_theme, common_layer, axis_layer, guides_layer, legend_key_layer)
+  list(base_theme, common_layer, axis_layer, guides_layer, legend_key_layer, theme(...))
 }
 
 #' @title ConvertAxesToArrows
@@ -125,56 +155,77 @@ theme_bimber <- function(
 #' @param arrowHeadAngle Numeric. Arrowhead angle in degrees (larger = “bigger” head).
 #' @param xLabel Character. Text label placed at the midpoint of the x-axis arrow.
 #' @param yLabel Character. Text label placed at the midpoint of the y-axis arrow.
-#' @param arrowLabelOffset Numeric. Offset of labels from the arrow line as a
-#'   fraction of the respective axis range (vertical for x label, horizontal for y label).
+#' @param arrowLabelOffsetX Numeric. Offset of labels from the arrow line as a fraction of the x axis range (vertical for x label, horizontal for y label).
+#' @param arrowLabelOffsetY Numeric. Offset of labels from the arrow line as a fraction of the x axis range (vertical for x label, horizontal for y label).
 #' @param arrowYlabelAngle Numeric. Rotation angle (degrees) for the y-axis arrow label.
+#' @param renameUmapAxes If true, RenameUmapAxes() will be run
+#' @param plotAxisPrefix Passed directly to RenameUmapAxes(prefix = plotAxisPrefix)
 #'
 #' @return ggplot object
 #' @export
-
+#'
+#' @examples
+#' \dontrun{
+#' Seurat::DimPlot(seuratObj) +
+#'      ConvertAxesToArrows()
+#'
+#' Seurat::DimPlot(seuratObj) +
+#'      ConvertAxesToArrows(plotAxisPrefix = 'tSNE')
+#' }
 ConvertAxesToArrows <- function(
     arrowLength = 0.3,
     arrowLinewidth = 1.5,
     arrowHeadLenMm = 2,
     arrowHeadAngle = 50,
-    xLabel = "X_Axis",
-    yLabel = "Y_Axis",
-    arrowLabelOffset = 0.02,
-    arrowYlabelAngle = 90
+    arrowLabelOffsetX = 0.08,
+    arrowLabelOffsetY = 0.02,
+    arrowYlabelAngle = 90,
+    renameUmapAxes = TRUE,
+    plotAxisPrefix = 'UMAP'
 ){
   structure(list(
     arrowLength = arrowLength,
     arrowLinewidth = arrowLinewidth,
     arrowHeadLenMm = arrowHeadLenMm,
     arrowHeadAngle = arrowHeadAngle,
-    xLabel = xLabel,
-    yLabel = yLabel,
-    arrowLabelOffset = arrowLabelOffset,
-    arrowYlabelAngle = arrowYlabelAngle
-  ), class = "bimber_arrows")
+    arrowLabelOffsetX = arrowLabelOffsetX,
+    arrowLabelOffsetY = arrowLabelOffsetY,
+    arrowYlabelAngle = arrowYlabelAngle,
+    renameUmapAxes = renameUmapAxes,
+    plotAxisPrefix = plotAxisPrefix
+  ), class = "dimplot_arrows")
 }
 
-#' @title ggplot_add method for bimber_arrows
+#' @title ggplot_add method for dimplot_arrows
 #'
 #' @description Internal helper used to add arrow-based axes and their labels to
 #'   ggplot objects.
 #'
 #' @param object A code object created by \code{ConvertAxesToArrows()},containing arrow and label parameters.
 #' @param plot A ggplot object to which the arrow-based axes and labels will be added.
-#' @param object_name Character. The name of the \code{bimber_arrows} object
+#' @param object_name Character. The name of the \code{dimplot_arrows} object
 #'   being added (supplied by ggplot2; typically not used directly).
 #'
 #' @return A ggplot object with arrow-based axes and corresponding labels added.
 #'
-#' @method ggplot_add bimber_arrows
+#' @method ggplot_add dimplot_arrows
 #' @export
 
-ggplot_add.bimber_arrows <- function(object, plot, object_name){
+ggplot_add.dimplot_arrows <- function(object, plot, object_name){
   plot <- plot +
     coord_cartesian(clip = "off") +
     theme(axis.line = element_blank(),
-          plot.margin = margin(6, 6, 16, 6))
-  
+          plot.margin = margin(6, 6, 16, 6),
+          axis.title  = element_blank(),
+          axis.text   = element_blank(),
+          axis.ticks  = element_blank(),
+          panel.grid  = element_blank()
+    )
+
+  if (object$renameUmapAxes) {
+    plot <- plot + RenameUmapAxes(prefix = object$plotAxisPrefix)
+  }
+
   gb <- ggplot_build(plot)
   pp <- gb$layout$panel_params[[1]]
   
@@ -189,8 +240,8 @@ ggplot_add.bimber_arrows <- function(object, plot, object_name){
   ym <- y0 + dy/2
   
   # below x-axis arrow, left of y-axis arrow
-  xLabel_y <- y0 - diff(yr) * object$arrowLabelOffset
-  yLabel_x <- x0 - diff(xr) * object$arrowLabelOffset
+  xLabel_y <- y0 - diff(yr) * object$arrowLabelOffsetY
+  yLabel_x <- x0 - diff(xr) * object$arrowLabelOffsetX
   
   arrow_spec <- grid::arrow(
     type = "closed", ends = "last",
@@ -208,108 +259,11 @@ ggplot_add.bimber_arrows <- function(object, plot, object_name){
              linewidth = object$arrowLinewidth, arrow = arrow_spec
     ) +
     annotate(
-      "text", x = xm, y = xLabel_y, label = object$xLabel,
+      "text", x = xm, y = xLabel_y, label = ggplot2::get_labs(plot)$x,
       vjust = 1, hjust = 0.5
     ) +
     annotate(
-      "text", x = yLabel_x, y = ym, label = object$yLabel,
+      "text", x = yLabel_x, y = ym, label = ggplot2::get_labs(plot)$y,
       vjust = 0.5, hjust = 0.5, angle = object$arrowYlabelAngle
     )
-}
-
-#' @title ApplyBimberTheme
-#' 
-#' @description Wrapper for Rdiscvr plotting themes that formats ggplot objects using a standardized theme.
-#' @param  plot a ggplot object
-#' @param  standardPlot boolean controls theming defaults dependant on a plot is a UMAP, DonutPlot, or other non-Standard plot
-#' @param legendPosition character, default `"right"`. Legend position passed to
-#'   `theme(legend.position = ...)`. Supported values: `"none"`, `"left"`, `"right"`,
-#'   `"bottom"`, `"top"`.
-#' @param face character, default `"bold"`. Font face for plot titles, subtitles,
-#'   and facet strips (e.g., `"plain"`, `"bold"`, `"italic"`, `"bold.italic"`).
-#' @param titleJust character, default `"center"`. Horizontal justification of
-#'   title/subtitle. One of `"left"`, `"center"`, `"right"`.
-#' @param baseSize numeric, default `12`. Base font size fed to the base theme.
-#' @param axisTextsize numeric, default `16`. Font size for axis titles and tick
-#'   labels when `standardPlot = TRUE`. Also used to scale arrow-label text.
-#' @param forceLegendAlpha logical, default `TRUE`. If `TRUE`, legend guide
-#'   overrides mapped alpha to `1` so legend keys are fully opaque.
-#' @param adjustLegendKeySize logical, default `TRUE`. If `TRUE`, increases
-#'   legend key width/height for readability.
-#' @param useArrows logical, default `FALSE`. If `TRUE`, removes default axis
-#'   lines and draws perpendicular x/y arrows at the lower-left
-#'   of the panel with customizable head/shaft and centered labels.
-#'
-#' @param arrowLength numeric in (0,1), default `0.3`. Arrow length as
-#'   a fraction of the respective axis range (x and y independently).
-#' @param arrowLinewidth numeric, default `1.5`. Line width of the arrow shafts.
-#' @param arrowHeadLenMm numeric, default `2`. Arrowhead length in millimeters.
-#' @param arrowHeadAngle numeric, default `50`. Arrowhead angle (larger =
-#'   “bigger” head).
-#'
-#' @param xLabel character, default `"X_Axis"`. Text shown at the midpoint of
-#'   the x-axis arrow.
-#' @param yLabel character, default `"Y_Axis"`. Text shown at the midpoint of
-#'   the y-axis arrow.
-#' @param arrowLabelOffset numeric, default `0.02`. Offset of the label text
-#'   from the arrow shafts, expressed as a fraction of the corresponding axis
-#'   range (x-label offset is vertical; y-label offset is horizontal).
-#' @param arrowYlabelAngle numeric, default `90`. Rotation for the y-axis arrow
-#'   label (set to `90` for vertical).
-#' @return ggplot object
-#' @export
-
-ApplyBimberTheme <- function(plot = NULL,
-                             standardPlot = TRUE,
-                             legendPosition = "right",
-                             face = "bold",
-                             titleJust = "center",
-                             baseSize = 12,
-                             axisTextsize = 16,
-                             forceLegendAlpha = TRUE,
-                             adjustLegendKeySize = TRUE,
-                             useArrows = FALSE,
-                             arrowLength = 0.3,
-                             arrowLinewidth = 1.5,
-                             arrowHeadLenMm = 2,
-                             arrowHeadAngle = 50,
-                             xLabel = "X_Axis",
-                             yLabel = "Y_Axis",
-                             arrowLabelOffset = 0.02,
-                             arrowYlabelAngle = 90){
-  
-  #################
-  ### Sanitize  ###
-  #################
-  
-  if(is.null(plot)){
-    stop("No ggplot object supplied, please provide a ggplot object.")
-  } else if (!is.logical(standardPlot)){
-    stop("standardPlot argument is not logical. Please set to TRUE/FALSE")
-  }
-  
-  plot <- plot +
-    theme_bimber(standardPlot = standardPlot,
-                 legendPosition = legendPosition,
-                 face = face,
-                 titleJust = titleJust,
-                 baseSize = baseSize,
-                 axisTextsize = axisTextsize,
-                 forceLegendAlpha = forceLegendAlpha,
-                 adjustLegendKeySize = adjustLegendKeySize)
-  
-  if (useArrows) {
-    plot <- plot + ConvertAxesToArrows(
-      arrowLength = arrowLength,
-      arrowLinewidth = arrowLinewidth,
-      arrowHeadLenMm = arrowHeadLenMm,
-      arrowHeadAngle = arrowHeadAngle,
-      xLabel = xLabel,
-      yLabel = yLabel,
-      arrowLabelOffset = arrowLabelOffset,
-      arrowYlabelAngle = arrowYlabelAngle
-    )
-  }
-  
-  return(plot)
 }

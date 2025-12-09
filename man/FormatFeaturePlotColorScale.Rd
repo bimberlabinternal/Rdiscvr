@@ -4,14 +4,20 @@
 \alias{FormatFeaturePlotColorScale}
 \title{FormatFeaturePlotColorScale}
 \usage{
-FormatFeaturePlotColorScale(P1)
+FormatFeaturePlotColorScale(prefix = "UMAP")
 }
 \arguments{
-\item{P1}{The plot object}
+\item{prefix}{The string prefix for the axes. Passed to RenameUmapAxes()}
 }
 \value{
 A plot object
 }
 \description{
 Calls FormatFeaturePlotColorScale and sets a navy/red color scale for Seurat FeaturePlot objects
+}
+\examples{
+\dontrun{
+Seurat::DimPlot(seuratObj) +
+     FormatFeaturePlotColorScale()
+}
 }

@@ -9,10 +9,11 @@ ConvertAxesToArrows(
   arrowLinewidth = 1.5,
   arrowHeadLenMm = 2,
   arrowHeadAngle = 50,
-  xLabel = "X_Axis",
-  yLabel = "Y_Axis",
-  arrowLabelOffset = 0.02,
-  arrowYlabelAngle = 90
+  arrowLabelOffsetX = 0.08,
+  arrowLabelOffsetY = 0.02,
+  arrowYlabelAngle = 90,
+  renameUmapAxes = TRUE,
+  plotAxisPrefix = "UMAP"
 )
 }
 \arguments{
@@ -24,14 +25,19 @@ ConvertAxesToArrows(
 
 \item{arrowHeadAngle}{Numeric. Arrowhead angle in degrees (larger = “bigger” head).}
 
+\item{arrowLabelOffsetX}{Numeric. Offset of labels from the arrow line as a fraction of the x axis range (vertical for x label, horizontal for y label).}
+
+\item{arrowLabelOffsetY}{Numeric. Offset of labels from the arrow line as a fraction of the x axis range (vertical for x label, horizontal for y label).}
+
+\item{arrowYlabelAngle}{Numeric. Rotation angle (degrees) for the y-axis arrow label.}
+
+\item{renameUmapAxes}{If true, RenameUmapAxes() will be run}
+
+\item{plotAxisPrefix}{Passed directly to RenameUmapAxes(prefix = plotAxisPrefix)}
+
 \item{xLabel}{Character. Text label placed at the midpoint of the x-axis arrow.}
 
 \item{yLabel}{Character. Text label placed at the midpoint of the y-axis arrow.}
-
-\item{arrowLabelOffset}{Numeric. Offset of labels from the arrow line as a
-fraction of the respective axis range (vertical for x label, horizontal for y label).}
-
-\item{arrowYlabelAngle}{Numeric. Rotation angle (degrees) for the y-axis arrow label.}
 }
 \value{
 ggplot object
@@ -39,4 +45,13 @@ ggplot object
 \description{
 Replaces standard x/y axis lines with short, arrow-based axes and
   adds labels at their midpoints (useful for UMAPs and other DR plots).
+}
+\examples{
+\dontrun{
+Seurat::DimPlot(seuratObj) +
+     ConvertAxesToArrows()
+
+Seurat::DimPlot(seuratObj) +
+     ConvertAxesToArrows(plotAxisPrefix = 'tSNE')
+}
 }
