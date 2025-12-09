@@ -6,6 +6,8 @@
 \usage{
 ConvertAxesToArrows(
   arrowLength = 0.3,
+  arrowLengthX = NULL,
+  arrowLengthY = NULL,
   arrowLinewidth = 1.5,
   arrowHeadLenMm = 2,
   arrowHeadAngle = 50,
@@ -15,6 +17,10 @@ ConvertAxesToArrows(
 }
 \arguments{
 \item{arrowLength}{Numeric. Shaft length as a fraction of the axis range.}
+
+\item{arrowLengthX}{Numeric. Shaft length as a fraction of the axis range for the X arrow. Supercedes arrowLength.}
+
+\item{arrowLengthY}{Numeric. Shaft length as a fraction of the axis range for the Y arrow. Supercedes arrowLength}
 
 \item{arrowLinewidth}{Numeric. Line width of the arrow shafts.}
 

@@ -45,7 +45,7 @@ FormatFeaturePlotColorScale <- function(prefix = 'UMAP') {
 #'   donut/pie or other non-standard panels without axes.
 #' @param legendPosition Character. Position of the legend; e.g., "right",
 #'   "left", "top", "bottom", or "none".
-#' @param fontFamily The default font family for this plot
+#' @param baseFontFamily The default font family for this plot
 #' @param face Character. Font face for titles, subtitles, and facet strips
 #'   (e.g., "plain", "bold", "italic", "bold.italic").
 #' @param titleJust Character. Title/subtitle horizontal justification:
@@ -74,7 +74,7 @@ FormatFeaturePlotColorScale <- function(prefix = 'UMAP') {
 theme_bimberlab <- function(
     minimalPlot = FALSE,
     legendPosition = "right",
-    fontFamily = "Helvetica",
+    baseFontFamily = "",
     face = "bold",
     titleJust = "center",
     baseSize = 12,
@@ -102,13 +102,8 @@ theme_bimberlab <- function(
     strip.background   = element_rect(linewidth = 2)
   )
 
-  if (!is.null(fontFamily)) {
-    # TODO: on windows this gives the error: Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y,  : font family not found in Windows font database
-    common_layer <- common_layer + theme(text = element_text(family = fontFamily))
-  }
-
   if (minimalPlot) {
-    base_theme <- theme_void(base_size = baseSize)
+    base_theme <- theme_void(base_size = baseSize, base_family = baseFontFamily)
     axis_layer <- theme(
       axis.title  = element_blank(),
       axis.text   = element_blank(),
@@ -117,7 +112,7 @@ theme_bimberlab <- function(
       panel.grid  = element_blank()
     )
   } else {
-    base_theme <- egg::theme_article(base_size = baseSize)
+    base_theme <- egg::theme_article(base_size = baseSize, base_family = baseFontFamily)
     axis_layer <- theme(
       axis.title  = element_text(size = axisTextSize),
       axis.text.x = element_text(size = axisTextSize, color = "black"),
@@ -149,6 +144,8 @@ theme_bimberlab <- function(
 #'   adds labels at their midpoints (useful for UMAPs and other DR plots).
 #'
 #' @param arrowLength Numeric. Shaft length as a fraction of the axis range.
+#' @param arrowLengthX Numeric. Shaft length as a fraction of the axis range for the X arrow. Supercedes arrowLength.
+#' @param arrowLengthY Numeric. Shaft length as a fraction of the axis range for the Y arrow. Supercedes arrowLength
 #' @param arrowLinewidth Numeric. Line width of the arrow shafts.
 #' @param arrowHeadLenMm Numeric. Arrowhead length in millimeters.
 #' @param arrowHeadAngle Numeric. Arrowhead angle in degrees (larger = “bigger” head).
@@ -168,6 +165,8 @@ theme_bimberlab <- function(
 #' }
 ConvertAxesToArrows <- function(
     arrowLength = 0.3,
+    arrowLengthX = NULL,
+    arrowLengthY = NULL,
     arrowLinewidth = 1.5,
     arrowHeadLenMm = 2,
     arrowHeadAngle = 50,
@@ -176,6 +175,8 @@ ConvertAxesToArrows <- function(
 ){
   structure(list(
     arrowLength = arrowLength,
+    arrowLengthX = arrowLengthX,
+    arrowLengthY = arrowLengthY,
     arrowLinewidth = arrowLinewidth,
     arrowHeadLenMm = arrowHeadLenMm,
     arrowHeadAngle = arrowHeadAngle,
@@ -206,7 +207,10 @@ ggplot_add.dimplot_arrows <- function(object, plot, ...){
           axis.title  = element_blank(),
           axis.text   = element_blank(),
           axis.ticks  = element_blank(),
-          panel.grid  = element_blank()
+          panel.grid  = element_blank(),
+          # NOTE: if the plot overrode these, setting axis.text isnt enough:
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank()
     )
 
   if (object$renameUmapAxes) {
@@ -221,8 +225,8 @@ ggplot_add.dimplot_arrows <- function(object, plot, ...){
   yr <- if (!is.null(pp$y.range)) pp$y.range else pp$y$range$range
   x0 <- xr[1];
   y0 <- yr[1]
-  dx <- diff(xr) * object$arrowLength
-  dy <- diff(yr) * (object$arrowLength + 0.05)
+  dx <- diff(xr) * ifelse(is.null(object$arrowLengthX), object$arrowLength, object$arrowLengthX)
+  dy <- diff(yr) * ifelse(is.null(object$arrowLengthY), object$arrowLength, object$arrowLengthY)
   
   arrow_spec <- grid::arrow(
     type = "closed", ends = "last",

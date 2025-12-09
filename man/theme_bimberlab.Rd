@@ -7,7 +7,7 @@
 theme_bimberlab(
   minimalPlot = FALSE,
   legendPosition = "right",
-  fontFamily = "Helvetica",
+  baseFontFamily = "",
   face = "bold",
   titleJust = "center",
   baseSize = 12,
@@ -25,7 +25,7 @@ donut/pie or other non-standard panels without axes.}
 \item{legendPosition}{Character. Position of the legend; e.g., "right",
 "left", "top", "bottom", or "none".}
 
-\item{fontFamily}{The default font family for this plot}
+\item{baseFontFamily}{The default font family for this plot}
 
 \item{face}{Character. Font face for titles, subtitles, and facet strips
 (e.g., "plain", "bold", "italic", "bold.italic").}
