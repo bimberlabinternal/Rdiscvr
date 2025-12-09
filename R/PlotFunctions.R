@@ -90,10 +90,8 @@ theme_bimberlab <- function(
                   "left" = 0,
                   stop(paste0('Unknown value for titleJust: ', titleJust))
   )
-  
+
   common_layer <- theme(
-    # TODO: on windows this gives the error: Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y,  : font family not found in Windows font database
-    #text               = element_text(family = fontFamily),
     legend.position    = legendPosition,
     legend.title       = element_text(face = face),
     legend.text        = element_text(),
@@ -103,7 +101,12 @@ theme_bimberlab <- function(
     strip.text.y       = element_text(color = "black", face = face),
     strip.background   = element_rect(linewidth = 2)
   )
-  
+
+  if (!is.null(fontFamily)) {
+    # TODO: on windows this gives the error: Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y,  : font family not found in Windows font database
+    common_layer <- common_layer + theme(text = element_text(family = fontFamily))
+  }
+
   if (minimalPlot) {
     base_theme <- theme_void(base_size = baseSize)
     axis_layer <- theme(
@@ -149,9 +152,6 @@ theme_bimberlab <- function(
 #' @param arrowLinewidth Numeric. Line width of the arrow shafts.
 #' @param arrowHeadLenMm Numeric. Arrowhead length in millimeters.
 #' @param arrowHeadAngle Numeric. Arrowhead angle in degrees (larger = “bigger” head).
-#' @param arrowLabelOffsetX Numeric. Offset of labels from the arrow line as a fraction of the x axis range (vertical for x label, horizontal for y label).
-#' @param arrowLabelOffsetY Numeric. Offset of labels from the arrow line as a fraction of the x axis range (vertical for x label, horizontal for y label).
-#' @param arrowYlabelAngle Numeric. Rotation angle (degrees) for the y-axis arrow label.
 #' @param renameUmapAxes If true, RenameUmapAxes() will be run
 #' @param plotAxisPrefix Passed directly to RenameUmapAxes(prefix = plotAxisPrefix)
 #'
@@ -171,9 +171,6 @@ ConvertAxesToArrows <- function(
     arrowLinewidth = 1.5,
     arrowHeadLenMm = 2,
     arrowHeadAngle = 50,
-    arrowLabelOffsetX = 0.08,
-    arrowLabelOffsetY = 0.02,
-    arrowYlabelAngle = 90,
     renameUmapAxes = TRUE,
     plotAxisPrefix = 'UMAP'
 ){
@@ -182,9 +179,6 @@ ConvertAxesToArrows <- function(
     arrowLinewidth = arrowLinewidth,
     arrowHeadLenMm = arrowHeadLenMm,
     arrowHeadAngle = arrowHeadAngle,
-    arrowLabelOffsetX = arrowLabelOffsetX,
-    arrowLabelOffsetY = arrowLabelOffsetY,
-    arrowYlabelAngle = arrowYlabelAngle,
     renameUmapAxes = renameUmapAxes,
     plotAxisPrefix = plotAxisPrefix
   ), class = "dimplot_arrows")
@@ -222,27 +216,21 @@ ggplot_add.dimplot_arrows <- function(object, plot, ...){
 
   gb <- ggplot_build(plot)
   pp <- gb$layout$panel_params[[1]]
-  
+
+  # Find the coordinates of the plot origin:
   xr <- if (!is.null(pp$x.range)) pp$x.range else pp$x$range$range
   yr <- if (!is.null(pp$y.range)) pp$y.range else pp$y$range$range
-  
-  x0 <- xr[1]; y0 <- yr[1]
+  x0 <- xr[1];
+  y0 <- yr[1]
   dx <- diff(xr) * object$arrowLength
   dy <- diff(yr) * (object$arrowLength + 0.05)
-  
-  xm <- x0 + dx/2
-  ym <- y0 + dy/2
-  
-  # below x-axis arrow, left of y-axis arrow
-  xLabel_y <- y0 - diff(yr) * object$arrowLabelOffsetY
-  yLabel_x <- x0 - diff(xr) * object$arrowLabelOffsetX
   
   arrow_spec <- grid::arrow(
     type = "closed", ends = "last",
     length = grid::unit(object$arrowHeadLenMm, "mm"),
     angle = object$arrowHeadAngle
   )
-  
+
   plot +
     annotate("segment",
              x = x0, y = y0, xend = x0 + dx, yend = y0,
@@ -253,11 +241,11 @@ ggplot_add.dimplot_arrows <- function(object, plot, ...){
              linewidth = object$arrowLinewidth, arrow = arrow_spec
     ) +
     annotate(
-      "text", x = xm, y = xLabel_y, label = ggplot2::get_labs(plot)$x,
-      vjust = 1, hjust = 0.5
+      "text", x = x0, y = y0, label = ggplot2::get_labs(plot)$x,
+      vjust = 1.5, hjust = -0.25
     ) +
     annotate(
-      "text", x = yLabel_x, y = ym, label = ggplot2::get_labs(plot)$y,
-      vjust = 0.5, hjust = 0.5, angle = object$arrowYlabelAngle
+      "text", x = x0, y = y0, label = ggplot2::get_labs(plot)$y,
+      vjust = -0.75, hjust = -0.25, angle = 90
     )
 }

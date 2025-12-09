@@ -9,9 +9,6 @@ ConvertAxesToArrows(
   arrowLinewidth = 1.5,
   arrowHeadLenMm = 2,
   arrowHeadAngle = 50,
-  arrowLabelOffsetX = 0.08,
-  arrowLabelOffsetY = 0.02,
-  arrowYlabelAngle = 90,
   renameUmapAxes = TRUE,
   plotAxisPrefix = "UMAP"
 )
@@ -24,12 +21,6 @@ ConvertAxesToArrows(
 \item{arrowHeadLenMm}{Numeric. Arrowhead length in millimeters.}
 
 \item{arrowHeadAngle}{Numeric. Arrowhead angle in degrees (larger = “bigger” head).}
-
-\item{arrowLabelOffsetX}{Numeric. Offset of labels from the arrow line as a fraction of the x axis range (vertical for x label, horizontal for y label).}
-
-\item{arrowLabelOffsetY}{Numeric. Offset of labels from the arrow line as a fraction of the x axis range (vertical for x label, horizontal for y label).}
-
-\item{arrowYlabelAngle}{Numeric. Rotation angle (degrees) for the y-axis arrow label.}
 
 \item{renameUmapAxes}{If true, RenameUmapAxes() will be run}
 
