@@ -1160,14 +1160,20 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     seuratObj$IsActive <- seuratObj@meta.data[[activatedCluster$resolution]] == activatedCluster$cluster
     print(paste0('Active cluster: ', activatedCluster$cluster, '. Total cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'sPLS') {
+    # This is create by RIRA::PredictTcellActivation()
     if (! 'sPLS_TCR_General_v3' %in% names(seuratObj@meta.data)) {
         stop('Missing field: sPLS_TCR_General_v3')
     }
 
-    seuratObj$IsActive <- seuratObj$sPLS_TCR_General_v3 %in% c('Th1', 'Th17', 'AgSpecificActivated')
-    if (any(!is.na(seuratObj@meta.data[[chain]]) & is.na(seuratObj$sPLS_TCR_General_v3))) {
-        stop('There were NA values for sPLS_TCR_General_v3 that contained TCR data')
+    if (! 'Is_TCR_Stimulated' %in% names(seuratObj@meta.data)) {
+      stop('Missing field: Is_TCR_Stimulated. This should be created by RIRA::PredictTcellActivation()')
     }
+
+    if (any(!is.na(seuratObj@meta.data[[chain]]) & is.na(seuratObj$Is_TCR_Stimulated))) {
+      stop('There were NA values for Is_TCR_Stimulated that contained TCR data')
+    }
+
+    seuratObj$IsActive <- seuratObj$Is_TCR_Stimulated
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   } else {
     stop(paste0('Unknown method: ', method))
