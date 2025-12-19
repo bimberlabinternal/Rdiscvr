@@ -923,8 +923,10 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 #' @description This will query the clone_responses table and append a column tagging each cell for matching antigens (based on clonotype)
 #'
 #' @param seuratObj The seurat object
+#' @param antigenInclusionList If provided, only antigens from this list will be considered
+#' @param antigenExclusionList If provided, antigens on this list will be omitted
 #' @export
-ApplyKnownClonotypicData <- function(seuratObj) {
+ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = null, antigenExclusionList = NULL) {
   subjectIds <- sort(unique(seuratObj$SubjectId))
 
   dat <- labkey.selectRows(
@@ -938,6 +940,16 @@ ApplyKnownClonotypicData <- function(seuratObj) {
   )
 
   names(dat) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated')
+
+  if (!all(is.null(antigenInclusionList))) {
+    dat <- dat |>
+      filter( Stim %in% antigenInclusionList)
+  }
+
+  if (!all(is.null(antigenExclusionList))) {
+    dat <- dat |>
+      filter(! Stim %in% antigenExclusionList)
+  }
 
   dat <- dat %>%
     filter(Clonotype != 'No TCR') %>%
@@ -957,6 +969,13 @@ ApplyKnownClonotypicData <- function(seuratObj) {
       meanFractionCloneActivated = mean(fractioncloneactivated)
     ) %>%
     as.data.frame()
+
+  if (nrow(dat) == 0) {
+    print('No matching clones, skipping')
+    seuratObj$NumAntigens <- 0
+    seuratObj$Antigens <- NA
+    return(seuratObj)
+  }
 
   toAppend <- NULL
   for (subjectId in subjectIds) {
@@ -1046,7 +1065,14 @@ ApplyKnownClonotypicData <- function(seuratObj) {
   })
   toAppend$NumAntigens[is.na(toAppend$NumAntigens)] <- 0
 
+  # Clear existing values:
+  for (n in names(toAppend)) {
+    seuratObj[[n]] <- NULL
+  }
   seuratObj <- Seurat::AddMetaData(seuratObj, toAppend)
+
+  # Always provide a value
+  seuratObj$NumAntigens[is.na(seuratObj$NumAntigens)] <- 0
 
   if (length(names(seuratObj@reductions)) > 0) {
     print(DimPlot(seuratObj, group.by = 'Antigens'))
