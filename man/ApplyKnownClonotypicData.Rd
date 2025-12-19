@@ -4,10 +4,18 @@
 \alias{ApplyKnownClonotypicData}
 \title{ApplyKnownClonotypicData}
 \usage{
-ApplyKnownClonotypicData(seuratObj)
+ApplyKnownClonotypicData(
+  seuratObj,
+  antigenInclusionList = null,
+  antigenExclusionList = NULL
+)
 }
 \arguments{
 \item{seuratObj}{The seurat object}
+
+\item{antigenInclusionList}{If provided, only antigens from this list will be considered}
+
+\item{antigenExclusionList}{If provided, antigens on this list will be omitted}
 }
 \description{
 This will query the clone_responses table and append a column tagging each cell for matching antigens (based on clonotype)

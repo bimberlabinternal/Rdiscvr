@@ -37,12 +37,12 @@ test_that("Plot extensions do not error", {
   FP +
     ConvertAxesToArrows()
 
-  FP +
+  FP &
     FormatFeaturePlotColorScale()
 
   FP +
     ConvertAxesToArrows() +
-    theme_bimberlab() +
+    theme_bimberlab() &
     FormatFeaturePlotColorScale()
 
   FP +

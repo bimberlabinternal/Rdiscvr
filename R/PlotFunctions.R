@@ -21,19 +21,15 @@ RenameUmapAxes <- function(prefix = 'UMAP') {
 #' @title FormatFeaturePlotColorScale
 #'
 #' @description Calls FormatFeaturePlotColorScale and sets a navy/red color scale for Seurat FeaturePlot objects
-#' @param prefix The string prefix for the axes. Passed to RenameUmapAxes()
 #' @return A plot object
 #' @export
 #' @examples
 #' \dontrun{
-#' Seurat::DimPlot(seuratObj) +
+#' Seurat::FeaturePlot(seuratObj, features = 'CD8A') &
 #'      FormatFeaturePlotColorScale()
 #' }
-FormatFeaturePlotColorScale <- function(prefix = 'UMAP') {
-  return(list(
-           RenameUmapAxes(prefix) &
-           scale_colour_gradientn(colours = c("navy", "dodgerblue", "gold", "red"))
-  ))
+FormatFeaturePlotColorScale <- function() {
+  return(scale_colour_gradientn(colours = c("navy", "dodgerblue", "gold", "red")))
 }
 
 #' @title theme_bimberlab
