@@ -925,8 +925,9 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 #' @param seuratObj The seurat object
 #' @param antigenInclusionList If provided, only antigens from this list will be considered
 #' @param antigenExclusionList If provided, antigens on this list will be omitted
+#' @param fieldPrefix If provided, this will be appended to the beginning of the output field names
 #' @export
-ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = null, antigenExclusionList = NULL) {
+ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, antigenExclusionList = NULL, fieldPrefix = NULL) {
   subjectIds <- sort(unique(seuratObj$SubjectId))
 
   dat <- labkey.selectRows(
@@ -970,10 +971,13 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = null, ant
     ) %>%
     as.data.frame()
 
+  numAntigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'NumAntigens', no = paste0(fieldPrefix, 'NumAntigens'))
+  antigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'Antigens', no = paste0(fieldPrefix, 'Antigens'))
+
   if (nrow(dat) == 0) {
     print('No matching clones, skipping')
-    seuratObj$NumAntigens <- 0
-    seuratObj$Antigens <- NA
+    seuratObj[[numAntigensFieldName]] <- 0
+    seuratObj[[antigensFieldName]] <- NA
     return(seuratObj)
   }
 
@@ -1020,11 +1024,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = null, ant
         HasIE = max(HasIE),
         HasNoStim = max(HasNoStim),
         maxTotalCloneSize = max(maxTotalCloneSize),
-        # TODO: this is not quite right
-        meanCloneSize = max(meanCloneSize),
-        maxFractionCloneActivated = max(maxFractionCloneActivated),
-        # TODO: this is not quite right
-        meanFractionCloneActivated = max(meanFractionCloneActivated)
+        maxFractionCloneActivated = max(maxFractionCloneActivated)
       ) %>%
       as.data.frame()
 
@@ -1065,6 +1065,10 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = null, ant
   })
   toAppend$NumAntigens[is.na(toAppend$NumAntigens)] <- 0
 
+  if (!is.null(fieldPrefix)) {
+    names(toAppend) <- paste0(fieldPrefix, names(toAppend))
+  }
+
   # Clear existing values:
   for (n in names(toAppend)) {
     seuratObj[[n]] <- NULL
@@ -1072,11 +1076,11 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = null, ant
   seuratObj <- Seurat::AddMetaData(seuratObj, toAppend)
 
   # Always provide a value
-  seuratObj$NumAntigens[is.na(seuratObj$NumAntigens)] <- 0
+  seuratObj[[numAntigensFieldName]][is.na(seuratObj[[numAntigensFieldName]])] <- 0
 
   if (length(names(seuratObj@reductions)) > 0) {
-    print(DimPlot(seuratObj, group.by = 'Antigens'))
-    print(DimPlot(seuratObj, group.by = 'NumAntigens'))
+    print(DimPlot(seuratObj, group.by = antigensFieldName))
+    print(DimPlot(seuratObj, group.by = numAntigensFieldName))
   }
 
   return(seuratObj)

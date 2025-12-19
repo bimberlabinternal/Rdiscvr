@@ -6,8 +6,9 @@
 \usage{
 ApplyKnownClonotypicData(
   seuratObj,
-  antigenInclusionList = null,
-  antigenExclusionList = NULL
+  antigenInclusionList = NULL,
+  antigenExclusionList = NULL,
+  fieldPrefix = NULL
 )
 }
 \arguments{
@@ -16,6 +17,8 @@ ApplyKnownClonotypicData(
 \item{antigenInclusionList}{If provided, only antigens from this list will be considered}
 
 \item{antigenExclusionList}{If provided, antigens on this list will be omitted}
+
+\item{fieldPrefix}{If provided, this will be appended to the beginning of the output field names}
 }
 \description{
 This will query the clone_responses table and append a column tagging each cell for matching antigens (based on clonotype)
