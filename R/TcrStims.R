@@ -1289,7 +1289,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   toUpdate <- allDataWithPVal %>%
     group_by(cDNA_ID) %>%
     filter(IsActive) %>%
-    filter(!EnrichedStatus) %>%
+    filter(is.na(EnrichedStatus) | !EnrichedStatus) %>%
     summarise(quantification = unique(FractionOfSampleWithState)*100, nClones = n()) %>%
     mutate(QuantificationMethod = methodName)
 
