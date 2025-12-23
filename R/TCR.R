@@ -655,7 +655,7 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegion
     return(seuratObj)
   }
 
-  ad <- Seurat::GetAssayData(seuratObj, slot = 'counts', assay = assayName)
+  ad <- Seurat::GetAssayData(seuratObj, layer = 'counts', assay = assayName)
 
   testGeneGt0 <- function(ad, featureName, defaultValue = FALSE, threshold = 0){
     if (!featureName %in% rownames(ad)){

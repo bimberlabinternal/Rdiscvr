@@ -120,7 +120,7 @@ GroupByMhcSimilarity <- function(seuratObj, groupField, sourceAssay = 'MHC', dis
 PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featurePrefix = 'Mamu-', delimiter = '*', ambiguousFeatureDelim = ',', perCell = TRUE, cellGroupingVariable = 'DatasetId', stripNumbersFromLocus = TRUE) {
   seuratObj <- .AssignLocusToMhcFeatures(seuratObj, sourceAssayName = sourceAssayName, featurePrefix = featurePrefix, delimiter = delimiter, ambiguousFeatureDelim = ambiguousFeatureDelim, stripNumbersFromLocus = stripNumbersFromLocus)
 
-  dat <- Seurat::GetAssayData(seuratObj, assay = sourceAssayName, slot = 'counts')
+  dat <- Seurat::GetAssayData(seuratObj, assay = sourceAssayName, layer = 'counts')
   assayMeta <- .GetAssayMeta(seuratObj[[sourceAssayName]])
   margin <- 2
 
@@ -190,7 +190,7 @@ PerformMhcNormalization <- function(seuratObj, sourceAssayName = 'MHC', featureP
     dat[assayMeta$locus == locus] <- toNormalize
   }
 
-  seuratObj <- Seurat::SetAssayData(seuratObj, assay = sourceAssayName, slot = 'data', new.data = dat)
+  seuratObj <- Seurat::SetAssayData(seuratObj, assay = sourceAssayName, layer = 'data', new.data = dat)
 
   return(seuratObj)
 }
