@@ -1191,8 +1191,8 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     print(paste0('Active cluster: ', activatedCluster$cluster, '. Total cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'sPLS') {
     # This is create by RIRA::PredictTcellActivation()
-    if (! 'sPLS_TCR_General_v3' %in% names(seuratObj@meta.data)) {
-        stop('Missing field: sPLS_TCR_General_v3')
+    if (! 'GeneralizedTCR_sPLSDA_ConsensusClass' %in% names(seuratObj@meta.data)) {
+        stop('Missing field: GeneralizedTCR_sPLSDA_ConsensusClass')
     }
 
     if (! 'Is_TCR_Stimulated' %in% names(seuratObj@meta.data)) {
