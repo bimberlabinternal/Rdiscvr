@@ -928,8 +928,10 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 #' @param fieldPrefix If provided, this will be appended to the beginning of the output field names
 #' @export
 ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, antigenExclusionList = NULL, fieldPrefix = NULL) {
-  subjectIds <- sort(unique(seuratObj$SubjectId))
+  numAntigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'NumAntigens', no = paste0(fieldPrefix, 'NumAntigens'))
+  antigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'Antigens', no = paste0(fieldPrefix, 'Antigens'))
 
+  subjectIds <- sort(unique(seuratObj$SubjectId))
   responseData <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
@@ -996,9 +998,6 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       ClonotypesUsedForClonotypeMatch = paste0(Chain, ':', Clonotype)
     ) %>%
     tidyr::separate_longer_delim(Clonotype, delim = ',')
-
-  numAntigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'NumAntigens', no = paste0(fieldPrefix, 'NumAntigens'))
-  antigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'Antigens', no = paste0(fieldPrefix, 'Antigens'))
 
   if (nrow(responseData) == 0) {
     print('No matching clones, skipping')
