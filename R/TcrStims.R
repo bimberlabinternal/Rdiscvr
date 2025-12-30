@@ -977,7 +977,6 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
   }
 
   responseData <- responseData %>%
-    filter(Clonotype != 'No TCR') %>%
     mutate(
       IsNoStim = grepl(Stim, pattern = '^NoStim')
     ) %>%
