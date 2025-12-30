@@ -930,7 +930,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, antigenExclusionList = NULL, fieldPrefix = NULL) {
   subjectIds <- sort(unique(seuratObj$SubjectId))
 
-  dat <- labkey.selectRows(
+  responseData <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="tcrdb",
@@ -940,41 +940,44 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     colNameOpt="rname"
   )
 
-  names(dat) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated')
+  names(responseData) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated')
 
   if (!all(is.null(antigenInclusionList))) {
-    dat <- dat |>
+    responseData <- responseData |>
       filter( Stim %in% antigenInclusionList)
   }
 
   if (!all(is.null(antigenExclusionList))) {
-    dat <- dat |>
+    responseData <- responseData |>
       filter(! Stim %in% antigenExclusionList)
   }
 
-  dat <- dat %>%
+  responseData <- responseData %>%
     filter(Clonotype != 'No TCR') %>%
     mutate(
-      IsNoStim = grepl(Stim, pattern = '^NoStim'),
-      IsIE = grepl(Stim, pattern = 'IE-')
+      IsNoStim = grepl(Stim, pattern = '^NoStim')
     ) %>%
     group_by(SubjectId, Clonotype) %>%
     summarize(
       Chain = paste0(sort(unique(Chain)), collapse = ','),
       Antigens = paste0(sort(unique(Stim)), collapse = ','),
-      HasIE = sum(IsIE)>0,
       HasNoStim = sum(IsNoStim)>0,
-      maxTotalCloneSize = max(totalclonesize),
-      meanCloneSize = mean(totalclonesize),
-      maxFractionCloneActivated = max(fractioncloneactivated),
-      meanFractionCloneActivated = mean(fractioncloneactivated)
+      MaxTotalCloneSize = max(totalclonesize),
+      MeanCloneSize = mean(totalclonesize),
+      MaxFractionCloneActivated = max(fractioncloneactivated),
+      MeanFractionCloneActivated = mean(fractioncloneactivated)
     ) %>%
-    as.data.frame()
+    as.data.frame() %>%
+    mutate(
+      DetectedAsSingleCDR3 = !grepl(Clonotype, pattern = ','),
+      ClonotypesUsedForClonotypeMatch = paste0(Chain, ':', Clonotype)
+    ) %>%
+    tidyr::separate_longer_delim(Clonotype, delim = ',')
 
   numAntigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'NumAntigens', no = paste0(fieldPrefix, 'NumAntigens'))
   antigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'Antigens', no = paste0(fieldPrefix, 'Antigens'))
 
-  if (nrow(dat) == 0) {
+  if (nrow(responseData) == 0) {
     print('No matching clones, skipping')
     seuratObj[[numAntigensFieldName]] <- 0
     seuratObj[[antigensFieldName]] <- NA
@@ -983,30 +986,30 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 
   toAppend <- NULL
   for (subjectId in subjectIds) {
-    dat2 <- dat %>% filter(SubjectId == subjectId)
-    if (nrow(dat2) == 0) {
+    responseDataForSubject <- responseData %>% filter(SubjectId == subjectId)
+    if (nrow(responseDataForSubject) == 0) {
       next
     }
 
-    for (idx in seq_len(nrow(dat2))) {
-      clonotype <- dat2$Clonotype[idx]
+    for (idx in seq_len(nrow(responseDataForSubject))) {
+      clonotype <- responseDataForSubject$Clonotype[idx]
       chain  <- NA
       if (any(grepl(x = clonotype, pattern = ':'))) {
         tokens <- unlist(strsplit(x = clonotype, split = ':'))
         chain <- tokens[1]
         clonotype <- tokens[2]
       } else {
-        chain <- dat2$Chain[idx]
+        chain <- responseDataForSubject$Chain[idx]
         if (is.na(chain) || is.null(chain)) {
           stop(paste0('Clone lacks chain info: ', clonotype))
         }
       }
 
-      #clonotypes <- unlist(strsplit(clonotype, split = ','))
       sel <- seuratObj$SubjectId == subjectId & grepl(pattern = paste0("(?:^|,)", clonotype, "(?:$|,)"), x = seuratObj[[chain]][[1]])
       if (any(sel)) {
-        toAdd <- dat2[rep(idx, sum(sel)),]
-        toAdd$ChainsForAntigenMatch <- chain
+        toAdd <- responseDataForSubject[rep(idx, sum(sel)),]
+        toAdd$ChainsUsedForClonotypeMatch <- chain
+        toAdd$ClonotypesUsedForClonotypeMatch <- responseDataForSubject$ClonotypesUsedForClonotypeMatch[idx]
         toAdd$CellBarcode <- rownames(seuratObj@meta.data)[sel]
 
         toAppend <- rbind(toAppend, toAdd)
@@ -1015,16 +1018,16 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
   }
 
   if (any(duplicated(toAppend$CellBarcode))) {
-    warning('Duplicated cell barcodes, regrouping')
     toAppend <- toAppend %>%
       group_by(CellBarcode) %>%
       summarize(
         Antigens = paste0(sort(unique(Antigens)), collapse = ','),
-        ChainsForAntigenMatch = paste0(sort(unique(ChainsForAntigenMatch)), collapse = ','),
-        HasIE = max(HasIE),
+        ChainsUsedForClonotypeMatch = paste0(sort(unique(ChainsUsedForClonotypeMatch)), collapse = ','),
+        ClonotypesUsedForClonotypeMatch = paste0(unique(sort(ClonotypesUsedForClonotypeMatch)), collapse = ';'),
         HasNoStim = max(HasNoStim),
-        maxTotalCloneSize = max(maxTotalCloneSize),
-        maxFractionCloneActivated = max(maxFractionCloneActivated)
+        MaxTotalCloneSize = max(MaxTotalCloneSize),
+        MaxFractionCloneActivated = max(MaxFractionCloneActivated),
+        DetectedAsSingleCDR3 = max(DetectedAsSingleCDR3)
       ) %>%
       as.data.frame()
 
@@ -1038,7 +1041,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       return(paste0(x, collapse = ','))
     }))
 
-    toAppend$ChainsForAntigenMatch <- unlist(sapply(toAppend$ChainsForAntigenMatch, function(x){
+    toAppend$ChainsUsedForClonotypeMatch <- unlist(sapply(toAppend$ChainsUsedForClonotypeMatch, function(x){
       if (is.na(x)) {
         return(NA)
       }
@@ -1046,6 +1049,16 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       x <- sort(unique(unlist(strsplit(x, split = ','))))
 
       return(paste0(x, collapse = ','))
+    }))
+
+    toAppend$ClonotypesUsedForClonotypeMatch <- unlist(sapply(toAppend$ClonotypesUsedForClonotypeMatch, function(x){
+      if (is.na(x)) {
+        return(NA)
+      }
+
+      x <- sort(unique(unlist(strsplit(x, split = ';'))))
+
+      return(paste0(x, collapse = ';'))
     }))
   }
 
