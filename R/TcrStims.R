@@ -936,20 +936,44 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     schemaName="tcrdb",
     queryName="clone_responses",
     colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,chain,clonotype,totalclonesize,fractioncloneactivated",
-    colFilter=makeFilter(c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';'))),
+    colFilter=makeFilter(
+      c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
+      c('clonotype', "NEQ", "No TCR")
+    ),
     colNameOpt="rname"
   )
 
   names(responseData) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated')
 
+  if (nrow(responseData) == 0) {
+    print('No matching clones found in DB, skipping')
+    seuratObj[[numAntigensFieldName]] <- 0
+    seuratObj[[antigensFieldName]] <- NA
+    return(seuratObj)
+  }
+
   if (!all(is.null(antigenInclusionList))) {
     responseData <- responseData |>
       filter( Stim %in% antigenInclusionList)
+
+    if (nrow(responseData) == 0) {
+      print('No matching clones after applying inclusionList, skipping')
+      seuratObj[[numAntigensFieldName]] <- 0
+      seuratObj[[antigensFieldName]] <- NA
+      return(seuratObj)
+    }
   }
 
   if (!all(is.null(antigenExclusionList))) {
     responseData <- responseData |>
       filter(! Stim %in% antigenExclusionList)
+
+    if (nrow(responseData) == 0) {
+      print('No matching clones after applying exclusionList, skipping')
+      seuratObj[[numAntigensFieldName]] <- 0
+      seuratObj[[antigensFieldName]] <- NA
+      return(seuratObj)
+    }
   }
 
   responseData <- responseData %>%
