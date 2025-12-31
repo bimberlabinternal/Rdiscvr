@@ -6,7 +6,7 @@
 utils::globalVariables(
   names = c('Clonotype','FDR','FractionOfCloneInSample','FractionOfCloneWithStateInSample','GroupName','IsControlSample','LabelText',
             'NoStimFractionOfCloneInSample','NoStimId','NoStimTotalCells','NoStimTotalCellsActive','OriginalClone','PatternField','Stim','TNK_Type',
-            'Tcell_EffectorDifferentiation','TotalCellsForClone','TotalCellsForCloneAndState','TotalCellsForSample','TotalCellsForSampleAndState','V_Gene', 'J_Gene',
+            'Tcell_EffectorDifferentiation','TotalCellsForClone','TotalCellsForCloneAndState','TotalCellsForSample','TotalCellsForSampleAndState','V_Gene', 'J_Gene', 'cdr3WithSegments',
             'cDNA_ID','coefficients', 'p_val', 'error', 'FractionOfCloneWithState', 'Antigens', 'Chain', 'ChainsForAntigenMatch', 'HasIE', 'HasNoStim', 'IsIE', 'IsNoStim',
             'SampleDate', 'Tissue', 'fractioncloneactivated', 'maxFractionCloneActivated', 'maxTotalCloneSize', 'meanCloneSize', 'meanFractionCloneActivated', 'totalclonesize',
             'TandNK_ActivationCore_UCell', 'TandNK_Activation_UCell', 'TandNK_Activation3_UCell', 'IsFiltered', 'EnrichedStatus', 'FractionOfSampleWithState', 'container'),
@@ -135,6 +135,7 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   dat$Clonotype <- dat[[chain]]
   dat$V_Gene <- dat[[paste0(chain, '_V')]]
   dat$J_Gene <- dat[[paste0(chain, '_J')]]
+  dat$cdr3WithSegments <- dat[[paste0(chain, '_Segments')]]
 
   if (retainRowsWithoutCDR3) {
     dat$Clonotype <- as.character(dat$Clonotype)
@@ -172,7 +173,8 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     summarize(
       TotalCellsForCloneAndState = n(),
       V_Gene = paste0(sort(unique(V_Gene)), collapse = ','),
-      J_Gene = paste0(sort(unique(J_Gene)), collapse = ',')
+      J_Gene = paste0(sort(unique(J_Gene)), collapse = ','),
+      cdr3WithSegments = paste0(sort(unique(cdr3WithSegments)), collapse = ','),
     ) %>%
     as.data.frame() %>%
     mutate(
@@ -189,6 +191,10 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   })
 
   dat$J_Gene <- sapply(dat$J_Gene, function(x){
+    return(paste0(sort(unique(unlist(strsplit(x, split = ',')))), collapse = ','))
+  })
+
+  dat$cdr3WithSegments <- sapply(dat$cdr3WithSegments, function(x){
     return(paste0(sort(unique(unlist(strsplit(x, split = ',')))), collapse = ','))
   })
 
@@ -501,7 +507,8 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
         NoStimTotalCells = sum(NoStimTotalCells),
         OrigClonotype = paste0(sort(unique(OriginalClone)), collapse = '|'),
         V_Gene = paste0(sort(unique(V_Gene)), collapse = ','),
-        J_Gene = paste0(sort(unique(J_Gene)), collapse = ',')
+        J_Gene = paste0(sort(unique(J_Gene)), collapse = ','),
+        cdr3WithSegments = paste0(sort(unique(cdr3WithSegments)), collapse = ',')
       ) %>%
       as.data.frame() %>%
       mutate(
@@ -521,9 +528,13 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
       return(paste0(sort(unique(unlist(strsplit(x, split = ',')))), collapse = ','))
     })
 
+    dat$cdr3WithSegments <- sapply(dat$cdr3WithSegments, function(x){
+      return(paste0(sort(unique(unlist(strsplit(x, split = ',')))), collapse = ','))
+    })
+
     dat <- dat %>%
       select(all_of(c(groupingFields, 'TotalCellsForSample', 'TotalCellsForSampleAndState', 'IsActive', 'Clonotype', 'TotalCellsForClone', 'TotalCellsForCloneAndState',
-                      'NoStimTotalCellsActive', 'NoStimTotalCells', 'NoStimFractionOfCloneInSample', 'OrigClonotype', 'V_Gene', 'J_Gene',
+                      'NoStimTotalCellsActive', 'NoStimTotalCells', 'NoStimFractionOfCloneInSample', 'OrigClonotype', 'V_Gene', 'J_Gene', 'cdr3WithSegments',
                       'FractionOfCloneWithStateInSample', 'FractionOfCloneWithState', 'FractionOfSampleWithState', 'NoStimFractionActive', 'MaxFractionInSubject'
       )))
 
@@ -1381,6 +1392,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       totalCells = 'TotalCellsForCloneAndState',
       vGene = 'V_Gene',
       jGene = 'J_Gene',
+      cdr3WithSegments = 'cdr3WithSegments',
       totalCloneSize = 'TotalCellsForClone',
       fractionCloneActivated = 'FractionOfCloneWithState',
       totalCellsForSample = 'TotalCellsForSample',
@@ -1438,7 +1450,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     toInsert <- toInsert %>% left_join(existingLibraries, by = c('cDNA_ID' = 'rowid'))
     for (fieldName in names(toInsert)) {
       if (all(is.na(toInsert[[fieldName]]))) {
-        print(paste0('dropping all-NA: ', fieldName))
+        print(paste0('dropping all-NA field: ', fieldName))
         toInsert[[fieldName]] <- NULL
       }
     }
