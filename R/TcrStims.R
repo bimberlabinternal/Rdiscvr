@@ -937,9 +937,10 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 #' @param antigenInclusionList If provided, only antigens from this list will be considered
 #' @param antigenExclusionList If provided, antigens on this list will be omitted
 #' @param minActivationFrequency If provided, only responses with activationFrequency (of the parent population) will be included
+#' @param minFractionCloneActivated If provided, only responses where fractionCloneActivated is above this value will be will be included
 #' @param fieldPrefix If provided, this will be appended to the beginning of the output field names
 #' @export
-ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, fieldPrefix = NULL) {
+ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, minFractionCloneActivated = 0, fieldPrefix = NULL) {
   numAntigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'NumAntigens', no = paste0(fieldPrefix, 'NumAntigens'))
   antigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'Antigens', no = paste0(fieldPrefix, 'Antigens'))
 
@@ -996,6 +997,18 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 
     if (nrow(responseData) == 0) {
       print('No matching clones after applying minActivationFrequency, skipping')
+      seuratObj[[numAntigensFieldName]] <- 0
+      seuratObj[[antigensFieldName]] <- NA
+      return(seuratObj)
+    }
+  }
+
+  if (!is.na(minFractionCloneActivated) && minFractionCloneActivated > 0) {
+    responseData <- responseData |>
+      filter(fractioncloneactivated > minFractionCloneActivated)
+
+    if (nrow(responseData) == 0) {
+      print('No matching clones after applying minFractionCloneActivated, skipping')
       seuratObj[[numAntigensFieldName]] <- 0
       seuratObj[[antigensFieldName]] <- NA
       return(seuratObj)
