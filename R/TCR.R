@@ -515,34 +515,42 @@ utils::globalVariables(
   tcr <- .ProcessTcrClonotypes(clonotypeFile, dropConflictingVJSegments = dropConflictingVJSegments)
 
   # Summarise, grouping by barcode
-  tcr <- tcr %>% group_by(barcode) %>% summarise(
-    ChainCDR3s = paste0(sort(unique(ChainCDR3s[ChainCDR3s != ''])), collapse = ","),
-    CDR3s = paste0(sort(unique(cdr3[cdr3 != ''])), collapse = ","),
-    TRA = paste0(sort(unique(as.character(TRA[TRA != '']))), collapse = ","),
-    TRB = paste0(sort(unique(as.character(TRB[TRB != '']))), collapse = ","),
-    TRD = paste0(sort(unique(as.character(TRD[TRD != '']))), collapse = ","),
-    TRG = paste0(sort(unique(as.character(TRG[TRG != '']))), collapse = ","),
-    TRA_V = paste0(sort(unique(as.character(TRAV[TRAV != '']))), collapse = ","),
-    TRB_V = paste0(sort(unique(as.character(TRBV[TRBV != '']))), collapse = ","),
-    TRD_V = paste0(sort(unique(as.character(TRDV[TRDV != '']))), collapse = ","),
-    TRG_V = paste0(sort(unique(as.character(TRGV[TRGV != '']))), collapse = ","),
-    TRA_J = paste0(sort(unique(as.character(TRAJ[TRAJ != '']))), collapse = ","),
-    TRB_J = paste0(sort(unique(as.character(TRBJ[TRBJ != '']))), collapse = ","),
-    TRD_J = paste0(sort(unique(as.character(TRDJ[TRDJ != '']))), collapse = ","),
-    TRG_J = paste0(sort(unique(as.character(TRGJ[TRGJ != '']))), collapse = ","),
-    TRA_C = paste0(sort(unique(as.character(TRAC[TRAC != '']))), collapse = ","),
-    TRB_C = paste0(sort(unique(as.character(TRBC[TRBC != '']))), collapse = ","),
-    TRD_C = paste0(sort(unique(as.character(TRDC[TRDC != '']))), collapse = ","),
-    TRG_C = paste0(sort(unique(as.character(TRGC[TRGC != '']))), collapse = ","),
-    TRB_D = paste0(sort(unique(as.character(TRBD[TRBD != '']))), collapse = ","),
-    TRD_D = paste0(sort(unique(as.character(TRDD[TRDD != '']))), collapse = ","),
-    TRA_Segments = paste0(sort(unique(as.character(paste0(dplyr::coalesce(TRA, '-'), '|', dplyr::coalesce(TRAV, '-'), '|', dplyr::coalesce(TRAJ, '-')), collapse = '')))),
-    TRB_Segments = paste0(sort(unique(as.character(paste0(dplyr::coalesce(TRB, '-'), '|', dplyr::coalesce(TRBV, '-'), '|', dplyr::coalesce(TRBJ, '-')), collapse = '')))),
-    TRD_Segments = paste0(sort(unique(as.character(paste0(dplyr::coalesce(TRD, '-'), '|', dplyr::coalesce(TRDV, '-'), '|', dplyr::coalesce(TRDJ, '-')), collapse = '')))),
-    TRG_Segments = paste0(sort(unique(as.character(paste0(dplyr::coalesce(TRG, '-'), '|', dplyr::coalesce(TRGV, '-'), '|', dplyr::coalesce(TRGJ, '-')), collapse = '')))),
-    raw_clonotype_id = paste0(sort(unique(as.character(raw_clonotype_id[raw_clonotype_id != '']))), collapse = ","),
-    CloneNames = paste0(sort(unique(CloneName[CloneName != ''])), collapse = ",")  #this is imprecise b/c we count a hit if we match any chain, but this is probably what we often want
-  )
+  tcr <- tcr %>%
+    mutate(
+      TRA_Segments = paste0(dplyr::coalesce(TRA, '-'), '|', dplyr::coalesce(TRAV, '-'), '|', dplyr::coalesce(TRAJ, '-')),
+      TRB_Segments = paste0(dplyr::coalesce(TRB, '-'), '|', dplyr::coalesce(TRBV, '-'), '|', dplyr::coalesce(TRBJ, '-')),
+      TRD_Segments = paste0(dplyr::coalesce(TRD, '-'), '|', dplyr::coalesce(TRDV, '-'), '|', dplyr::coalesce(TRDJ, '-')),
+      TRG_Segments = paste0(dplyr::coalesce(TRG, '-'), '|', dplyr::coalesce(TRGV, '-'), '|', dplyr::coalesce(TRGJ, '-'))
+    ) %>%
+    group_by(barcode) %>%
+    summarise(
+      ChainCDR3s = paste0(sort(unique(ChainCDR3s[ChainCDR3s != ''])), collapse = ","),
+      CDR3s = paste0(sort(unique(cdr3[cdr3 != ''])), collapse = ","),
+      TRA = paste0(sort(unique(as.character(TRA[TRA != '']))), collapse = ","),
+      TRB = paste0(sort(unique(as.character(TRB[TRB != '']))), collapse = ","),
+      TRD = paste0(sort(unique(as.character(TRD[TRD != '']))), collapse = ","),
+      TRG = paste0(sort(unique(as.character(TRG[TRG != '']))), collapse = ","),
+      TRA_V = paste0(sort(unique(as.character(TRAV[TRAV != '']))), collapse = ","),
+      TRB_V = paste0(sort(unique(as.character(TRBV[TRBV != '']))), collapse = ","),
+      TRD_V = paste0(sort(unique(as.character(TRDV[TRDV != '']))), collapse = ","),
+      TRG_V = paste0(sort(unique(as.character(TRGV[TRGV != '']))), collapse = ","),
+      TRA_J = paste0(sort(unique(as.character(TRAJ[TRAJ != '']))), collapse = ","),
+      TRB_J = paste0(sort(unique(as.character(TRBJ[TRBJ != '']))), collapse = ","),
+      TRD_J = paste0(sort(unique(as.character(TRDJ[TRDJ != '']))), collapse = ","),
+      TRG_J = paste0(sort(unique(as.character(TRGJ[TRGJ != '']))), collapse = ","),
+      TRA_C = paste0(sort(unique(as.character(TRAC[TRAC != '']))), collapse = ","),
+      TRB_C = paste0(sort(unique(as.character(TRBC[TRBC != '']))), collapse = ","),
+      TRD_C = paste0(sort(unique(as.character(TRDC[TRDC != '']))), collapse = ","),
+      TRG_C = paste0(sort(unique(as.character(TRGC[TRGC != '']))), collapse = ","),
+      TRB_D = paste0(sort(unique(as.character(TRBD[TRBD != '']))), collapse = ","),
+      TRD_D = paste0(sort(unique(as.character(TRDD[TRDD != '']))), collapse = ","),
+      TRA_Segments = paste0(sort(unique(as.character(TRA_Segments))), collapse = ","),
+      TRB_Segments = paste0(sort(unique(as.character(TRB_Segments))), collapse = ","),
+      TRD_Segments = paste0(sort(unique(as.character(TRD_Segments))), collapse = ","),
+      TRG_Segments = paste0(sort(unique(as.character(TRG_Segments))), collapse = ","),
+      raw_clonotype_id = paste0(sort(unique(as.character(raw_clonotype_id[raw_clonotype_id != '']))), collapse = ","),
+      CloneNames = paste0(sort(unique(CloneName[CloneName != ''])), collapse = ",")  #this is imprecise b/c we count a hit if we match any chain, but this is probably what we often want
+    )
 
   # Note: we should attempt to produce a more specfic call, assuming we have data from multiple chains
   # The intent of this was to allow a A- or B-only hit to produce a call, but if we have both A/B, take their intersect.
