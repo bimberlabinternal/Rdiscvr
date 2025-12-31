@@ -1143,7 +1143,9 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 
   # Clear existing values:
   for (n in names(toAppend)) {
-    seuratObj[[n]] <- NULL
+    if (n %in% names(seuratObj@meta.data)) {
+      seuratObj[[n]] <- NULL
+    }
   }
   seuratObj <- Seurat::AddMetaData(seuratObj, toAppend)
 

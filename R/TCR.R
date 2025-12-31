@@ -340,7 +340,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
 
         if (nrow(gexRows) > 0) {
           tcrReadsets <- sort(unique(cdnaRows$tcrreadsetid), decreasing = TRUE)
-          if (nrow(tcrReadsets) > 1) {
+          if (length(tcrReadsets) > 1) {
             stop(paste0('More than one TCR readset found associated with GEX readset: ', gexReadset, ' and barcode: ', loupeDataId))
           }
 
