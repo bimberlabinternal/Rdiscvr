@@ -536,6 +536,10 @@ utils::globalVariables(
     TRG_C = paste0(sort(unique(as.character(TRGC[TRGC != '']))), collapse = ","),
     TRB_D = paste0(sort(unique(as.character(TRBD[TRBD != '']))), collapse = ","),
     TRD_D = paste0(sort(unique(as.character(TRDD[TRDD != '']))), collapse = ","),
+    TRA_Segments = paste0(sort(unique(as.character(paste0(dplyr::coalesce(TRA, '-'), '|', dplyr::coalesce(TRAV, '-'), '|', dplyr::coalesce(TRAJ, '-')), collapse = '')))),
+    TRB_Segments = paste0(sort(unique(as.character(paste0(dplyr::coalesce(TRB, '-'), '|', dplyr::coalesce(TRBV, '-'), '|', dplyr::coalesce(TRBJ, '-')), collapse = '')))),
+    TRD_Segments = paste0(sort(unique(as.character(paste0(dplyr::coalesce(TRD, '-'), '|', dplyr::coalesce(TRDV, '-'), '|', dplyr::coalesce(TRDJ, '-')), collapse = '')))),
+    TRG_Segments = paste0(sort(unique(as.character(paste0(dplyr::coalesce(TRG, '-'), '|', dplyr::coalesce(TRGV, '-'), '|', dplyr::coalesce(TRGJ, '-')), collapse = '')))),
     raw_clonotype_id = paste0(sort(unique(as.character(raw_clonotype_id[raw_clonotype_id != '']))), collapse = ","),
     CloneNames = paste0(sort(unique(CloneName[CloneName != ''])), collapse = ",")  #this is imprecise b/c we count a hit if we match any chain, but this is probably what we often want
   )

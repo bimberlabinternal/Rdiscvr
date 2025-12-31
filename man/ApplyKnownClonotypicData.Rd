@@ -8,6 +8,7 @@ ApplyKnownClonotypicData(
   seuratObj,
   antigenInclusionList = NULL,
   antigenExclusionList = NULL,
+  minActivationFrequency = 0,
   fieldPrefix = NULL
 )
 }
@@ -17,6 +18,8 @@ ApplyKnownClonotypicData(
 \item{antigenInclusionList}{If provided, only antigens from this list will be considered}
 
 \item{antigenExclusionList}{If provided, antigens on this list will be omitted}
+
+\item{minActivationFrequency}{If provided, only responses with activationFrequency (of the parent population) will be included}
 
 \item{fieldPrefix}{If provided, this will be appended to the beginning of the output field names}
 }

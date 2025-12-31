@@ -925,9 +925,10 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 #' @param seuratObj The seurat object
 #' @param antigenInclusionList If provided, only antigens from this list will be considered
 #' @param antigenExclusionList If provided, antigens on this list will be omitted
+#' @param minActivationFrequency If provided, only responses with activationFrequency (of the parent population) will be included
 #' @param fieldPrefix If provided, this will be appended to the beginning of the output field names
 #' @export
-ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, antigenExclusionList = NULL, fieldPrefix = NULL) {
+ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, fieldPrefix = NULL) {
   numAntigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'NumAntigens', no = paste0(fieldPrefix, 'NumAntigens'))
   antigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'Antigens', no = paste0(fieldPrefix, 'Antigens'))
 
@@ -937,7 +938,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="tcrdb",
     queryName="clone_responses",
-    colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,chain,clonotype,totalclonesize,fractioncloneactivated",
+    colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency",
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
       c('clonotype', "NEQ", "No TCR")
@@ -945,7 +946,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     colNameOpt="rname"
   )
 
-  names(responseData) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated')
+  names(responseData) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency')
 
   if (nrow(responseData) == 0) {
     print('No matching clones found in DB, skipping')
@@ -972,6 +973,18 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 
     if (nrow(responseData) == 0) {
       print('No matching clones after applying exclusionList, skipping')
+      seuratObj[[numAntigensFieldName]] <- 0
+      seuratObj[[antigensFieldName]] <- NA
+      return(seuratObj)
+    }
+  }
+
+  if (!is.na(minActivationFrequency) && minActivationFrequency > 0) {
+    responseData <- responseData |>
+      filter(activationfrequency > minActivationFrequency)
+
+    if (nrow(responseData) == 0) {
+      print('No matching clones after applying minActivationFrequency, skipping')
       seuratObj[[numAntigensFieldName]] <- 0
       seuratObj[[antigensFieldName]] <- NA
       return(seuratObj)
