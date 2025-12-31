@@ -1012,9 +1012,8 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       Antigens = paste0(sort(unique(Stim)), collapse = ','),
       HasNoStim = sum(IsNoStim)>0,
       MaxTotalCloneSize = max(totalclonesize),
-      MeanCloneSize = mean(totalclonesize),
       MaxFractionCloneActivated = max(fractioncloneactivated),
-      MeanFractionCloneActivated = mean(fractioncloneactivated)
+      MaxActivationFrequency = max(activationfrequency)
     ) %>%
     as.data.frame() %>%
     mutate(
@@ -1073,6 +1072,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
         HasNoStim = max(HasNoStim),
         MaxTotalCloneSize = max(MaxTotalCloneSize),
         MaxFractionCloneActivated = max(MaxFractionCloneActivated),
+        MaxActivationFrequency = max(MaxActivationFrequency),
         DetectedAsSingleCDR3 = max(DetectedAsSingleCDR3)
       ) %>%
       as.data.frame()
