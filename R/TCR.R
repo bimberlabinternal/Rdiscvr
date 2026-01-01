@@ -320,7 +320,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
         ),
         containerFilter=NULL,
         colNameOpt="rname"
-      ))
+      )) |> unique()
 
       if (nrow(gexRows) > 0) {
         gexReadset <- sort(unique(gexRows$readsetid), decreasing = TRUE)[1]
@@ -336,7 +336,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
           ),
           containerFilter=NULL,
           colNameOpt="rname"
-        ))
+        )) |> unique()
 
         if (nrow(gexRows) > 0) {
           tcrReadsets <- sort(unique(cdnaRows$tcrreadsetid), decreasing = TRUE)
