@@ -372,7 +372,7 @@ CreateMergedTcrClonotypeFile <- function(seuratObj, outputFile, overwriteTcrTabl
 		colFilter=makeFilter(c("readset", "EQUAL", tcrReadsetId), c("category", "EQUAL", "10x VLoupe")),
 		containerFilter=NULL,
 		colNameOpt="rname"
-  )
+  ) |> unique()
 
   if (nrow(rows) > 1){
     print(paste0('more than one matching VLoupe file found, using most recent for TCR readset: ', tcrReadsetId))
