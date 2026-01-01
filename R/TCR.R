@@ -457,6 +457,8 @@ utils::globalVariables(
     tcr <- .DropConflictingVJSegments(tcr)
   }
 
+  tcr$cdr3WithSuffix <- paste0(tcr$cdr3, ifelse(tcr$productive == 'True', yes = '', no = ' (NP)'))
+
   #Download named clonotypes and merge:
   # Add clone names:
   labelDf <- suppressWarnings(labkey.selectRows(
@@ -494,6 +496,10 @@ utils::globalVariables(
     tcr[[target]] <- NA
     tcr[[target]][tcr$chain == l] <- as.character(tcr$j_gene[tcr$chain == l])
 
+    target <- paste0(l, '_WithProductive')
+    tcr[[target]] <- NA
+    tcr[[target]][tcr$chain == l] <- as.character(tcr$cdr3WithSuffix[tcr$chain == l])
+
     if (l %in% c('TRB', 'TRD')) {
       target <- paste0(l, 'D')
       tcr[[target]] <- NA
@@ -517,10 +523,10 @@ utils::globalVariables(
   # Summarise, grouping by barcode
   tcr <- tcr %>%
     mutate(
-      TRA_Segments = paste0(dplyr::coalesce(TRA, '-'), '|', dplyr::coalesce(TRAV, '-'), '|', dplyr::coalesce(TRAJ, '-')),
-      TRB_Segments = paste0(dplyr::coalesce(TRB, '-'), '|', dplyr::coalesce(TRBV, '-'), '|', dplyr::coalesce(TRBJ, '-')),
-      TRD_Segments = paste0(dplyr::coalesce(TRD, '-'), '|', dplyr::coalesce(TRDV, '-'), '|', dplyr::coalesce(TRDJ, '-')),
-      TRG_Segments = paste0(dplyr::coalesce(TRG, '-'), '|', dplyr::coalesce(TRGV, '-'), '|', dplyr::coalesce(TRGJ, '-'))
+      TRA_Segments = ifelse(TRA == '', yes = NA, no = paste0(dplyr::coalesce(TRA, '-'), '|', dplyr::coalesce(TRAV, '-'), '|', dplyr::coalesce(TRAJ, '-'))),
+      TRB_Segments = ifelse(TRB == '', yes = NA, no = paste0(dplyr::coalesce(TRB, '-'), '|', dplyr::coalesce(TRBV, '-'), '|', dplyr::coalesce(TRBJ, '-'))),
+      TRD_Segments = ifelse(TRD == '', yes = NA, no = paste0(dplyr::coalesce(TRD, '-'), '|', dplyr::coalesce(TRDV, '-'), '|', dplyr::coalesce(TRDJ, '-'))),
+      TRG_Segments = ifelse(TRG == '', yes = NA, no = paste0(dplyr::coalesce(TRG, '-'), '|', dplyr::coalesce(TRGV, '-'), '|', dplyr::coalesce(TRGJ, '-')))
     ) %>%
     group_by(barcode) %>%
     summarise(
@@ -544,6 +550,10 @@ utils::globalVariables(
       TRG_C = paste0(sort(unique(as.character(TRGC[TRGC != '']))), collapse = ","),
       TRB_D = paste0(sort(unique(as.character(TRBD[TRBD != '']))), collapse = ","),
       TRD_D = paste0(sort(unique(as.character(TRDD[TRDD != '']))), collapse = ","),
+      TRA_WithProductive = paste0(sort(unique(as.character(TRA_WithProductive[TRA_WithProductive != '']))), collapse = ","),
+      TRB_WithProductive = paste0(sort(unique(as.character(TRB_WithProductive[TRB_WithProductive != '']))), collapse = ","),
+      TRD_WithProductive = paste0(sort(unique(as.character(TRD_WithProductive[TRD_WithProductive != '']))), collapse = ","),
+      TRG_WithProductive = paste0(sort(unique(as.character(TRG_WithProductive[TRG_WithProductive != '']))), collapse = ","),
       TRA_Segments = paste0(sort(unique(as.character(TRA_Segments))), collapse = ","),
       TRB_Segments = paste0(sort(unique(as.character(TRB_Segments))), collapse = ","),
       TRD_Segments = paste0(sort(unique(as.character(TRD_Segments))), collapse = ","),
