@@ -1168,11 +1168,12 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 #' @param chain The chain to summarize
 #' @param method Either 'Cluster-Based' or 'sPLS'
 #' @param storeStimLevelData If true, activation levels will be stord in tcrtb.stims
+#' @param maxRatioToCombine Passed to GroupOverlappingClones
 #' @export
 #' @import Rlabkey
 #' @import dplyr
-IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', storeStimLevelData = TRUE) {
-  allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method)
+IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', storeStimLevelData = TRUE, maxRatioToCombine = 1.0) {
+  allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method, maxRatioToCombine = maxRatioToCombine)
   .UpdateTcrStimDb(allDataWithPVal, chain = chain, methodName = method, storeStimLevelData = storeStimLevelData)
 }
 
@@ -1252,7 +1253,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   }
 }
 
-.IdentifyActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS') {
+.IdentifyActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', maxRatioToCombine = 1.0) {
   if (method == 'Cluster-Based') {
     activatedCluster <- .IdentifyActivatedCluster(dat)
     if (all(is.null(activatedCluster))) {
@@ -1302,7 +1303,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     dat <- PrepareTcrData(dat, subjectId = subjectId, minEDS = 2, retainRowsWithoutCDR3 = TRUE, chain = chain, enforceAllDataPresent = FALSE)
     dat$MethodString <- method
 
-    dat <- GroupOverlappingClones(dat, dataMask = dat$IsActive, groupingFields = c('cDNA_ID', 'SubjectId', 'SampleDate', 'Stim', 'NoStimId', 'IsControlSample', 'IsActiveLabel', 'MethodString', 'AssayType'))
+    dat <- GroupOverlappingClones(dat, maxRatioToCombine = maxRatioToCombine, dataMask = dat$IsActive, groupingFields = c('cDNA_ID', 'SubjectId', 'SampleDate', 'Stim', 'NoStimId', 'IsControlSample', 'IsActiveLabel', 'MethodString', 'AssayType'))
     dat <- ApplyCloneFilters(dat, minCellsPerClone = 2, minFractionOfCloneActive = 0.025, minFoldChangeAboveNoStim = NA)
     dat$IsFiltered <- ifelse(is.na(dat$Filter), yes = 'No', no = 'Yes')
 

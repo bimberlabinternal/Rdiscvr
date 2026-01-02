@@ -8,7 +8,8 @@ IdentifyAndStoreActiveClonotypes(
   seuratObj,
   chain = "TRB",
   method = "sPLS",
-  storeStimLevelData = TRUE
+  storeStimLevelData = TRUE,
+  maxRatioToCombine = 1
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ IdentifyAndStoreActiveClonotypes(
 \item{method}{Either 'Cluster-Based' or 'sPLS'}
 
 \item{storeStimLevelData}{If true, activation levels will be stord in tcrtb.stims}
+
+\item{maxRatioToCombine}{Passed to GroupOverlappingClones}
 }
 \description{
 This is a very specialized method designed to score and summarize activated TCR clonotypes
