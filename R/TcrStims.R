@@ -84,7 +84,7 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="tcrdb",
     queryName="stims",
-    colSelect="cdna_id,controlStimId",
+    colSelect="cdna_id,controlStimId,status",
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "EQUALS", subjectId),
       c("cDNA_ID/readsetId/totalFiles", "GT", 0)
@@ -93,7 +93,8 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   ) %>%
     rename(
       cDNA_ID = 'cdna_id',
-      NoStimId = 'controlstimid'
+      NoStimId = 'controlstimid',
+      StimStatus = 'status'
     )
 
   print(paste0('Found ', nrow(allStims), ' known stims'))
@@ -106,16 +107,23 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     missing <- unique(allStims$cDNA_ID)
     missing <- missing[! missing %in% dat$cDNA_ID]
 
-    if (enforceAllDataPresent) {
-      stop(paste0('Missing cDNA_IDs: ', paste0(sort(missing), collapse = ', ')))
-    } else {
-      warning(paste0('Missing some cDNA_IDs: ', paste0(sort(missing), collapse = ', ')))
+    # Allow failed stims to be missing:
+    failed <- allStims$cDNA_ID[grepl(allStims$StimStatus, pattern = 'Fail')]
+    missing <- missing[! missing %in% failed]
+
+    if (length(missing) > 0) {
+      if (enforceAllDataPresent) {
+        stop(paste0('Missing cDNA_IDs: ', paste0(sort(missing), collapse = ', ')))
+      } else {
+        warning(paste0('Missing some cDNA_IDs: ', paste0(sort(missing), collapse = ', ')))
+      }
     }
   }
 
   allStims$IsControlSample <- allStims$cDNA_ID %in% allStims$NoStimId
   noStimData <- allStims %>%
-    filter(IsControlSample)
+    filter(IsControlSample) %>%
+    filter(!grepl(StimStatus, pattern = 'Fail'))
 
   if (! all(noStimData$cDNA_ID %in% dat$cDNA_ID)) {
     missing <- unique(noStimData$cDNA_ID)
@@ -157,6 +165,12 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
       filter(TNK_Type != 'Unknown')
 
     print(paste0('Dropping Ambiguous/Unknown TNK_Type cells. Before/after filter: ', origRows, ' / ', nrow(dat)))
+  }
+  dat <- dat %>%
+    filter(!grepl(StimStatus, pattern = 'Fail'))
+
+  if (nrow(dat) == 0) {
+    stop('No rows remain after dropping failed stims')
   }
 
   dat <- dat %>%
@@ -813,7 +827,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
   P1 <- ggplot(dataWithPVal %>% filter(!is.na(FDR) & !IsControlSample), aes(x = coefficients, y = -log10(FDR), color = Stim, label = Clonotype)) +
     geom_point() +
     ggrepel::geom_label_repel(show.legend = FALSE, size = 3) +
-    geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
+    geom_vline(xintercept = 0.5, linetype = "dashed", color = "black") +
     geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "black") +
     egg::theme_article() +
     xlab("Log Odds Ratio") +
@@ -953,7 +967,8 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency",
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
-      c('clonotype', "NEQ", "No TCR")
+      c('clonotype', "NEQ", "No TCR"),
+      c('cDNA_ID/status', 'DOES_NOT_CONTAIN', 'Failed')
     ),
     colNameOpt="rname"
   )
@@ -1253,7 +1268,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   }
 }
 
-.IdentifyActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', maxRatioToCombine = 1.0) {
+.IdentifyActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', maxRatioToCombine = 1.0, minOddsRatio = 0.5) {
   if (method == 'Cluster-Based') {
     activatedCluster <- .IdentifyActivatedCluster(dat)
     if (all(is.null(activatedCluster))) {
@@ -1328,7 +1343,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       next
     }
 
-    dataWithPVal$EnrichedStatus <- dataWithPVal$coefficients < 1
+    dataWithPVal$FailedEnrichment <- !is.na(dataWithPVal$coefficients) & dataWithPVal$coefficients < minOddsRatio
 
     passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'EnrichedStatus', plotTitle = paste0(subjectId, ": EDS > 2, Passing Enrichment"), groupLowFreq = FALSE)
     if (!all(is.null(passingClones))){
@@ -1339,7 +1354,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
           legend.text = element_text(size = rel(0.5)),
           legend.title = element_text(size = rel(0.75))
         ) +
-        labs(pattern = 'Failed Significance?')
+        labs(pattern = 'Failed Enrichment?')
 
       # Reset the fill colors:
       if (n_distinct(dataWithPVal$Clonotype) < 10) {
