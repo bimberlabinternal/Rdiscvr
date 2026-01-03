@@ -9,7 +9,7 @@ utils::globalVariables(
             'Tcell_EffectorDifferentiation','TotalCellsForClone','TotalCellsForCloneAndState','TotalCellsForSample','TotalCellsForSampleAndState','V_Gene', 'J_Gene', 'cdr3WithSegments',
             'cDNA_ID','coefficients', 'p_val', 'error', 'FractionOfCloneWithState', 'Antigens', 'Chain', 'ChainsForAntigenMatch', 'HasIE', 'HasNoStim', 'IsIE', 'IsNoStim',
             'SampleDate', 'Tissue', 'fractioncloneactivated', 'maxFractionCloneActivated', 'maxTotalCloneSize', 'meanCloneSize', 'meanFractionCloneActivated', 'totalclonesize',
-            'TandNK_ActivationCore_UCell', 'TandNK_Activation_UCell', 'TandNK_Activation3_UCell', 'IsFiltered', 'EnrichedStatus', 'FractionOfSampleWithState', 'container'),
+            'TandNK_ActivationCore_UCell', 'TandNK_Activation_UCell', 'TandNK_Activation3_UCell', 'IsFiltered', 'FailedEnrichment', 'FractionOfSampleWithState', 'container'),
   package = 'Rdiscvr',
   add = TRUE
 )
@@ -1360,7 +1360,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
     dataWithPVal$FailedEnrichment <- !is.na(dataWithPVal$coefficients) & dataWithPVal$coefficients < minOddsRatio
 
-    passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'EnrichedStatus', plotTitle = paste0(subjectId, ": EDS > 2, Passing Enrichment"), groupLowFreq = FALSE)
+    passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'FailedEnrichment', plotTitle = paste0(subjectId, ": EDS > 2, Passing Enrichment"), groupLowFreq = FALSE)
     if (!all(is.null(passingClones))){
       passingClones <- passingClones +
         geom_hline(yintercept = 0.005, linetype = 'dotted', colour = 'red', linewidth = 1) +
@@ -1394,7 +1394,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   toUpdate <- allDataWithPVal %>%
     group_by(cDNA_ID) %>%
     filter(IsActive) %>%
-    filter(is.na(EnrichedStatus) | !EnrichedStatus) %>%
+    filter(is.na(FailedEnrichment) | !FailedEnrichment) %>%
     summarise(quantification = unique(FractionOfSampleWithState)*100, nClones = n()) %>%
     mutate(QuantificationMethod = methodName)
 
@@ -1432,7 +1432,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   # Now clone data:
   toInsertOrUpdate <- allDataWithPVal %>%
     filter(IsActive) %>%
-    filter(is.na(EnrichedStatus) | !EnrichedStatus) %>%
+    filter(is.na(FailedEnrichment) | !FailedEnrichment) %>%
     rename(
       activationFrequency = 'FractionOfCloneWithStateInSample',
       totalCells = 'TotalCellsForCloneAndState',
