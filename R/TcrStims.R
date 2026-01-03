@@ -473,8 +473,10 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, plotTitle = NULL, yFacetField
 #' @param dataMask An optional logical vector. If provided, the 'dat' dataframe is filtered to include only rows where dataMask is TRUE.
 #'
 GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5, dataMask = NULL) {
+  origClonotypes <- NULL
   if (is.null(dataMask)) {
     dupes <- unique(grep(dat$Clonotype, pattern = ',', value = TRUE))
+    origClonotypes <- unique(dat$Clonotype)
   } else {
     if (length(dataMask) != nrow(dat)) {
       stop('The dataMask should be a vector of the same length as the dat dataframe')
@@ -485,6 +487,7 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
     }
 
     dupes <- unique(grep(dat$Clonotype[dataMask], pattern = ',', value = TRUE))
+    origClonotypes <- unique(dat$Clonotype[dataMask])
   }
 
   joinedClones <- FALSE
@@ -563,6 +566,10 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
 
   if (joinedClones) {
     print('Some clones were merged, so repeating GroupOverlappingClones()')
+    if (!all(is.null(dataMask))) {
+      # This needs to be reset since the row length is changed:
+      dataMask <- dat$Clonotype %in% origClonotypes
+    }
     return(GroupOverlappingClones(dat = dat, groupingFields = groupingFields, maxRatioToCombine = maxRatioToCombine, dataMask = dataMask))
   }
 
