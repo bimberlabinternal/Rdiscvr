@@ -166,12 +166,6 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
 
     print(paste0('Dropping Ambiguous/Unknown TNK_Type cells. Before/after filter: ', origRows, ' / ', nrow(dat)))
   }
-  dat <- dat %>%
-    filter(!grepl(StimStatus, pattern = 'Fail'))
-
-  if (nrow(dat) == 0) {
-    stop('No rows remain after dropping failed stims')
-  }
 
   dat <- dat %>%
     group_by(across(all_of(groupingFields))) %>%
@@ -228,7 +222,14 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
 
   dat <- dat %>%
     left_join(allStims, by = 'cDNA_ID')
-  
+
+  dat <- dat %>%
+    filter(!grepl(StimStatus, pattern = 'Fail'))
+
+  if (nrow(dat) == 0) {
+    stop('No rows remain after dropping failed stims')
+  }
+
   # Now merge with the active NoStim values:
   noStimSummary <- dat %>%
     as.data.frame() %>%
