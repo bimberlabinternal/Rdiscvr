@@ -486,6 +486,7 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
     dupes <- unique(grep(dat$Clonotype[dataMask], pattern = ',', value = TRUE))
   }
 
+  joinedClones <- FALSE
   if (length(dupes) > 0) {
     print(paste0('Total multi-chain clonotypes: ', length(dupes)))
     dat$OriginalClone <- dat$Clonotype
@@ -502,6 +503,7 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
           prefix <- ifelse(doCombine, yes = 'Combining', no = 'Skipping')
           print(paste0(prefix, ': ', c, ' (', sum1, ') into ', cn, ' (', sum2, '). Ratio: ', rat))
           if (doCombine) {
+            joinedClones <- TRUE
             dat$Clonotype[dat$Clonotype == c] <- cn
           }
         }
@@ -556,6 +558,11 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
     dat <- rbind(dat, lowFreq)
   } else {
     print('No multi-CDR3 clonotypes present')
+  }
+
+  if (joinedClones) {
+    print('Some clones were merged, so repeating GroupOverlappingClones()')
+    return(GroupOverlappingClones(dat = dat, groupingFields = groupingFields, maxRatioToCombine = maxRatioToCombine, dataMask = dataMask))
   }
 
   return(dat)
