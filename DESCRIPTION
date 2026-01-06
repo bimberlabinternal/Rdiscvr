@@ -35,7 +35,8 @@ Imports:
     future.apply,
     ggrepel,
     patchwork,
-    httr
+    httr,
+    plyr
 Suggests:
     devtools,
     testthat (>= 2.1.0)

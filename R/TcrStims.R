@@ -1204,7 +1204,77 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 #' @import dplyr
 IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', storeStimLevelData = TRUE, maxRatioToCombine = 1.0) {
   allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method, maxRatioToCombine = maxRatioToCombine)
-  .UpdateTcrStimDb(allDataWithPVal, chain = chain, methodName = method, storeStimLevelData = storeStimLevelData)
+
+  # Calculate/store frequencies for clones that responded in at least one sample:
+  allClones <- unique(allDataWithPVal$Clonotype)
+  allClones <- allClones[allClones != 'No TCR']
+  for (subjectId in sort(unique(allDataWithPVal$SubjectId))) {
+    datForSubject <- allDataWithPVal %>% filter(SubjectId == subjectId)
+    for (cdnaId in sort(unique(datForSubject$cDNA_ID))) {
+      datForStim <- datForSubject %>% filter(cDNA_ID == cdnaId)
+      missingClonotypes <- allClones[! allClones %in% datForStim$Clonotype ]
+      if (length(missingClonotypes) == 0) {
+        next
+      }
+
+      chainWithSegmentsField = paste0(chain, '_Segments')
+      vField <- paste0(chain, '_V')
+      jField <- paste0(chain, '_J')
+      toAppend <- seuratObj@meta.data %>%
+        filter(cDNA_ID == cdnaId) %>%
+        filter(dplyr::if_all(dplyr::all_of(c(chain)), ~ !is.na(.x))) %>%
+        group_by(cDNA_ID) %>%
+        mutate(totalCellsForSample = n()) %>%
+        ungroup() %>%
+        select(all_of(c('cDNA_ID', chain, vField, jField, chainWithSegmentsField))) %>%
+        rename(c(
+          Clonotype = !!chain,
+          cdr3WithSegments = !!chainWithSegmentsField,
+          vGene = !!vField,
+          jGene = !!jField
+        )) %>%
+        as.data.frame() %>%
+        filter(Clonotype %in% missingClonotypes) %>%
+        group_by(cDNA_ID, Clonotype, vGene, jGene, cdr3WithSegments) %>%
+        summarize(totalCloneSize = n()) %>%
+        as.data.frame() %>%
+        mutate(
+          method = method,
+          totalCells = 0,
+          fractionCloneActivated = 0,
+          chain = chain
+        )
+
+      stillNeeded <- missingClonotypes[! missingClonotypes %in% toAppend$Clonotype]
+      if (length(stillNeeded) > 0) {
+        toAppend2 <- seuratObj@meta.data %>%
+          select(all_of(c(chain, vField, jField, chainWithSegmentsField))) %>%
+          rename(c(
+            Clonotype = !!chain,
+            cdr3WithSegments = !!chainWithSegmentsField,
+            vGene = !!vField,
+            jGene = !!jField
+          )) %>%
+          as.data.frame() %>%
+          filter(Clonotype %in% stillNeeded) %>%
+          unique() %>%
+          mutate(
+            method = method,
+            totalCells = 0,
+            fractionCloneActivated = 0,
+            chain = chain,
+            cDNA_ID = cdnaId
+          )
+
+        toAppend <- plyr::rbind.fill(toAppend, toAppend2)
+      }
+
+      print(paste0('cDNA ', cdnaId, ': adding ', nrow(toAppend), ' placeholder records for clonotypes without activation'))
+      allDataWithPVal <- plyr::rbind.fill(allDataWithPVal, toAppend)
+    }
+  }
+
+  .UpdateTcrStimDb(allDataWithPVal, chain = chain, methodName = method, storeStimLevelData = storeStimLevelData, allCDNA_IDs = unique(seuratObj$cDNA_ID))
 }
 
 .IdentifyActivatedCluster <- function(dat, resolutions = c('0.2', '0.4', '0.6', '0.8', '1.2')) {
@@ -1360,24 +1430,31 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
     dataWithPVal$FailedEnrichment <- !is.na(dataWithPVal$coefficients) & dataWithPVal$coefficients < minOddsRatio
 
-    passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'FailedEnrichment', plotTitle = paste0(subjectId, ": EDS > 2, Passing Enrichment"), groupLowFreq = FALSE)
-    if (!all(is.null(passingClones))){
-      passingClones <- passingClones +
-        geom_hline(yintercept = 0.005, linetype = 'dotted', colour = 'red', linewidth = 1) +
-        theme(
-          legend.position = ifelse(n_distinct(dataWithPVal$Clonotype) > 15, yes = 'none', no = 'right'),
-          legend.text = element_text(size = rel(0.5)),
-          legend.title = element_text(size = rel(0.75))
-        ) +
-        labs(pattern = 'Failed Enrichment?')
+    tryCatch({
+      passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'FailedEnrichment', plotTitle = paste0(subjectId, ": EDS > 2, Passing Enrichment"), groupLowFreq = FALSE)
+      if (!all(is.null(passingClones))){
+        passingClones <- passingClones +
+          geom_hline(yintercept = 0.005, linetype = 'dotted', colour = 'red', linewidth = 1) +
+          theme(
+            legend.position = ifelse(n_distinct(dataWithPVal$Clonotype) > 15, yes = 'none', no = 'right'),
+            legend.text = element_text(size = rel(0.5)),
+            legend.title = element_text(size = rel(0.75))
+          ) +
+          labs(pattern = 'Failed Enrichment?')
 
-      # Reset the fill colors:
-      if (n_distinct(dataWithPVal$Clonotype) < 10) {
-        passingClones <- passingClones + scale_fill_discrete()
+        # Reset the fill colors:
+        if (n_distinct(dataWithPVal$Clonotype) < 10) {
+          passingClones <- passingClones + scale_fill_discrete()
+        }
+
+        print(passingClones)
+
       }
-
-      print(passingClones)
-    }
+    }, error = function(e){
+      warning('Error generating passingClones plot')
+      print(conditionMessage(e))
+      traceback()
+    })
 
     allDataWithPVal <- rbind(allDataWithPVal, dataWithPVal)
   }
@@ -1385,9 +1462,37 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   return(allDataWithPVal)
 }
 
-.UpdateTcrStimDb <- function(allDataWithPVal, chain, methodName = NULL, storeStimLevelData = TRUE) {
+.UpdateTcrStimDb <- function(allDataWithPVal, chain, methodName = NULL, storeStimLevelData = TRUE, allCDNA_IDs = NULL) {
   if (all(is.null(allDataWithPVal))) {
     print('No data, skipping import')
+
+    if (!all(is.null(allCDNA_IDs))) {
+      toDelete <- suppressWarnings(labkey.selectRows(
+        baseUrl=.getBaseUrl(),
+        folderPath=.getLabKeyDefaultFolder(),
+        schemaName="tcrdb",
+        queryName="clone_responses",
+        colSelect="rowid,container",
+        colFilter=makeFilter(
+          c("cdna_id", "IN", paste0(unique(allCDNA_IDs), collapse = ';')),
+          c('chain', 'EQUALS', chain)
+        ),
+        containerFilter=NULL,
+        colNameOpt="rname"
+      ))
+
+      if (nrow(toDelete) > 0) {
+        print(paste0('Deleting ', nrow(toDelete), ' rows in tcrdb.clone_responses'))
+        deleted <- labkey.deleteRows(
+          baseUrl=.getBaseUrl(),
+          folderPath=.getLabKeyDefaultFolder(),
+          schemaName="tcrdb",
+          queryName="clone_responses",
+          toDelete = toDelete
+        )
+      }
+    }
+
     return()
   }
 
@@ -1398,6 +1503,11 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     summarise(quantification = unique(FractionOfSampleWithState)*100, nClones = n()) %>%
     mutate(QuantificationMethod = methodName)
 
+  allCDNA <- toUpdate$cDNA_ID
+  if (!all(is.null(allCDNA_IDs))) {
+    allCDNA <- sort(unique(allCDNA, allCDNA_IDs))
+  }
+
   containerInfo <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
@@ -1405,7 +1515,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     queryName="stims",
     colSelect="rowid,cdna_id,container",
     colFilter=makeFilter(
-      c("cdna_id/rowid", "IN", paste0(toUpdate$cDNA_ID, collapse = ';'))
+      c("cdna_id/rowid", "IN", paste0(allCDNA, collapse = ';'))
     ),
     colNameOpt="rname"
   )
@@ -1455,7 +1565,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     queryName="clone_responses",
     colSelect="rowid,clonotype,cdna_id,container",
     colFilter=makeFilter(
-      c("cdna_id", "IN", paste0(unique(toInsertOrUpdate$cDNA_ID), collapse = ';')),
+      c("cdna_id", "IN", paste0(unique(allCDNA), collapse = ';')),
       c('chain', 'EQUALS', chain)
     ),
     containerFilter=NULL,
