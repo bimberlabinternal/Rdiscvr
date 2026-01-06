@@ -9,7 +9,8 @@ IdentifyAndStoreActiveClonotypes(
   chain = "TRB",
   method = "sPLS",
   storeStimLevelData = TRUE,
-  maxRatioToCombine = 1
+  maxRatioToCombine = 1,
+  minEDS = 2
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ IdentifyAndStoreActiveClonotypes(
 \item{storeStimLevelData}{If true, activation levels will be stord in tcrtb.stims}
 
 \item{maxRatioToCombine}{Passed to GroupOverlappingClones}
+
+\item{minEDS}{If provided, only cells with EDS>minEDS will be included}
 }
 \description{
 This is a very specialized method designed to score and summarize activated TCR clonotypes

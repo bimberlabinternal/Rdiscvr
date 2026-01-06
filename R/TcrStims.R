@@ -271,15 +271,15 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   dat$NoStimFractionOfCloneInSample[dat$NoStimTotalCells == 0] <- 0
   dat$NoStimFractionActive[is.na(dat$NoStimFractionActive) & dat$NoStimTotalCells == 0] <- 0
   dat$NoStimFractionActive[is.na(dat$NoStimFractionActive) & dat$NoStimTotalCells ] <- 0
-  
+
   if (any(is.na(dat$NoStimTotalCells))) {
     stop('Found NAs in NoStimTotalCells')
   }
-  
+
   if (any(is.na(dat$NoStimFractionOfCloneInSample))) {
     stop('Found NAs in NoStimFractionOfCloneInSample')
   }
-  
+
   dat$NoStimTotalCellsActive[is.na(dat$NoStimTotalCellsActive) & !is.na(dat$NoStimTotalCells)] <- 0
   if (any(is.na(dat$NoStimTotalCellsActive))) {
     stop('Found NAs in NoStimTotalCellsActive')
@@ -997,6 +997,18 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     return(seuratObj)
   }
 
+  return(.ApplyKnownClonotypicData(seuratObj,
+                                   responseData = responseData,
+                                   antigenInclusionList = antigenInclusionList,
+                                   antigenExclusionList = antigenExclusionList,
+                                   minActivationFrequency = minActivationFrequency,
+                                   minFractionCloneActivated = minFractionCloneActivated,
+                                   fieldPrefix = fieldPrefix
+  ))
+}
+
+# responseData should be a data.frame with the columns: c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency')
+.ApplyKnownClonotypicData <- function(seuratObj, responseData, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, minFractionCloneActivated = 0, fieldPrefix = NULL) {
   if (!all(is.null(antigenInclusionList))) {
     responseData <- responseData |>
       filter( Stim %in% antigenInclusionList)
@@ -1199,11 +1211,12 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 #' @param method Either 'Cluster-Based' or 'sPLS'
 #' @param storeStimLevelData If true, activation levels will be stord in tcrtb.stims
 #' @param maxRatioToCombine Passed to GroupOverlappingClones
+#' @param minEDS If provided, only cells with EDS>minEDS will be included
 #' @export
 #' @import Rlabkey
 #' @import dplyr
-IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', storeStimLevelData = TRUE, maxRatioToCombine = 1.0) {
-  allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method, maxRatioToCombine = maxRatioToCombine)
+IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', storeStimLevelData = TRUE, maxRatioToCombine = 1.0, minEDS = 2) {
+  allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method, maxRatioToCombine = maxRatioToCombine, minEDS = minEDS)
 
   # Calculate/store frequencies for clones that responded in at least one sample:
   allClones <- unique(allDataWithPVal$Clonotype)
@@ -1353,7 +1366,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   }
 }
 
-.IdentifyActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', maxRatioToCombine = 1.0, minOddsRatio = 0.5) {
+.IdentifyActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', maxRatioToCombine = 1.0, minOddsRatio = 0.5, minEDS = 2) {
   if (method == 'Cluster-Based') {
     activatedCluster <- .IdentifyActivatedCluster(dat)
     if (all(is.null(activatedCluster))) {
@@ -1400,7 +1413,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       dat$cDNA_ID <- converted
     }
 
-    dat <- PrepareTcrData(dat, subjectId = subjectId, minEDS = 2, retainRowsWithoutCDR3 = TRUE, chain = chain, enforceAllDataPresent = FALSE)
+    dat <- PrepareTcrData(dat, subjectId = subjectId, minEDS = minEDS, retainRowsWithoutCDR3 = TRUE, chain = chain, enforceAllDataPresent = FALSE)
     dat$MethodString <- method
 
     dat <- GroupOverlappingClones(dat, maxRatioToCombine = maxRatioToCombine, dataMask = dat$IsActive, groupingFields = c('cDNA_ID', 'SubjectId', 'SampleDate', 'Stim', 'NoStimId', 'IsControlSample', 'IsActiveLabel', 'MethodString', 'AssayType'))
@@ -1411,7 +1424,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     print(filterPlots)
 
     subjectId <- paste0(sort(unique(dat$SubjectId)), collapse = ',')
-    P1 <- GenerateTcrPlot(dat, xFacetField = 'SampleDate', dropInactive = FALSE, patternField = 'IsFiltered', plotTitle = paste0(subjectId, ": EDS > 2, Unfiltered"), groupLowFreq = TRUE)
+    P1 <- GenerateTcrPlot(dat, xFacetField = 'SampleDate', dropInactive = FALSE, patternField = 'IsFiltered', plotTitle = paste0(subjectId, ": EDS > ", minEDS, ", Unfiltered"), groupLowFreq = TRUE)
 
     P1 <- P1 + patchwork::plot_annotation(title = paste0(subjectId, ': Unfiltered Clonotypes and ICS'))
     print(P1)
@@ -1431,7 +1444,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     dataWithPVal$FailedEnrichment <- !is.na(dataWithPVal$coefficients) & dataWithPVal$coefficients < minOddsRatio
 
     tryCatch({
-      passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'FailedEnrichment', plotTitle = paste0(subjectId, ": EDS > 2, Passing Enrichment"), groupLowFreq = FALSE)
+      passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'FailedEnrichment', plotTitle = paste0(subjectId, ": EDS > ", minEDS, ", Passing Enrichment"), groupLowFreq = FALSE)
       if (!all(is.null(passingClones))){
         passingClones <- passingClones +
           geom_hline(yintercept = 0.005, linetype = 'dotted', colour = 'red', linewidth = 1) +
