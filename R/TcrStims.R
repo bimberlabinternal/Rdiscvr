@@ -68,6 +68,13 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     stop(paste0('Missing chain: ', chain))
   }
 
+  for (suffix in c('_V', '_J', '_Segments')) {
+    fn <- paste0(chain, suffix)
+    if (! fn %in% names(dat)) {
+      stop(paste0('Missing field: ', fn))
+    }
+  }
+
   if (!is.null(minEDS) && minEDS > 0) {
     if (!'Tcell_EffectorDifferentiation' %in% names(dat)) {
       stop('Missing field Tcell_EffectorDifferentiation from input table')
