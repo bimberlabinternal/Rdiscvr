@@ -1092,6 +1092,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
   }
 
   toAppend <- NULL
+  subjectIds <- sort(unique(seuratObj$SubjectId))
   for (subjectId in subjectIds) {
     responseDataForSubject <- responseData %>% filter(SubjectId == subjectId)
     if (nrow(responseDataForSubject) == 0) {
