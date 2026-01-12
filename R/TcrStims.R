@@ -966,6 +966,14 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
   return(P)
 }
 
+.getNumAntigensFieldName <- function(fieldPrefix){
+  return(ifelse(is.null(fieldPrefix), yes = 'NumAntigens', no = paste0(fieldPrefix, 'NumAntigens')))
+}
+
+.getAntigensFieldName <- function(fieldPrefix){
+  return(ifelse(is.null(fieldPrefix), yes = 'Antigens', no = paste0(fieldPrefix, 'Antigens')))
+}
+
 #' @title ApplyKnownClonotypicData
 #' @description This will query the clone_responses table and append a column tagging each cell for matching antigens (based on clonotype)
 #'
@@ -977,8 +985,8 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 #' @param fieldPrefix If provided, this will be appended to the beginning of the output field names
 #' @export
 ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, minFractionCloneActivated = 0, fieldPrefix = NULL) {
-  numAntigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'NumAntigens', no = paste0(fieldPrefix, 'NumAntigens'))
-  antigensFieldName <- ifelse(is.null(fieldPrefix), yes = 'Antigens', no = paste0(fieldPrefix, 'Antigens'))
+  numAntigensFieldName <- .getNumAntigensFieldName(fieldPrefix)
+  antigensFieldName <- .getAntigensFieldName(fieldPrefix)
 
   subjectIds <- sort(unique(seuratObj$SubjectId))
   responseData <- labkey.selectRows(
@@ -1016,6 +1024,9 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 
 # responseData should be a data.frame with the columns: c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency')
 .ApplyKnownClonotypicData <- function(seuratObj, responseData, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, minFractionCloneActivated = 0, fieldPrefix = NULL) {
+  numAntigensFieldName <- .getNumAntigensFieldName(fieldPrefix)
+  antigensFieldName <- .getAntigensFieldName(fieldPrefix)
+
   if (!all(is.null(antigenInclusionList))) {
     responseData <- responseData |>
       filter( Stim %in% antigenInclusionList)
