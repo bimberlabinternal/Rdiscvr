@@ -1249,7 +1249,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
         next
       }
 
-      chainWithSegmentsField = paste0(chain, '_Segments')
+      chainWithSegmentsField <- paste0(chain, '_Segments')
       vField <- paste0(chain, '_V')
       jField <- paste0(chain, '_J')
       toAppend <- seuratObj@meta.data %>%
