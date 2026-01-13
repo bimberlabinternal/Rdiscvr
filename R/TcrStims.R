@@ -994,7 +994,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="tcrdb",
     queryName="clone_responses",
-    colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency",
+    colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency,clonename",
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
       c('clonotype', "NEQ", "No TCR"),
@@ -1003,7 +1003,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     colNameOpt="rname"
   )
 
-  names(responseData) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency')
+  names(responseData) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency', 'CloneName')
 
   if (nrow(responseData) == 0) {
     print('No matching clones found in DB, skipping')
@@ -1082,6 +1082,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     group_by(SubjectId, Clonotype) %>%
     summarize(
       Chain = paste0(sort(unique(Chain)), collapse = ','),
+      CloneName = paste0(sort(unique(CloneName)), collapse = ','),
       Antigens = paste0(sort(unique(Stim)), collapse = ','),
       HasNoStim = sum(IsNoStim)>0,
       MaxTotalCloneSize = max(totalclonesize),
@@ -1141,6 +1142,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       group_by(CellBarcode) %>%
       summarize(
         Antigens = paste0(sort(unique(Antigens)), collapse = ','),
+        CloneName = paste0(sort(unique(CloneName)), collapse = ','),
         ChainsUsedForClonotypeMatch = paste0(sort(unique(ChainsUsedForClonotypeMatch)), collapse = ','),
         ClonotypesUsedForClonotypeMatch = paste0(unique(sort(ClonotypesUsedForClonotypeMatch)), collapse = ';'),
         HasNoStim = max(HasNoStim),
@@ -1152,6 +1154,16 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       as.data.frame()
 
     toAppend$Antigens <- unlist(sapply(toAppend$Antigens, function(x){
+      if (is.na(x)) {
+        return(NA)
+      }
+
+      x <- sort(unique(unlist(strsplit(x, split = ','))))
+
+      return(paste0(x, collapse = ','))
+    }))
+
+    toAppend$CloneName <- unlist(sapply(toAppend$CloneName, function(x){
       if (is.na(x)) {
         return(NA)
       }
@@ -1256,24 +1268,24 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
         filter(cDNA_ID == cdnaId) %>%
         filter(dplyr::if_all(dplyr::all_of(c(chain)), ~ !is.na(.x))) %>%
         group_by(cDNA_ID) %>%
-        mutate(totalCellsForSample = n()) %>%
+        mutate(TotalCellsForSample = n()) %>%
         ungroup() %>%
         select(all_of(c('cDNA_ID', chain, vField, jField, chainWithSegmentsField))) %>%
         rename(c(
           Clonotype = !!chain,
           cdr3WithSegments = !!chainWithSegmentsField,
-          vGene = !!vField,
-          jGene = !!jField
+          V_Gene = !!vField,
+          J_Gene = !!jField
         )) %>%
         as.data.frame() %>%
         filter(Clonotype %in% missingClonotypes) %>%
-        group_by(cDNA_ID, Clonotype, vGene, jGene, cdr3WithSegments) %>%
+        group_by(cDNA_ID, Clonotype, V_Gene, J_Gene, cdr3WithSegments) %>%
         summarize(totalCloneSize = n()) %>%
         as.data.frame() %>%
         mutate(
           method = method,
-          totalCells = 0,
-          fractionCloneActivated = 0,
+          TotalCellsForCloneAndState = 0,
+          FractionOfCloneWithState = 0,
           chain = chain
         )
 
@@ -1284,25 +1296,29 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
           rename(c(
             Clonotype = !!chain,
             cdr3WithSegments = !!chainWithSegmentsField,
-            vGene = !!vField,
-            jGene = !!jField
+            V_Gene = !!vField,
+            J_Gene = !!jField
           )) %>%
           as.data.frame() %>%
           filter(Clonotype %in% stillNeeded) %>%
           unique() %>%
           mutate(
             method = method,
-            totalCells = 0,
-            fractionCloneActivated = 0,
+            TotalCellsForCloneAndState = 0,
+            FractionOfCloneWithState = 0,
             chain = chain,
             cDNA_ID = cdnaId
           )
 
-        toAppend <- plyr::rbind.fill(toAppend, toAppend2)
+        if (nrow(toAppend2) > 0) {
+          toAppend <- plyr::rbind.fill(toAppend, toAppend2)
+        }
       }
 
       print(paste0('cDNA ', cdnaId, ': adding ', nrow(toAppend), ' placeholder records for clonotypes without activation'))
-      allDataWithPVal <- plyr::rbind.fill(allDataWithPVal, toAppend)
+      if (nrow(toAppend) > 0) {
+        allDataWithPVal <- plyr::rbind.fill(allDataWithPVal, toAppend)
+      }
     }
   }
 
@@ -1528,6 +1544,30 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     return()
   }
 
+  cloneNames <- allDataWithPVal %>%
+    group_by(SubjectId, Clonotype) %>%
+    summarize() %>%
+    as.data.frame() %>%
+    group_by(SubjectId) %>%
+    mutate(CloneId = row_number()) %>%
+    mutate(CloneName = paste0(SubjectId, '-', chain, '-', CloneId)) %>%
+    select(-CloneId)
+
+  allDataWithPVal <- allDataWithPVal %>%
+    left_join(cloneNames, by = c('SubjectId', 'Clonotype'))
+  rm(cloneNames)
+
+  if (!is.integer(allDataWithPVal$cDNA_ID)) {
+    print('Converting cDNA_ID to an integer')
+    allDataWithPVal$cDNA_ID <- as.character(allDataWithPVal$cDNA_ID)
+    converted <- as.integer(allDataWithPVal$cDNA_ID)
+    if (any(is.na(converted))) {
+      stop('Non-numeric cDNA_IDs found: ', paste0(unique(allDataWithPVal$cDNA_ID[is.na(converted)]), collapse = ','))
+    }
+    
+    allDataWithPVal$cDNA_ID <- converted
+  }
+  
   toUpdate <- allDataWithPVal %>%
     group_by(cDNA_ID) %>%
     filter(IsActive) %>%
@@ -1537,7 +1577,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
   allCDNA <- toUpdate$cDNA_ID
   if (!all(is.null(allCDNA_IDs))) {
-    allCDNA <- sort(unique(allCDNA, allCDNA_IDs))
+    allCDNA <- sort(unique(c(allCDNA, allCDNA_IDs)))
   }
 
   containerInfo <- labkey.selectRows(
