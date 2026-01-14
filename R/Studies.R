@@ -281,9 +281,9 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     schemaName="lists",
     queryName="MalariaSamples",
     colNameOpt="rname",
-    colSelect = 'libraryid,timepointlabel,LibraryId/sortId/sampleId/subjectId'
+    colSelect = 'libraryid,timepointlabel,parasitemia,LibraryId/sortId/sampleId/subjectId'
   )
-  names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'SubjectId')
+  names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'Parasitemia', 'SubjectId')
   
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
