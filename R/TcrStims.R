@@ -1106,7 +1106,8 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
   toAppend <- NULL
   subjectIds <- sort(unique(seuratObj$SubjectId))
   for (subjectId in subjectIds) {
-    responseDataForSubject <- responseData %>% filter(SubjectId == subjectId)
+    responseDataForSubject <- responseData %>%
+      filter(!is.na(SubjectId) & SubjectId == subjectId)
     if (nrow(responseDataForSubject) == 0) {
       next
     }
@@ -1125,7 +1126,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
         }
       }
 
-      sel <- seuratObj$SubjectId == subjectId & grepl(pattern = paste0("(?:^|,)", clonotype, "(?:$|,)"), x = seuratObj[[chain]][[1]])
+      sel <- !is.na(seuratObj$SubjectId) & seuratObj$SubjectId == subjectId & grepl(pattern = paste0("(?:^|,)", clonotype, "(?:$|,)"), x = seuratObj[[chain]][[1]])
       if (any(sel)) {
         toAdd <- responseDataForSubject[rep(idx, sum(sel)),]
         toAdd$ChainsUsedForClonotypeMatch <- chain
