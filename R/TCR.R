@@ -20,8 +20,12 @@ utils::globalVariables(
 #' @return A modified Seurat object.
 #' @export
 DownloadAndAppendTcrClonotypes <- function(seuratObj, outPath = tempdir(), dropExisting = T, overwriteTcrTable = F, allowMissing = FALSE, dropConflictingVJSegments = TRUE){
-  if (all(is.null(seuratObj[['BarcodePrefix']]))){
-    stop('Seurat object lacks BarcodePrefix column')
+  if (!'BarcodePrefix' %in% names(seuratObj@meta.data) || any(is.na(seuratObj$BarcodePrefix))){
+    seuratObj <- .AttemptToRestoreBarcodePrefix(seuratObj)
+  }
+
+  if (!'BarcodePrefix' %in% names(seuratObj@meta.data) || any(is.na(seuratObj$BarcodePrefix))){
+    stop('Seurat object lacks BarcodePrefix column or has missing values')
   }
 
   i <- 0

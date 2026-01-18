@@ -318,3 +318,17 @@ GenerateSRATable <- function(cDNA_IDs) {
 .GetAssayMeta <- function(assayObj) {
 	return(methods::slot(assayObj, .GetAssayMetaSlotName(assayObj)))
 }
+
+.AttemptToRestoreBarcodePrefix <- function(seuratObj) {
+  print('Attempting to restore BarcodePrefix column')
+  if (any(!grepl(pattern = '^[0-9]+_[ATGCN]+$', colnames(seuratObj)))) {
+    print('cell barcodes do not match the expected format, aborting')
+    return(seuratObj)
+  }
+
+  seuratObj$BarcodePrefix <- unlist(sapply(colnames(seuratObj), function(x){
+    return(unlist(strsplit(x, split = '_'))[1])
+  }))
+
+  return(seuratObj)
+}
