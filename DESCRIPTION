@@ -36,7 +36,8 @@ Imports:
     ggrepel,
     patchwork,
     httr,
-    plyr
+    plyr,
+    stringr
 Suggests:
     devtools,
     testthat (>= 2.1.0)
