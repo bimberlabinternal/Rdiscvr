@@ -1142,6 +1142,11 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
         })))
       }
 
+      # Ensure consistent value when empty:
+      if (all(is.na(cognateCDR3s)) || all(is.null(cognateCDR3s)) || all(cognateCDR3s == '')) {
+        cognateCDR3s <- NULL
+      }
+
       sel <- !is.na(seuratObj$SubjectId) & seuratObj$SubjectId == subjectId & grepl(pattern = paste0("(?:^|,)", clonotype, "(?:$|,)"), x = seuratObj[[chain]][[1]])
       if (any(sel)) {
         toAdd <- responseDataForSubject[rep(idx, sum(sel)),]
@@ -1149,8 +1154,8 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
         toAdd$ClonotypesUsedForClonotypeMatch <- responseDataForSubject$ClonotypesUsedForClonotypeMatch[idx]
         toAdd$CellBarcode <- rownames(seuratObj@meta.data)[sel]
 
-        if (!is.na(cognateCDR3s) && !is.null(cognateCDR3s)) {
-          toRetain <- unlist(sapply(seuratObj[[cognateChain]][sel], function(x){
+        if (!all(is.null(cognateCDR3s))) {
+          toRetain <- unlist(sapply(seuratObj@meta.data[[cognateChain]][sel], function(x){
             if (is.na(x) || x == '') {
               return(TRUE)
             }
@@ -1160,10 +1165,10 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
             return(length(intersect(x, cognateCDR3s)) > 0)
           }))
 
-          if (sum(toRetain) != nrow(toAppend)) {
-            toDrop <- nrow(toAppend) - sum(toRetain)
-            print(paste0('Dropping ', toDrop, ' hits out of ', nrow(toAppend), ' because of mismatched second chain'))
-            toAppend <- toAppend[toRetain,]
+          if (sum(toRetain) != nrow(toAdd)) {
+            toDrop <- nrow(toAdd) - sum(toRetain)
+            print(paste0('Dropping ', toDrop, ' hits out of ', nrow(toAdd), ' because of mismatched second chain'))
+            toAdd <- toAdd[toRetain,]
           }
         }
 
