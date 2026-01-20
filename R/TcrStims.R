@@ -994,7 +994,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="tcrdb",
     queryName="clone_responses",
-    colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency,clonename",
+    colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency,clonename,cognatecdr3s",
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
       c('clonotype', "NEQ", "No TCR"),
@@ -1003,7 +1003,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     colNameOpt="rname"
   )
 
-  names(responseData) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency', 'CloneName')
+  names(responseData) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency', 'CloneName', 'cognatecdr3s')
 
   if (nrow(responseData) == 0) {
     print('No matching clones found in DB, skipping')
@@ -1087,7 +1087,8 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       HasNoStim = sum(IsNoStim)>0,
       MaxTotalCloneSize = max(totalclonesize),
       MaxFractionCloneActivated = max(fractioncloneactivated),
-      MaxActivationFrequency = max(activationfrequency)
+      MaxActivationFrequency = max(activationfrequency),
+      cognatecdr3s = paste0(sort(unique(cognatecdr3s)), collapse = ',')
     ) %>%
     as.data.frame() %>%
     mutate(
@@ -1126,12 +1127,45 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
         }
       }
 
+      cognateChain <- .GetCognateChain(chain)
+      if (! cognateChain %in% colnames(seuratObj@meta.data)) {
+        stop(paste0('Missing column: ', cognateChain))
+      }
+
+      cognateCDR3s <- responseDataForSubject$cognatecdr3s[idx]
+      if (!is.na(cognateCDR3s) && !is.null(cognateCDR3s) && cognateCDR3s != '') {
+        cognateCDR3s <- unlist(strsplit(cognateCDR3s, split = ','))
+        cognateCDR3s <- unique(unlist(sapply(cognateCDR3s, function(x){
+          # Strip frequency information:
+          x <- unlist(strsplit(x, split = ':'))[1]
+          return(x)
+        })))
+      }
+
       sel <- !is.na(seuratObj$SubjectId) & seuratObj$SubjectId == subjectId & grepl(pattern = paste0("(?:^|,)", clonotype, "(?:$|,)"), x = seuratObj[[chain]][[1]])
       if (any(sel)) {
         toAdd <- responseDataForSubject[rep(idx, sum(sel)),]
         toAdd$ChainsUsedForClonotypeMatch <- chain
         toAdd$ClonotypesUsedForClonotypeMatch <- responseDataForSubject$ClonotypesUsedForClonotypeMatch[idx]
         toAdd$CellBarcode <- rownames(seuratObj@meta.data)[sel]
+
+        if (!is.na(cognateCDR3s) && !is.null(cognateCDR3s)) {
+          toRetain <- unlist(sapply(seuratObj[[cognateChain]][sel], function(x){
+            if (is.na(x) || x == '') {
+              return(TRUE)
+            }
+
+            x <- unlist(strsplit(x, split = ','))
+
+            return(length(intersect(x, cognateCDR3s)) > 0)
+          }))
+
+          if (sum(toRetain) != nrow(toAppend)) {
+            toDrop <- nrow(toAppend) - sum(toRetain)
+            print(paste0('Dropping ', toDrop, ' hits out of ', nrow(toAppend), ' because of mismatched second chain'))
+            toAppend <- toAppend[toRetain,]
+          }
+        }
 
         toAppend <- rbind(toAppend, toAdd)
       }
@@ -1323,6 +1357,9 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     }
   }
 
+  # Add cognate chains:
+  allDataWithPVal <- .AddCognateChains(chain, seuratObj, allDataWithPVal)
+
   .UpdateTcrStimDb(allDataWithPVal, chain = chain, methodName = method, storeStimLevelData = storeStimLevelData, allCDNA_IDs = unique(seuratObj$cDNA_ID))
 }
 
@@ -1400,6 +1437,16 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       return(NULL)
     }
   }
+}
+
+.GetCognateChain <- function(chain) {
+  return(switch(chain,
+         "TRA" = "TRB",
+         "TRB" = "TRA",
+         "TRG" = "TRD",
+         "TRD" = "TRG",
+         stop(paste0('Uknown chain: ', chain))
+  ))
 }
 
 .IdentifyActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', maxRatioToCombine = 1.0, minOddsRatio = 0.5, minEDS = 2) {
@@ -1507,6 +1554,59 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
     allDataWithPVal <- rbind(allDataWithPVal, dataWithPVal)
   }
+
+  return(allDataWithPVal)
+}
+
+.AddCognateChains <- function(chain, seuratObj, allDataWithPVal, minFraction = 0.05) {
+  cognateChain <- .GetCognateChain(chain)
+
+  chainData <- data.frame(SourceChain = allDataWithPVal$Clonotype, ToJoin = allDataWithPVal$Clonotype) %>%
+    group_by(SourceChain, ToJoin) %>%
+    summarize(CellForSource = n()) %>%
+    as.data.frame() %>%
+    tidyr::separate_longer_delim(cols = ToJoin, delim = ',') %>%
+    filter(!is.na(SourceChain)) %>%
+    unique()
+
+  cognateData <- seuratObj@meta.data %>%
+    select(all_of(c(chain, cognateChain))) %>%
+    rename(
+      'TargetChain' = !!chain,
+      'CognateChain' = !!cognateChain
+    ) %>%
+    filter(!is.na(TargetChain)) %>%
+    group_by(TargetChain, CognateChain) %>%
+    summarize(CellForCognate = n()) %>%
+    as.data.frame() %>%
+    mutate(ToJoin = TargetChain) %>%
+    tidyr::separate_longer_delim(cols = ToJoin, delim = ',')
+
+  joinedData <- chainData %>%
+    left_join(cognateData, by = 'ToJoin', relationship = 'many-to-many') %>%
+    group_by(SourceChain) %>%
+    mutate(TotalForSource = sum(CellForCognate[!is.na(CognateChain)])) %>%
+    group_by(SourceChain, CognateChain, TotalForSource) %>%
+    summarize(Total = sum(CellForCognate[!is.na(CognateChain)])) %>%
+    as.data.frame() %>%
+    mutate(Fraction = Total / TotalForSource) %>%
+    mutate(Weight = 1/(stringr::str_count(CognateChain, ",")+1)) %>%
+    mutate(WeightedTotal = Total * Weight) %>%
+    tidyr::separate_longer_delim(cols = CognateChain, delim = ',') %>%
+    group_by(SourceChain, CognateChain, TotalForSource) %>%
+    summarise(WeightedTotal = sum(WeightedTotal)) %>%
+    as.data.frame() %>%
+    mutate(Fraction = WeightedTotal / TotalForSource) %>%
+    filter(Fraction > minFraction) %>%
+    group_by(SourceChain) %>%
+    mutate(numCognates = n()) %>%
+    mutate(ChainAndWeight = paste0(CognateChain, ':', round(Fraction, 3))) %>%
+    group_by(SourceChain) %>%
+    summarize(cognateCdr3s = paste0(ChainAndWeight, collapse = ',')) %>%
+    as.data.frame()
+
+  allDataWithPVal <- allDataWithPVal %>%
+    left_join(joinedData, by = c('Clonotype' = 'SourceChain'))
 
   return(allDataWithPVal)
 }
