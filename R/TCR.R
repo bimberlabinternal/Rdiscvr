@@ -676,6 +676,11 @@ ClassifyTNKByExpression <- function(seuratObj, assayName = 'RNA', constantRegion
     seuratObj <- Rdiscvr::DownloadAndAppendTcrClonotypes(seuratObj, allowMissing = FALSE)
   }
 
+  if (any(is.na(seuratObj$HasCDR3Data))) {
+    print('Fixing HasCDR3Data field')
+    seuratObj$HasCDR3Data <- !is.na(seuratObj$CDR3s)
+  }
+
   if (all(seuratObj$HasCDR3Data == FALSE)) {
     print('None of the cells had CDR3 data, skipping')
     return(seuratObj)
