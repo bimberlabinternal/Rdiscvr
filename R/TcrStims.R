@@ -1320,7 +1320,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
         as.data.frame() %>%
         filter(Clonotype %in% missingClonotypes) %>%
         group_by(cDNA_ID, Clonotype, V_Gene, J_Gene, cdr3WithSegments) %>%
-        summarize(totalCloneSize = n()) %>%
+        summarize(TotalCellsForClone = n()) %>%
         as.data.frame() %>%
         mutate(
           method = method,
