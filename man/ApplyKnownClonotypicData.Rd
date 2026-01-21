@@ -10,7 +10,8 @@ ApplyKnownClonotypicData(
   antigenExclusionList = NULL,
   minActivationFrequency = 0,
   minFractionCloneActivated = 0,
-  fieldPrefix = NULL
+  fieldPrefix = NULL,
+  doNotPruneUsingCognateChain = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ ApplyKnownClonotypicData(
 \item{minFractionCloneActivated}{If provided, only responses where fractionCloneActivated is above this value will be will be included}
 
 \item{fieldPrefix}{If provided, this will be appended to the beginning of the output field names}
+
+\item{doNotPruneUsingCognateChain}{By default, matching is performed using the primary chain (as defined in the DB). If this is provided, this additional step is skipped}
 }
 \description{
 This will query the clone_responses table and append a column tagging each cell for matching antigens (based on clonotype)

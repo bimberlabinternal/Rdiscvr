@@ -983,8 +983,9 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 #' @param minActivationFrequency If provided, only responses with activationFrequency (of the parent population) will be included
 #' @param minFractionCloneActivated If provided, only responses where fractionCloneActivated is above this value will be will be included
 #' @param fieldPrefix If provided, this will be appended to the beginning of the output field names
+#' @param doNotPruneUsingCognateChain By default, matching is performed using the primary chain (as defined in the DB). If this is provided, this additional step is skipped
 #' @export
-ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, minFractionCloneActivated = 0, fieldPrefix = NULL) {
+ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, minFractionCloneActivated = 0, fieldPrefix = NULL, doNotPruneUsingCognateChain = FALSE) {
   numAntigensFieldName <- .getNumAntigensFieldName(fieldPrefix)
   antigensFieldName <- .getAntigensFieldName(fieldPrefix)
 
@@ -999,7 +1000,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
       c('clonotype', "NEQ", "No TCR"),
       c('cDNA_ID/status', 'DOES_NOT_CONTAIN', 'Failed'),
-      c('status', "NOT_EQUAL_OR_MISSING", "Below Threshold"),
+      c('status', "NOT_EQUAL_OR_MISSING", "Below Threshold")
     ),
     colNameOpt="rname"
   )
@@ -1019,12 +1020,13 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
                                    antigenExclusionList = antigenExclusionList,
                                    minActivationFrequency = minActivationFrequency,
                                    minFractionCloneActivated = minFractionCloneActivated,
-                                   fieldPrefix = fieldPrefix
+                                   fieldPrefix = fieldPrefix,
+                                   doNotPruneUsingCognateChain = doNotPruneUsingCognateChain
   ))
 }
 
 # responseData should be a data.frame with the columns: c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency')
-.ApplyKnownClonotypicData <- function(seuratObj, responseData, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, minFractionCloneActivated = 0, fieldPrefix = NULL) {
+.ApplyKnownClonotypicData <- function(seuratObj, responseData, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, minFractionCloneActivated = 0, fieldPrefix = NULL, doNotPruneUsingCognateChain = FALSE) {
   numAntigensFieldName <- .getNumAntigensFieldName(fieldPrefix)
   antigensFieldName <- .getAntigensFieldName(fieldPrefix)
 
@@ -1155,7 +1157,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
         toAdd$ClonotypesUsedForClonotypeMatch <- responseDataForSubject$ClonotypesUsedForClonotypeMatch[idx]
         toAdd$CellBarcode <- rownames(seuratObj@meta.data)[sel]
 
-        if (!all(is.null(cognateCDR3s))) {
+        if (!doNotPruneUsingCognateChain && !all(is.null(cognateCDR3s))) {
           toRetain <- unlist(sapply(seuratObj@meta.data[[cognateChain]][sel], function(x){
             if (is.na(x) || x == '') {
               return(TRUE)
@@ -1329,7 +1331,8 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
           method = method,
           TotalCellsForCloneAndState = 0,
           FractionOfCloneWithState = 0,
-          chain = chain
+          chain = chain,
+          IsActive = TRUE
         )
 
       stillNeeded <- missingClonotypes[! missingClonotypes %in% toAppend$Clonotype]
@@ -1350,7 +1353,8 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
             TotalCellsForCloneAndState = 0,
             FractionOfCloneWithState = 0,
             chain = chain,
-            cDNA_ID = cdnaId
+            cDNA_ID = cdnaId,
+            IsActive = TRUE
           )
 
         if (nrow(toAppend2) > 0) {
