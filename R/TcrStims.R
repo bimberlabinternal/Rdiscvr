@@ -1289,10 +1289,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 #' @import dplyr
 IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', storeStimLevelData = TRUE, maxRatioToCombine = 1.0, minEDS = 2) {
   allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method, maxRatioToCombine = maxRatioToCombine, minEDS = minEDS)
-
-  if (any(is.na(allDataWithPVal$chain))) {
-    stop('There were NA values in chain after .IdentifyActiveClonotypes')
-  }
+  allDataWithPVal$chain <- chain
 
   # Calculate/store frequencies for clones that responded in at least one sample:
   allDataWithPVal$Status <- NA
@@ -1361,11 +1358,8 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
         }
       }
 
-      print(paste0('cDNA ', cdnaId, ': adding ', nrow(toAppend), ' placeholder records for clonotypes without activation'))
       if (nrow(toAppend) > 0) {
-        if (any(is.na(toAppend$chain))) {
-          stop('There were NA chain values in toAppend')
-        }
+        print(paste0('cDNA ', cdnaId, ': adding ', nrow(toAppend), ' placeholder records for clonotypes without activation'))
         toAppend$Status <- 'Below Threshold'
 
         allDataWithPVal <- plyr::rbind.fill(allDataWithPVal, toAppend)
@@ -1375,10 +1369,6 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
   # Add cognate chains:
   allDataWithPVal <- .AddCognateChains(chain, seuratObj, allDataWithPVal)
-
-  if (any(is.na(allDataWithPVal$chain))) {
-    stop('There were NA values in chain after .AddCognateChains')
-  }
 
   .UpdateTcrStimDb(allDataWithPVal, chain = chain, methodName = method, storeStimLevelData = storeStimLevelData, allCDNA_IDs = unique(seuratObj$cDNA_ID))
 }
