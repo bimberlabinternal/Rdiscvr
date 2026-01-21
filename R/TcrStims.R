@@ -998,7 +998,8 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
       c('clonotype', "NEQ", "No TCR"),
-      c('cDNA_ID/status', 'DOES_NOT_CONTAIN', 'Failed')
+      c('cDNA_ID/status', 'DOES_NOT_CONTAIN', 'Failed'),
+      c('status', "NOT_EQUAL_OR_MISSING", "Below Threshold"),
     ),
     colNameOpt="rname"
   )
@@ -1289,7 +1290,12 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', storeStimLevelData = TRUE, maxRatioToCombine = 1.0, minEDS = 2) {
   allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method, maxRatioToCombine = maxRatioToCombine, minEDS = minEDS)
 
+  if (any(is.na(allDataWithPVal$chain))) {
+    stop('There were NA values in chain after .IdentifyActiveClonotypes')
+  }
+
   # Calculate/store frequencies for clones that responded in at least one sample:
+  allDataWithPVal$Status <- NA
   allClones <- unique(allDataWithPVal$Clonotype)
   allClones <- allClones[allClones != 'No TCR']
   for (subjectId in sort(unique(allDataWithPVal$SubjectId))) {
@@ -1357,6 +1363,11 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
       print(paste0('cDNA ', cdnaId, ': adding ', nrow(toAppend), ' placeholder records for clonotypes without activation'))
       if (nrow(toAppend) > 0) {
+        if (any(is.na(toAppend$chain))) {
+          stop('There were NA chain values in toAppend')
+        }
+        toAppend$Status <- 'Below Threshold'
+
         allDataWithPVal <- plyr::rbind.fill(allDataWithPVal, toAppend)
       }
     }
@@ -1364,6 +1375,10 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
   # Add cognate chains:
   allDataWithPVal <- .AddCognateChains(chain, seuratObj, allDataWithPVal)
+
+  if (any(is.na(allDataWithPVal$chain))) {
+    stop('There were NA values in chain after .AddCognateChains')
+  }
 
   .UpdateTcrStimDb(allDataWithPVal, chain = chain, methodName = method, storeStimLevelData = storeStimLevelData, allCDNA_IDs = unique(seuratObj$cDNA_ID))
 }
