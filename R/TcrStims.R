@@ -1799,7 +1799,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       }
     }
 
-    for (fn in c('enrichmentFDR', 'oddsRatio', 'totalCloneSize')) {
+    for (fn in c('enrichmentFDR', 'oddsRatio', 'totalCloneSize', 'quantification')) {
       if (any(is.na(toInsert[[fn]]))) {
         toInsert[[fn]][is.na(toInsert[[fn]])] <- ''
       }
