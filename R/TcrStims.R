@@ -1351,6 +1351,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
           mutate(
             method = method,
             TotalCellsForCloneAndState = 0,
+            TotalCellsForClone = 0,
             FractionOfCloneWithState = 0,
             chain = chain,
             cDNA_ID = cdnaId,
@@ -1798,7 +1799,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       }
     }
 
-    for (fn in c('enrichmentFDR', 'oddsRatio')) {
+    for (fn in c('enrichmentFDR', 'oddsRatio', 'totalCloneSize')) {
       if (any(is.na(toInsert[[fn]]))) {
         toInsert[[fn]][is.na(toInsert[[fn]])] <- ''
       }
