@@ -1687,10 +1687,20 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   toUpdate <- allDataWithPVal %>%
     filter(is.na(Status)) %>%
     filter(is.na(FailedEnrichment) | !FailedEnrichment) %>%
-    group_by(cDNA_ID) %>%
     filter(IsActive) %>%
+    group_by(cDNA_ID) %>%
     summarise(quantification = unique(FractionOfSampleWithState)*100, nClones = n()) %>%
     mutate(QuantificationMethod = methodName)
+
+  if (any(is.na(toUpdate$cDNA_ID))) {
+    saveRDS(toUpdate, files = 'toUpdate.rds')
+    stop('There were NA cDNA_IDs in the tcrdb.stims toUpdate')
+  }
+
+  if (any(duplicated(toUpdate$cDNA_ID))) {
+    saveRDS(toUpdate, files = 'toUpdate.rds')
+    stop('There were duplicated cDNA_IDs in the tcrdb.stims toUpdate')
+  }
 
   allCDNA <- toUpdate$cDNA_ID
   if (!all(is.null(allCDNA_IDs))) {
@@ -1714,6 +1724,16 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
   if (storeStimLevelData) {
     print(paste0('Updating ', nrow(toUpdate), ' rows in tcrdb.stims'))
+
+    if (any(is.na(toUpdate$rowid))) {
+      saveRDS(toUpdate, files = 'toUpdate.rds')
+      stop('There were NA rowIds in the tcrdb.stims toUpdate')
+    }
+
+    if (any(duplicated(toUpdate$rowid))) {
+      saveRDS(toUpdate, files = 'toUpdate.rds')
+      stop('There were duplicated rowIds in the tcrdb.stims toUpdate')
+    }
 
     if (nrow(toUpdate) > 0) {
       for (fn in names(toUpdate)) {
