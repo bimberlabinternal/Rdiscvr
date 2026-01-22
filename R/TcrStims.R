@@ -1799,9 +1799,12 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       }
     }
 
-    for (fn in c('enrichmentFDR', 'oddsRatio', 'totalCloneSize', 'quantification')) {
-      if (any(is.na(toInsert[[fn]]))) {
-        toInsert[[fn]][is.na(toInsert[[fn]])] <- ''
+    # This has been an issue for: c('enrichmentFDR', 'oddsRatio', 'totalCloneSize', 'quantification')
+    for (fn in names(toInsert)) {
+      if (is.integer(toInsert[[fn]]) || is.numeric(toInsert[[fn]])) {
+        if (any(is.na(toInsert[[fn]]))) {
+          toInsert[[fn]][is.na(toInsert[[fn]])] <- ''
+        }
       }
     }
 
@@ -1817,9 +1820,11 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
   toUpdate <- toInsertOrUpdate %>% filter(!is.na(container))
   if (nrow(toUpdate) > 0) {
-    for (fn in c('enrichmentFDR', 'oddsRatio')) {
-      if (any(is.na(toUpdate[[fn]]))) {
-        toUpdate[[fn]][is.na(toUpdate[[fn]])] <- ''
+    for (fn in names(toUpdate)) {
+      if (is.integer(toUpdate[[fn]]) || is.numeric(toUpdate[[fn]])) {
+        if (any(is.na(toUpdate[[fn]]))) {
+          toUpdate[[fn]][is.na(toUpdate[[fn]])] <- ''
+        }
       }
     }
 
