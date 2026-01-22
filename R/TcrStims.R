@@ -11,7 +11,7 @@ utils::globalVariables(
             'SampleDate', 'Tissue', 'fractioncloneactivated', 'maxFractionCloneActivated', 'maxTotalCloneSize', 'meanCloneSize', 'meanFractionCloneActivated', 'totalclonesize',
             'TandNK_ActivationCore_UCell', 'TandNK_Activation_UCell', 'TandNK_Activation3_UCell', 'IsFiltered', 'FailedEnrichment', 'FractionOfSampleWithState', 'container',
             'DetectedAsSingleCDR3', 'CloneId', 'Status', 'MaxActivationFrequency', 'MaxFractionCloneActivated', 'MaxTotalCloneSize', 'ClonotypesUsedForClonotypeMatch', 'ChainsUsedForClonotypeMatch', 'cognatecdr3s',
-            'activationfrequency', 'ChainAndWeight', 'WeightedTotal', 'Weight', 'TotalForSource', 'CellForCognate', 'CognateChain', 'TargetChain', 'ToJoin', 'SourceChain'),
+            'activationfrequency', 'ChainAndWeight', 'WeightedTotal', 'Weight', 'TotalForSource', 'CellForCognate', 'CognateChain', 'TargetChain', 'ToJoin', 'SourceChain', 'StimStatus'),
   package = 'Rdiscvr',
   add = TRUE
 )
@@ -1798,18 +1798,10 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
   # And Clones/Responses:
   toDelete <- existingRows %>%
-    left_join(toInsertOrUpdate, by = c('cdna_id' = 'cDNA_ID', 'clonotype' = 'Clonotype')) %>%
-    filter(is.na(SubjectId))
+    select(rowid, container)
 
-  toInsertOrUpdate <- toInsertOrUpdate %>%
-    left_join(existingRows, by = c('cDNA_ID' = 'cdna_id', 'Clonotype' = 'clonotype'))
-
-  toInsert <- toInsertOrUpdate %>%
-    filter(is.na(rowid)) %>%
-    select(-rowid) %>%
-    select(-container)
-
-  if (nrow(toInsert) > 0) {
+  if (nrow(toInsertOrUpdate) > 0) {
+    toInsert <- toInsertOrUpdate
     existingLibraries <- labkey.selectRows(
       baseUrl=.getBaseUrl(),
       folderPath=.getLabKeyDefaultFolder(),
@@ -1817,12 +1809,14 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       queryName="cdna_libraries",
       colSelect="rowid,container",
       colFilter=makeFilter(
-        c("rowid", "IN", paste0(unique(toUpdate$cDNA_ID), collapse = ';'))
+        c("rowid", "IN", paste0(unique(toInsert$cDNA_ID), collapse = ';'))
       ),
       containerFilter=NULL,
       colNameOpt="rname"
     )
-    toInsert <- toInsert %>% left_join(existingLibraries, by = c('cDNA_ID' = 'rowid'))
+    toInsert <- toInsert %>%
+      left_join(existingLibraries, by = c('cDNA_ID' = 'rowid'))
+
     for (fieldName in names(toInsert)) {
       if (all(is.na(toInsert[[fieldName]]))) {
         print(paste0('dropping all-NA field: ', fieldName))
@@ -1846,26 +1840,6 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       schemaName="tcrdb",
       queryName="clone_responses",
       toInsert = toInsert
-    )
-  }
-
-  toUpdate <- toInsertOrUpdate %>% filter(!is.na(container))
-  if (nrow(toUpdate) > 0) {
-    for (fn in names(toUpdate)) {
-      if (is.integer(toUpdate[[fn]]) || is.numeric(toUpdate[[fn]])) {
-        if (any(is.na(toUpdate[[fn]]))) {
-          toUpdate[[fn]][is.na(toUpdate[[fn]])] <- ''
-        }
-      }
-    }
-
-    print(paste0('Updating ', nrow(toUpdate), ' rows in tcrdb.clone_responses'))
-    added <- labkey.updateRows(
-      baseUrl=.getBaseUrl(),
-      folderPath=.getLabKeyDefaultFolder(),
-      schemaName="tcrdb",
-      queryName="clone_responses",
-      toUpdate = toUpdate
     )
   }
 
