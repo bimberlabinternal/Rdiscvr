@@ -1715,6 +1715,14 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     print(paste0('Updating ', nrow(toUpdate), ' rows in tcrdb.stims'))
 
     if (nrow(toUpdate) > 0) {
+      for (fn in names(toUpdate)) {
+        if (is.integer(toUpdate[[fn]]) || is.numeric(toUpdate[[fn]])) {
+          if (any(is.na(toUpdate[[fn]]))) {
+            toUpdate[[fn]][is.na(toUpdate[[fn]])] <- ''
+          }
+        }
+      }
+
       updated <- labkey.updateRows(
         baseUrl=.getBaseUrl(),
         folderPath=.getLabKeyDefaultFolder(),
