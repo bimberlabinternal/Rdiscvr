@@ -3,7 +3,9 @@
 #' @import utils
 
 utils::globalVariables(
-  names = c('sortOrder', 'SampleName', 'SubjectId', 'c_gene', 'cdna', 'count', 'd_gene', 'j_gene', 'population', 'raw_clonotype_id', 'raw_consensus_id', 'v_gene', 'CellBarcode', 'IsActive', 'IsActiveLabel', 'GroupField', 'Fraction', 'Label', 'IsShared', 'Tissue', 'metricName'),
+  names = c('sortOrder', 'SampleName', 'SubjectId', 'c_gene', 'cdna', 'count', 'd_gene', 'j_gene', 'population', 'raw_clonotype_id', 'raw_consensus_id', 'v_gene', 'CellBarcode', 'IsActive', 'IsActiveLabel', 'GroupField', 'Fraction', 'Label', 'IsShared', 'Tissue', 'metricName',
+            'TRA_Segments', 'TRB_Segments', 'TRD_Segments', 'TRG_Segments',
+  'TRA_WithProductive', 'TRB_WithProductive', 'TRD_WithProductive', 'TRG_WithProductive'),
   package = 'Rdiscvr',
   add = TRUE
 )

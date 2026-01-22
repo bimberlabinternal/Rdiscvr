@@ -9,7 +9,9 @@ utils::globalVariables(
             'Tcell_EffectorDifferentiation','TotalCellsForClone','TotalCellsForCloneAndState','TotalCellsForSample','TotalCellsForSampleAndState','V_Gene', 'J_Gene', 'cdr3WithSegments',
             'cDNA_ID','coefficients', 'p_val', 'error', 'FractionOfCloneWithState', 'Antigens', 'Chain', 'ChainsForAntigenMatch', 'HasIE', 'HasNoStim', 'IsIE', 'IsNoStim',
             'SampleDate', 'Tissue', 'fractioncloneactivated', 'maxFractionCloneActivated', 'maxTotalCloneSize', 'meanCloneSize', 'meanFractionCloneActivated', 'totalclonesize',
-            'TandNK_ActivationCore_UCell', 'TandNK_Activation_UCell', 'TandNK_Activation3_UCell', 'IsFiltered', 'FailedEnrichment', 'FractionOfSampleWithState', 'container'),
+            'TandNK_ActivationCore_UCell', 'TandNK_Activation_UCell', 'TandNK_Activation3_UCell', 'IsFiltered', 'FailedEnrichment', 'FractionOfSampleWithState', 'container',
+            'DetectedAsSingleCDR3', 'CloneId', 'Status', 'MaxActivationFrequency', 'MaxFractionCloneActivated', 'MaxTotalCloneSize', 'ClonotypesUsedForClonotypeMatch', 'ChainsUsedForClonotypeMatch', 'cognatecdr3s',
+            'activationfrequency', 'ChainAndWeight', 'WeightedTotal', 'Weight', 'TotalForSource', 'CellForCognate', 'CognateChain', 'TargetChain', 'ToJoin', 'SourceChain'),
   package = 'Rdiscvr',
   add = TRUE
 )
@@ -1693,12 +1695,12 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     mutate(QuantificationMethod = methodName)
 
   if (any(is.na(toUpdate$cDNA_ID))) {
-    saveRDS(toUpdate, files = 'toUpdate.rds')
+    saveRDS(toUpdate, file = 'toUpdate.rds')
     stop('There were NA cDNA_IDs in the tcrdb.stims toUpdate')
   }
 
   if (any(duplicated(toUpdate$cDNA_ID))) {
-    saveRDS(toUpdate, files = 'toUpdate.rds')
+    saveRDS(toUpdate, file = 'toUpdate.rds')
     stop('There were duplicated cDNA_IDs in the tcrdb.stims toUpdate')
   }
 
@@ -1726,12 +1728,12 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     print(paste0('Updating ', nrow(toUpdate), ' rows in tcrdb.stims'))
 
     if (any(is.na(toUpdate$rowid))) {
-      saveRDS(toUpdate, files = 'toUpdate.rds')
+      saveRDS(toUpdate, file = 'toUpdate.rds')
       stop('There were NA rowIds in the tcrdb.stims toUpdate')
     }
 
     if (any(duplicated(toUpdate$rowid))) {
-      saveRDS(toUpdate, files = 'toUpdate.rds')
+      saveRDS(toUpdate, file = 'toUpdate.rds')
       stop('There were duplicated rowIds in the tcrdb.stims toUpdate')
     }
 
