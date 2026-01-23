@@ -1295,54 +1295,30 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method, maxRatioToCombine = maxRatioToCombine, minEDS = minEDS)
   if (nrow(allDataWithPVal) > 0) {
     allDataWithPVal$chain <- chain
-  }
 
-  # Calculate/store frequencies for clones that responded in at least one sample:
-  allDataWithPVal$Status <- NA
-  allClones <- unique(allDataWithPVal$Clonotype)
-  allClones <- allClones[allClones != 'No TCR']
-  for (subjectId in sort(unique(allDataWithPVal$SubjectId))) {
-    datForSubject <- allDataWithPVal %>% filter(SubjectId == subjectId)
-    for (cdnaId in sort(unique(datForSubject$cDNA_ID))) {
-      datForStim <- datForSubject %>% filter(cDNA_ID == cdnaId)
-      missingClonotypes <- allClones[! allClones %in% datForStim$Clonotype ]
-      if (length(missingClonotypes) == 0) {
-        next
-      }
+    # Calculate/store frequencies for clones that responded in at least one sample:
+    allDataWithPVal$Status <- NA
+    allClones <- unique(allDataWithPVal$Clonotype)
+    allClones <- allClones[allClones != 'No TCR']
+    for (subjectId in sort(unique(allDataWithPVal$SubjectId))) {
+      datForSubject <- allDataWithPVal %>% filter(SubjectId == subjectId)
+      for (cdnaId in sort(unique(datForSubject$cDNA_ID))) {
+        datForStim <- datForSubject %>% filter(cDNA_ID == cdnaId)
+        missingClonotypes <- allClones[! allClones %in% datForStim$Clonotype ]
+        if (length(missingClonotypes) == 0) {
+          next
+        }
 
-      chainWithSegmentsField <- paste0(chain, '_Segments')
-      vField <- paste0(chain, '_V')
-      jField <- paste0(chain, '_J')
-      toAppend <- seuratObj@meta.data %>%
-        filter(cDNA_ID == cdnaId) %>%
-        filter(dplyr::if_all(dplyr::all_of(c(chain)), ~ !is.na(.x))) %>%
-        group_by(cDNA_ID) %>%
-        mutate(TotalCellsForSample = n()) %>%
-        ungroup() %>%
-        select(all_of(c('cDNA_ID', chain, vField, jField, chainWithSegmentsField))) %>%
-        rename(c(
-          Clonotype = !!chain,
-          cdr3WithSegments = !!chainWithSegmentsField,
-          V_Gene = !!vField,
-          J_Gene = !!jField
-        )) %>%
-        as.data.frame() %>%
-        filter(Clonotype %in% missingClonotypes) %>%
-        group_by(cDNA_ID, Clonotype, V_Gene, J_Gene, cdr3WithSegments) %>%
-        summarize(TotalCellsForClone = n()) %>%
-        as.data.frame() %>%
-        mutate(
-          method = method,
-          TotalCellsForCloneAndState = 0,
-          FractionOfCloneWithState = 0,
-          chain = chain,
-          IsActive = TRUE
-        )
-
-      stillNeeded <- missingClonotypes[! missingClonotypes %in% toAppend$Clonotype]
-      if (length(stillNeeded) > 0) {
-        toAppend2 <- seuratObj@meta.data %>%
-          select(all_of(c(chain, vField, jField, chainWithSegmentsField))) %>%
+        chainWithSegmentsField <- paste0(chain, '_Segments')
+        vField <- paste0(chain, '_V')
+        jField <- paste0(chain, '_J')
+        toAppend <- seuratObj@meta.data %>%
+          filter(cDNA_ID == cdnaId) %>%
+          filter(dplyr::if_all(dplyr::all_of(c(chain)), ~ !is.na(.x))) %>%
+          group_by(cDNA_ID) %>%
+          mutate(TotalCellsForSample = n()) %>%
+          ungroup() %>%
+          select(all_of(c('cDNA_ID', chain, vField, jField, chainWithSegmentsField))) %>%
           rename(c(
             Clonotype = !!chain,
             cdr3WithSegments = !!chainWithSegmentsField,
@@ -1350,34 +1326,58 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
             J_Gene = !!jField
           )) %>%
           as.data.frame() %>%
-          filter(Clonotype %in% stillNeeded) %>%
-          unique() %>%
+          filter(Clonotype %in% missingClonotypes) %>%
+          group_by(cDNA_ID, Clonotype, V_Gene, J_Gene, cdr3WithSegments) %>%
+          summarize(TotalCellsForClone = n()) %>%
+          as.data.frame() %>%
           mutate(
             method = method,
             TotalCellsForCloneAndState = 0,
-            TotalCellsForClone = 0,
             FractionOfCloneWithState = 0,
             chain = chain,
-            cDNA_ID = cdnaId,
             IsActive = TRUE
           )
 
-        if (nrow(toAppend2) > 0) {
-          toAppend <- plyr::rbind.fill(toAppend, toAppend2)
+        stillNeeded <- missingClonotypes[! missingClonotypes %in% toAppend$Clonotype]
+        if (length(stillNeeded) > 0) {
+          toAppend2 <- seuratObj@meta.data %>%
+            select(all_of(c(chain, vField, jField, chainWithSegmentsField))) %>%
+            rename(c(
+              Clonotype = !!chain,
+              cdr3WithSegments = !!chainWithSegmentsField,
+              V_Gene = !!vField,
+              J_Gene = !!jField
+            )) %>%
+            as.data.frame() %>%
+            filter(Clonotype %in% stillNeeded) %>%
+            unique() %>%
+            mutate(
+              method = method,
+              TotalCellsForCloneAndState = 0,
+              TotalCellsForClone = 0,
+              FractionOfCloneWithState = 0,
+              chain = chain,
+              cDNA_ID = cdnaId,
+              IsActive = TRUE
+            )
+
+          if (nrow(toAppend2) > 0) {
+            toAppend <- plyr::rbind.fill(toAppend, toAppend2)
+          }
+        }
+
+        if (nrow(toAppend) > 0) {
+          print(paste0('cDNA ', cdnaId, ': adding ', nrow(toAppend), ' placeholder records for clonotypes without activation'))
+          toAppend$Status <- 'Below Threshold'
+
+          allDataWithPVal <- plyr::rbind.fill(allDataWithPVal, toAppend)
         }
       }
-
-      if (nrow(toAppend) > 0) {
-        print(paste0('cDNA ', cdnaId, ': adding ', nrow(toAppend), ' placeholder records for clonotypes without activation'))
-        toAppend$Status <- 'Below Threshold'
-
-        allDataWithPVal <- plyr::rbind.fill(allDataWithPVal, toAppend)
-      }
     }
-  }
 
-  # Add cognate chains:
-  allDataWithPVal <- .AddCognateChains(chain, seuratObj, allDataWithPVal)
+    # Add cognate chains:
+    allDataWithPVal <- .AddCognateChains(chain, seuratObj, allDataWithPVal)
+  }
 
   .UpdateTcrStimDb(allDataWithPVal, chain = chain, methodName = method, storeStimLevelData = storeStimLevelData, allCDNA_IDs = unique(seuratObj$cDNA_ID))
 }
@@ -1631,7 +1631,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 }
 
 .UpdateTcrStimDb <- function(allDataWithPVal, chain, methodName = NULL, storeStimLevelData = TRUE, allCDNA_IDs = NULL) {
-  if (all(is.null(allDataWithPVal))) {
+  if (all(is.null(allDataWithPVal)) || nrow(allDataWithPVal) == 0) {
     print('No data, skipping import')
 
     if (!all(is.null(allCDNA_IDs))) {
