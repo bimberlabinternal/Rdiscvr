@@ -1293,7 +1293,9 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 #' @import dplyr
 IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', storeStimLevelData = TRUE, maxRatioToCombine = 1.0, minEDS = 2) {
   allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method, maxRatioToCombine = maxRatioToCombine, minEDS = minEDS)
-  allDataWithPVal$chain <- chain
+  if (nrow(allDataWithPVal) > 0) {
+    allDataWithPVal$chain <- chain
+  }
 
   # Calculate/store frequencies for clones that responded in at least one sample:
   allDataWithPVal$Status <- NA
