@@ -1160,7 +1160,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
         toAdd$CellBarcode <- rownames(seuratObj@meta.data)[sel]
 
         if (!doNotPruneUsingCognateChain && !all(is.null(cognateCDR3s))) {
-          toRetain <- unlist(sapply(seuratObj@meta.data[[cognateChain]][sel], function(x){
+          toRetain <- unlist(sapply(as.character(seuratObj@meta.data[[cognateChain]][sel]), function(x){
             if (is.na(x) || x == '') {
               return(TRUE)
             }
