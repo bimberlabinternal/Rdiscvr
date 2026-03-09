@@ -192,22 +192,22 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
     'Unvaccinated-Mock',
     'IV-BCG-Mock',
     'RhCMV-TB/9Ag-Mock',
-    
+
     'RhCMV/Gag',
     'RhCMV-Malaria',
-    
+
     'Unvaccinated',
-    
+
     'BCG (adult)',
     'BCG (at birth)',
     'BCG (at birth) / RhCMV-TB/6Ag',
     'IV-BCG',
-    
+
     'Delta pp71 RhCMV-TB/6Ag',
     'RhCMV-TB/6Ag',
     'RhCMV-TB/9Ag'
   )
-  
+
   for (l in rev(expectedOrder)) {
     if (l %in% unique(metadata$VaccineAndChallenge)) {
       metadata$VaccineAndChallenge <- forcats::fct_relevel(metadata$VaccineAndChallenge, l, after = 0)
@@ -264,7 +264,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     seuratObj <- .ApplyMetadata(seuratObj)
   }
   seuratObj <- .AppendDemographics(seuratObj)
-  
+
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1172",
@@ -274,7 +274,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     colSelect = 'subjectid,sex,groupname,mmr,d0,mmr_date,cvac1,cvac2,cvac3,challengedate,PreExposureDate,ChallengeType,Protection',
   )
   names(metadata) <- c('SubjectId', 'Sex', 'GroupName', 'MMR', 'D0', 'MMR_Date', 'CVac1', 'CVac2', 'CVac3', 'ChallengeDate', 'PreExposureDate', 'ChallengeType', 'Protection')
-  
+
   metadata2 <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1172",
@@ -284,7 +284,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     colSelect = 'libraryid,timepointlabel,parasitemia,LibraryId/sortId/sampleId/subjectId'
   )
   names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'Parasitemia', 'SubjectId')
-  
+
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
 
@@ -296,7 +296,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     missing <- sort(unique(seuratObj$cDNA_ID[!seuratObj$cDNA_ID %in% metadata$cDNA_ID]))
     stop(paste0('There were cDNA_IDs in the seurat object missing from the metadata, missing: ', paste0(missing, collapse = ',')))
   }
-  
+
   toAdd <- data.frame(cDNA_ID = seuratObj$cDNA_ID, CellBarcode = colnames(seuratObj))
   toAdd$SortOrder <- seq_len(nrow(toAdd))
   toAdd <- merge(toAdd, metadata, by.x = 'cDNA_ID', all.x = TRUE)
@@ -336,7 +336,7 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     seuratObj <- .ApplyMetadata(seuratObj)
   }
   seuratObj <- .AppendDemographics(seuratObj)
-  
+
   metadata <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1297",
@@ -346,7 +346,7 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     colSelect = 'subjectid,VaccinationDate,InfectionDate,Outcome,VaccineType',
   )
   names(metadata) <- c('SubjectId', 'VaccinationDate', 'InfectionDate', 'Outcome', 'VaccineType')
-  
+
   metadata2 <- labkey.selectRows(
     baseUrl="https://prime-seq.ohsu.edu",
     folderPath="/Labs/Bimber/1297",
@@ -356,10 +356,10 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
     colSelect = 'cDNA_ID,Label,DPV,PID,cDNA_ID/sortId/sampleId/subjectId,pvl'
   )
   names(metadata2) <- c('cDNA_ID', 'TimepointLabel', 'DPV', 'PID', 'SubjectId', 'PVL')
-  
+
   metadata <- merge(metadata, metadata2, by = 'SubjectId', all.y = T)
   metadata <- metadata[names(metadata) != 'SubjectId']
-  
+
   if (errorIfUnknownIdsFound && (any(is.na(seuratObj$cDNA_ID)) || !all(seuratObj$cDNA_ID %in% metadata$cDNA_ID))) {
     if (any(is.na(seuratObj$cDNA_ID))) {
       stop('There were missing cDNA_IDs in the seurat object')
@@ -386,7 +386,7 @@ ApplyPC531Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApply
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
-  
+
   return(seuratObj)
 }
 
@@ -446,6 +446,8 @@ ApplyAcuteNxMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
   )
 
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
+
+  seuratObj <- .AppendStudyInfo(seuratObj)
 
   return(seuratObj)
 }
@@ -689,6 +691,8 @@ ApplyPPG_Stim_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reA
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
 
+  seuratObj <- .AppendStudyInfo(seuratObj)
+
   return(seuratObj)
 }
 
@@ -736,6 +740,41 @@ ApplyIMPAC_TB_Human_Metadata <- function(seuratObj, reApplyMetadata = TRUE, erro
 
   seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
   seuratObj <- .SetFieldsToUnknown(seuratObj, names(toAdd))
+
+  return(seuratObj)
+}
+
+.AppendStudyInfo <- function(seuratObj) {
+  toAdd <- labkey.selectRows(
+    baseUrl="https://prime-seq.ohsu.edu",
+    folderPath="/Labs/Bimber/Collaborations/SIV_Studies",
+    schemaName="study",
+    queryName="Demographics",
+    viewName="Expanded",
+    colSelect="Id,immunizations/immunizations,outcomes/outcomes,sivART/artInitiationDPI,sivART/infectionDate,sivART/artInitiationDate,sivART/artReleaseDate",
+    colSort="immunizations/immunizations",
+    colFilter=makeFilter(c("Id", "IN", paste0(unique(seuratObj$SubjectId), collapse = ';'))),
+    containerFilter=NULL,
+    colNameOpt="rname"
+  ) %>%
+    dplyr::rename(
+      SubjectId = 'id',
+      Vaccines = 'immunizations_immunizations',
+      Outcomes = 'outcomes_outcomes',
+      ART_Initiation_DPI = 'sivart_artinitiationdpi',
+      InfectionDate = 'sivart_infectiondate',
+      ART_Initiation_Date = 'sivart_artinitiationdate',
+      ART_Release_Date = 'sivart_artreleasedate'
+    )
+
+  toAdd <- seuratObj@meta.data %>%
+    dplyr::select(SubjectId) %>%
+    tibble::rownames_to_column(var = 'CellBarcode') %>%
+    dplyr::left_join(toAdd, by = 'SubjectId') %>%
+    tibble::column_to_rownames(var = 'CellBarcode') %>%
+    as.data.frame()
+
+  seuratObj <- Seurat::AddMetaData(seuratObj, toAdd)
 
   return(seuratObj)
 }
