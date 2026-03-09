@@ -463,7 +463,7 @@ utils::globalVariables(
     tcr <- .DropConflictingVJSegments(tcr)
   }
 
-  tcr$cdr3WithSuffix <- paste0(tcr$cdr3, ifelse(tcr$productive == 'True', yes = '', no = ' (NP)'))
+  tcr$cdr3WithSuffix <- paste0(tcr$cdr3, ifelse(tolower(tcr$productive) == 'true', yes = '', no = '(NP)'))
 
   #Download named clonotypes and merge:
   # Add clone names:
