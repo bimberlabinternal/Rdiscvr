@@ -1342,7 +1342,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
           group_by(cDNA_ID) %>%
           mutate(TotalCellsForSample = n()) %>%
           ungroup() %>%
-          select(all_of(c('cDNA_ID', 'SubjectId', chain, vField, jField, chainWithSegmentsField, cdr3WithProductiveField))) %>%
+          select(all_of(c('cDNA_ID', 'SubjectId', 'TotalCellsForSample', chain, vField, jField, chainWithSegmentsField, cdr3WithProductiveField))) %>%
           rename(c(
             Clonotype = !!chain,
             cdr3WithSegments = !!chainWithSegmentsField,
