@@ -1370,6 +1370,11 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
             stop(paste0('Multiple subjectIds for cDNA: ', cdnaId))
           }
 
+          totalCellsForSample <- nrow(seuratObj@meta.data %>%
+            filter(cDNA_ID == cdnaId) %>%
+            filter(dplyr::if_all(dplyr::all_of(c(chain)), ~ !is.na(.x)))
+          )
+
           toAppend2 <- seuratObj@meta.data %>%
             select(all_of(c(chain, vField, jField, chainWithSegmentsField, cdr3WithProductiveField))) %>%
             rename(c(
@@ -1389,6 +1394,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
               FractionOfCloneWithState = 0,
               chain = chain,
               cDNA_ID = cdnaId,
+              TotalCellsForSample = totalCellsForSample,
               SubjectId = subjectId,
               IsActive = TRUE
             )
