@@ -1311,6 +1311,18 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     allDataWithPVal$Status <- NA
     allClones <- unique(allDataWithPVal$Clonotype)
     allClones <- allClones[allClones != 'No TCR']
+
+    if (!is.integer(allDataWithPVal$cDNA_ID)) {
+      print('Converting cDNA_ID to an integer')
+      allDataWithPVal$cDNA_ID <- as.character(allDataWithPVal$cDNA_ID)
+      converted <- as.integer(allDataWithPVal$cDNA_ID)
+      if (any(is.na(converted))) {
+        stop('Non-numeric cDNA_IDs found: ', paste0(unique(allDataWithPVal$cDNA_ID[is.na(converted)]), collapse = ','))
+      }
+
+      allDataWithPVal$cDNA_ID <- converted
+    }
+
     for (subjectId in sort(unique(allDataWithPVal$SubjectId))) {
       datForSubject <- allDataWithPVal %>% filter(SubjectId == subjectId)
       for (cdnaId in sort(unique(datForSubject$cDNA_ID))) {
@@ -1330,7 +1342,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
           group_by(cDNA_ID) %>%
           mutate(TotalCellsForSample = n()) %>%
           ungroup() %>%
-          select(all_of(c('cDNA_ID', chain, vField, jField, chainWithSegmentsField, cdr3WithProductiveField))) %>%
+          select(all_of(c('cDNA_ID', 'SubjectId', chain, vField, jField, chainWithSegmentsField, cdr3WithProductiveField))) %>%
           rename(c(
             Clonotype = !!chain,
             cdr3WithSegments = !!chainWithSegmentsField,
@@ -1340,7 +1352,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
           )) %>%
           as.data.frame() %>%
           filter(Clonotype %in% missingClonotypes) %>%
-          group_by(cDNA_ID, Clonotype, V_Gene, J_Gene, cdr3WithSegments, cdr3WithProductive) %>%
+          group_by(cDNA_ID, SubjectId, Clonotype, V_Gene, J_Gene, cdr3WithSegments, cdr3WithProductive) %>%
           summarize(TotalCellsForClone = n()) %>%
           as.data.frame() %>%
           mutate(
@@ -1353,6 +1365,11 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
         stillNeeded <- missingClonotypes[! missingClonotypes %in% toAppend$Clonotype]
         if (length(stillNeeded) > 0) {
+          subjectId <- unique(seuratObj@meta.data$SubjectId[seuratObj@meta.data$cDNA_ID == cdnaId])
+          if (length(subjectId) > 1) {
+            stop(paste0('Multiple subjectIds for cDNA: ', cdnaId))
+          }
+
           toAppend2 <- seuratObj@meta.data %>%
             select(all_of(c(chain, vField, jField, chainWithSegmentsField, cdr3WithProductiveField))) %>%
             rename(c(
@@ -1372,6 +1389,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
               FractionOfCloneWithState = 0,
               chain = chain,
               cDNA_ID = cdnaId,
+              SubjectId = subjectId,
               IsActive = TRUE
             )
 
