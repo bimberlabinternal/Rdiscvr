@@ -1352,7 +1352,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 #' @import dplyr
 IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', storeStimLevelData = TRUE, maxRatioToCombine = 1.0, minEDS = 2) {
   allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method, maxRatioToCombine = maxRatioToCombine, minEDS = minEDS)
-  if (nrow(allDataWithPVal) > 0) {
+  if (!all(is.null(allDataWithPVal)) && nrow(allDataWithPVal) > 0) {
     allDataWithPVal$chain <- chain
 
     # Calculate/store frequencies for clones that responded in at least one sample:
@@ -1465,6 +1465,8 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
     # Add cognate chains:
     allDataWithPVal <- .AddCognateChains(chain, seuratObj, allDataWithPVal)
+  } else {
+    print('No passing TCR data')
   }
 
   .UpdateTcrStimDb(allDataWithPVal, chain = chain, methodName = method, storeStimLevelData = storeStimLevelData, allCDNA_IDs = unique(seuratObj$cDNA_ID))
