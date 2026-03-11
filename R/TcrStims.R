@@ -156,7 +156,7 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   dat$cdr3WithProductive <- dat[[paste0(chain, '_WithProductive')]]
 
   # If a cell has two records for the same CDR3, one listed and productive and one not, assume it's productive
-  dat$cdr3WithProductive <- sapply(dat$cdr3WithProductive, function(x){
+  dat$cdr3WithProductive <- sapply(as.character(dat$cdr3WithProductive), function(x){
     if (is.na(x) || !grepl(x, pattern = '(NP)', fixed = TRUE)) {
       return(x)
     }
@@ -240,7 +240,7 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     return(paste0(sort(unique(unlist(strsplit(x, split = ',')))), collapse = ','))
   })
 
-  dat$cdr3WithProductive <- sapply(dat$cdr3WithProductive, function(x){
+  dat$cdr3WithProductive <- sapply(as.character(dat$cdr3WithProductive), function(x){
     if (is.na(x)) {
       return(x)
     }
