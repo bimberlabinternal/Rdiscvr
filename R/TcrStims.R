@@ -157,7 +157,7 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
 
   # If a cell has two records for the same CDR3, one listed and productive and one not, assume it's productive
   dat$cdr3WithProductive <- sapply(dat$cdr3WithProductive, function(x){
-    if (!grepl(x, pattern = '(NP)')) {
+    if (is.na(x) || !grepl(x, pattern = '(NP)')) {
       return(x)
     }
 
@@ -241,6 +241,10 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   })
 
   dat$cdr3WithProductive <- sapply(dat$cdr3WithProductive, function(x){
+    if (is.na(x)) {
+      return(x)
+    }
+
     cdr3s <- sort(unlist(strsplit(x, split = ',')))
     toRemove <- c()
     for (val in cdr3s) {

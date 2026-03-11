@@ -587,7 +587,7 @@ utils::globalVariables(
     fieldName <- paste0(chain, '_WithProductive')
     if (any(grepl(tcr[[fieldName]], pattern = '(NP)'))) {
       tcr[[fieldName]] <- unlist(sapply(tcr[[fieldName]], function(x){
-        if (!grepl(x, pattern = '(NP)')) {
+        if (is.na(x) || !grepl(x, pattern = '(NP)')) {
           return(x)
         }
 
