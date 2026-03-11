@@ -897,20 +897,27 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     return(NULL)
   }
 
-  # Set a floor:
-  maxNonInfiniteTransformedFDR <- max(-log10(dataWithPVal$FDR[!is.infinite(-log10(dataWithPVal$FDR))]), na.rm = TRUE)
-  dataWithPVal$FDR[dataWithPVal$FDR == 0] <- maxNonInfiniteTransformedFDR + 0.0001
-  P1 <- ggplot(dataWithPVal %>% filter(!is.na(FDR) & !IsControlSample), aes(x = coefficients, y = -log10(FDR), color = Stim, label = Clonotype)) +
-    geom_point() +
-    ggrepel::geom_label_repel(show.legend = FALSE, size = 3) +
-    geom_vline(xintercept = 0.5, linetype = "dashed", color = "black") +
-    geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "black") +
-    egg::theme_article() +
-    xlab("Log Odds Ratio") +
-    ylab("-log10(FDR)") +
-    ggtitle('Clonotype Enrichment')
+  toPlot <- dataWithPVal %>%
+    filter(!is.na(FDR) & !IsControlSample)
 
-  print(P1)
+  if (nrow(toPlot) > 0) {
+    # Set a floor:
+    maxNonInfiniteTransformedFDR <- ifelse(all(is.infinite(-log10(toPlot$FDR))), yes = 0, no = max(-log10(toPlot$FDR[is.finite(-log10(toPlot$FDR))]), na.rm = TRUE))
+    if (any(toPlot$FDR == 0)) {
+      toPlot$FDR[toPlot$FDR == 0] <- maxNonInfiniteTransformedFDR + 0.0001
+    }
+    P1 <- ggplot(toPlot, aes(x = coefficients, y = -log10(FDR), color = Stim, label = Clonotype)) +
+      geom_point() +
+      ggrepel::geom_label_repel(show.legend = FALSE, size = 3) +
+      geom_vline(xintercept = 0.5, linetype = "dashed", color = "black") +
+      geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "black") +
+      egg::theme_article() +
+      xlab("Log Odds Ratio") +
+      ylab("-log10(FDR)") +
+      ggtitle('Clonotype Enrichment')
+
+    print(P1)
+  }
 
   return(dataWithPVal)
 }
