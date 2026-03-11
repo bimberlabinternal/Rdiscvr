@@ -893,7 +893,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     dataWithPVal <- rbind(dataWithPVal, inputData %>% filter(IsActive) %>% left_join(results, by = c('cDNA_ID', 'Clonotype')))
   }
 
-  if (all(is.null(dataWithPVal))) {
+  if (all(is.null(dataWithPVal)) || nrow(dataWithPVal) == 0) {
     return(NULL)
   }
 
