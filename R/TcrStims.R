@@ -1399,7 +1399,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
           )) %>%
           as.data.frame() %>%
           filter(Clonotype %in% missingClonotypes) %>%
-          group_by(cDNA_ID, SubjectId, Clonotype, V_Gene, J_Gene, cdr3WithSegments, cdr3WithProductive) %>%
+          group_by(cDNA_ID, TotalCellsForSample, SubjectId, Clonotype, V_Gene, J_Gene, cdr3WithSegments, cdr3WithProductive) %>%
           summarize(TotalCellsForClone = n()) %>%
           as.data.frame() %>%
           mutate(
@@ -1916,6 +1916,10 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       }
     }
 
+    if (any(is.na(toInsert$totalCellsForSample))) {
+      stop('Data missing values for totalCellsForSample')
+    }
+
     # This has been an issue for: c('enrichmentFDR', 'oddsRatio', 'totalCloneSize', 'quantification')
     for (fn in names(toInsert)) {
       if (is.integer(toInsert[[fn]]) || is.numeric(toInsert[[fn]])) {
@@ -1923,10 +1927,6 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
           toInsert[[fn]][is.na(toInsert[[fn]])] <- ''
         }
       }
-    }
-
-    if (any(is.na(toInsert$totalCellsForSample))) {
-      stop('Data missing values for totalCellsForSample')
     }
 
     print(paste0('Inserting ', nrow(toInsert), ' rows in tcrdb.clone_responses'))
