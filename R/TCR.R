@@ -582,6 +582,36 @@ utils::globalVariables(
     tcr[[colName]] <- as.factor(v)
   }
 
+  # If a cell has two records for the same CDR3, one listed and productive and one not, assume it's productive
+  for (chain in c('TRA', 'TRB', 'TRD', 'TRG')) {
+    fieldName <- paste0(chain, '_WithProductive')
+    if (any(grepl(tcr[[fieldName]], pattern = '(NP)'))) {
+      tcr[[fieldName]] <- unlist(sapply(tcr[[fieldName]], function(x){
+        if (!grepl(x, pattern = '(NP)')) {
+          return(x)
+        }
+
+        cdr3s <- sort(unlist(strsplit(x, split = ',')))
+        toRemove <- c()
+        for (val in cdr3s) {
+          if (!grepl(val, pattern = '(NP)')) {
+            next
+          }
+
+          if (gsub(val, pattern = '(NP)', replacement = '') %in% cdr3s) {
+            toRemove <- c(toRemove, val)
+          }
+        }
+
+        cdr3s <- cdr3s[! cdr3s %in% toRemove]
+
+        return(paste0(sort(unique(cdr3s)), collapse = ','))
+
+      }))
+    }
+
+  }
+
   return(tcr)
 }
 

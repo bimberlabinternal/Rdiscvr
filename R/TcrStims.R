@@ -155,6 +155,29 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   dat$cdr3WithSegments <- dat[[paste0(chain, '_Segments')]]
   dat$cdr3WithProductive <- dat[[paste0(chain, '_WithProductive')]]
 
+  # If a cell has two records for the same CDR3, one listed and productive and one not, assume it's productive
+  dat$cdr3WithProductive <- sapply(dat$cdr3WithProductive, function(x){
+    if (!grepl(x, pattern = '(NP)')) {
+      return(x)
+    }
+
+    cdr3s <- sort(unlist(strsplit(x, split = ',')))
+    toRemove <- c()
+    for (val in cdr3s) {
+      if (!grepl(val, pattern = '(NP)')) {
+        next
+      }
+
+      if (gsub(val, pattern = '(NP)', replacement = '') %in% cdr3s) {
+        toRemove <- c(toRemove, val)
+      }
+    }
+
+    cdr3s <- cdr3s[! cdr3s %in% toRemove]
+
+    return(paste0(sort(unique(cdr3s)), collapse = ','))
+  })
+
   if (retainRowsWithoutCDR3) {
     dat$Clonotype <- as.character(dat$Clonotype)
     dat$Clonotype[is.na(dat$Clonotype)] <- 'No TCR'
@@ -218,7 +241,21 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
   })
 
   dat$cdr3WithProductive <- sapply(dat$cdr3WithProductive, function(x){
-    return(paste0(sort(unique(unlist(strsplit(x, split = ',')))), collapse = ','))
+    cdr3s <- sort(unlist(strsplit(x, split = ',')))
+    toRemove <- c()
+    for (val in cdr3s) {
+      if (!grepl(val, pattern = '(NP)')) {
+        next
+      }
+
+      if (gsub(val, pattern = '(NP)', replacement = '') %in% cdr3s) {
+        toRemove <- c(toRemove, val)
+      }
+    }
+
+    cdr3s <- cdr3s[! cdr3s %in% toRemove]
+
+    return(paste0(sort(unique(cdr3s)), collapse = ','))
   })
 
   dat$OrigClonotype <- dat$Clonotype
@@ -1013,7 +1050,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
       c('clonotype', "NEQ", "No TCR"),
       c('cDNA_ID/status', 'DOES_NOT_CONTAIN', 'Failed'),
-      c('status', "NOT_EQUAL_OR_MISSING", "Below Threshold")
+      c('status', "MISSING", "")
     ),
     colNameOpt="rname"
   )
@@ -1308,7 +1345,6 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     allDataWithPVal$chain <- chain
 
     # Calculate/store frequencies for clones that responded in at least one sample:
-    allDataWithPVal$Status <- NA
     allClones <- unique(allDataWithPVal$Clonotype)
     allClones <- allClones[allClones != 'No TCR']
 
@@ -1359,8 +1395,10 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
             method = method,
             TotalCellsForCloneAndState = 0,
             FractionOfCloneWithState = 0,
+            FractionOfCloneWithStateInSample = 0,
             chain = chain,
-            IsActive = TRUE
+            IsActive = TRUE,
+            Status = 'None Activated'
           )
 
         stillNeeded <- missingClonotypes[! missingClonotypes %in% toAppend$Clonotype]
@@ -1392,11 +1430,13 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
               TotalCellsForCloneAndState = 0,
               TotalCellsForClone = 0,
               FractionOfCloneWithState = 0,
+              FractionOfCloneWithStateInSample = 0,
               chain = chain,
               cDNA_ID = cdnaId,
               TotalCellsForSample = totalCellsForSample,
               SubjectId = subjectId,
-              IsActive = TRUE
+              IsActive = TRUE,
+              Status = 'Not Present'
             )
 
           if (nrow(toAppend2) > 0) {
@@ -1406,7 +1446,6 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
         if (nrow(toAppend) > 0) {
           print(paste0('cDNA ', cdnaId, ': adding ', nrow(toAppend), ' placeholder records for clonotypes without activation'))
-          toAppend$Status <- 'Below Threshold'
 
           allDataWithPVal <- plyr::rbind.fill(allDataWithPVal, toAppend)
         }
@@ -1582,6 +1621,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     }
 
     dataWithPVal$FailedEnrichment <- !is.na(dataWithPVal$coefficients) & dataWithPVal$coefficients < minOddsRatio
+    dataWithPVal$Status <- ifelse(dataWithPVal$FailedEnrichment, yes = 'Failed Odds Ratio', no = NA)
 
     tryCatch({
       passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'SampleDate', dropInactive = TRUE, patternField = 'FailedEnrichment', plotTitle = paste0(subjectId, ": EDS > ", minEDS, ", Passing Enrichment"), groupLowFreq = FALSE)
@@ -1728,7 +1768,6 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   
   toUpdate <- allDataWithPVal %>%
     filter(is.na(Status)) %>%
-    filter(is.na(FailedEnrichment) | !FailedEnrichment) %>%
     filter(IsActive) %>%
     group_by(cDNA_ID) %>%
     summarise(quantification = unique(FractionOfSampleWithState)*100, nClones = n()) %>%
@@ -1801,7 +1840,6 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   # Now clone data:
   toInsertOrUpdate <- allDataWithPVal %>%
     filter(IsActive) %>%
-    filter(is.na(FailedEnrichment) | !FailedEnrichment) %>%
     rename(
       activationFrequency = 'FractionOfCloneWithStateInSample',
       totalCells = 'TotalCellsForCloneAndState',
@@ -1872,6 +1910,10 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
           toInsert[[fn]][is.na(toInsert[[fn]])] <- ''
         }
       }
+    }
+
+    if (any(is.na(toInsert$totalCellsForSample))) {
+      stop('Data missing values for totalCellsForSample')
     }
 
     print(paste0('Inserting ', nrow(toInsert), ' rows in tcrdb.clone_responses'))
