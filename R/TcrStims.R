@@ -157,18 +157,18 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
 
   # If a cell has two records for the same CDR3, one listed and productive and one not, assume it's productive
   dat$cdr3WithProductive <- sapply(dat$cdr3WithProductive, function(x){
-    if (is.na(x) || !grepl(x, pattern = '(NP)')) {
+    if (is.na(x) || !grepl(x, pattern = '(NP)', fixed = TRUE)) {
       return(x)
     }
 
     cdr3s <- sort(unlist(strsplit(x, split = ',')))
     toRemove <- c()
     for (val in cdr3s) {
-      if (!grepl(val, pattern = '(NP)')) {
+      if (!grepl(val, pattern = '(NP)', fixed = TRUE)) {
         next
       }
 
-      if (gsub(val, pattern = '(NP)', replacement = '') %in% cdr3s) {
+      if (gsub(val, pattern = '(NP)', replacement = '', fixed = TRUE) %in% cdr3s) {
         toRemove <- c(toRemove, val)
       }
     }
@@ -248,11 +248,11 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     cdr3s <- sort(unlist(strsplit(x, split = ',')))
     toRemove <- c()
     for (val in cdr3s) {
-      if (!grepl(val, pattern = '(NP)')) {
+      if (!grepl(val, pattern = '(NP)', fixed = TRUE)) {
         next
       }
 
-      if (gsub(val, pattern = '(NP)', replacement = '') %in% cdr3s) {
+      if (gsub(val, pattern = '(NP)', replacement = '', fixed = TRUE) %in% cdr3s) {
         toRemove <- c(toRemove, val)
       }
     }

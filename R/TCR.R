@@ -566,7 +566,8 @@ utils::globalVariables(
       TRG_Segments = paste0(sort(unique(as.character(TRG_Segments))), collapse = ","),
       raw_clonotype_id = paste0(sort(unique(as.character(raw_clonotype_id[raw_clonotype_id != '']))), collapse = ","),
       CloneNames = paste0(sort(unique(CloneName[CloneName != ''])), collapse = ",")  #this is imprecise b/c we count a hit if we match any chain, but this is probably what we often want
-    )
+    ) %>%
+    as.data.frame()
 
   # Note: we should attempt to produce a more specfic call, assuming we have data from multiple chains
   # The intent of this was to allow a A- or B-only hit to produce a call, but if we have both A/B, take their intersect.
@@ -585,20 +586,24 @@ utils::globalVariables(
   # If a cell has two records for the same CDR3, one listed and productive and one not, assume it's productive
   for (chain in c('TRA', 'TRB', 'TRD', 'TRG')) {
     fieldName <- paste0(chain, '_WithProductive')
-    if (any(grepl(tcr[[fieldName]], pattern = '(NP)'))) {
-      tcr[[fieldName]] <- unlist(sapply(tcr[[fieldName]], function(x){
-        if (is.na(x) || !grepl(x, pattern = '(NP)')) {
+    if (!fieldName %in% names(tcr)) {
+      stop(paste0('Missing field: ', fieldName))
+    }
+
+    if (any(grepl(tcr[[fieldName]], pattern = '(NP)', fixed = TRUE))) {
+      tcr[[fieldName]] <- unlist(sapply(as.character(tcr[[fieldName]]), function(x){
+        if (is.na(x) || !grepl(x, pattern = '(NP)', fixed = TRUE)) {
           return(x)
         }
 
         cdr3s <- sort(unlist(strsplit(x, split = ',')))
         toRemove <- c()
         for (val in cdr3s) {
-          if (!grepl(val, pattern = '(NP)')) {
+          if (!grepl(val, pattern = '(NP)', fixed = TRUE)) {
             next
           }
 
-          if (gsub(val, pattern = '(NP)', replacement = '') %in% cdr3s) {
+          if (gsub(val, pattern = '(NP)', replacement = '', fixed = TRUE) %in% cdr3s) {
             toRemove <- c(toRemove, val)
           }
         }
