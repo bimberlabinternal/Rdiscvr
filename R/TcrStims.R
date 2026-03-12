@@ -1403,7 +1403,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
           summarize(TotalCellsForClone = n()) %>%
           as.data.frame() %>%
           mutate(
-            method = method,
+            MethodString = method,
             TotalCellsForCloneAndState = 0,
             FractionOfCloneWithState = 0,
             FractionOfCloneWithStateInSample = 0,
@@ -1437,7 +1437,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
             filter(Clonotype %in% stillNeeded) %>%
             unique() %>%
             mutate(
-              method = method,
+              MethodString = method,
               TotalCellsForCloneAndState = 0,
               TotalCellsForClone = 0,
               FractionOfCloneWithState = 0,
