@@ -1329,6 +1329,8 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     seuratObj <- Seurat::AddMetaData(seuratObj, toAppend)
   } else {
     print('No clonotypes found, skipping')
+    seuratObj[[numAntigensFieldName]] <- 0
+    seuratObj[[antigensFieldName]] <- NA
   }
 
 
