@@ -1325,7 +1325,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     }
   }
 
-  if (nrow(toAppend) > 0) {
+  if (!all(is.null(toAppend)) && nrow(toAppend) > 0) {
     seuratObj <- Seurat::AddMetaData(seuratObj, toAppend)
   } else {
     print('No clonotypes found, skipping')
