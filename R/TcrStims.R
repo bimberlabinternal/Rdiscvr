@@ -1213,7 +1213,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 
       sel <- !is.na(seuratObj$SubjectId) & seuratObj$SubjectId == subjectId & grepl(pattern = paste0("(?:^|,)", clonotype, "(?:$|,)"), x = seuratObj[[chain]][[1]])
       if (any(sel)) {
-        toAdd <- responseDataForSubject[rep(idx, sum(sel)),]
+        toAdd <- responseDataForSubject[rep(idx, sum(sel)),,drop = FALSE]
         toAdd$ChainsUsedForClonotypeMatch <- chain
         toAdd$ClonotypesUsedForClonotypeMatch <- responseDataForSubject$ClonotypesUsedForClonotypeMatch[idx]
         toAdd$CellBarcode <- rownames(seuratObj@meta.data)[sel]
@@ -1232,7 +1232,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
           if (sum(toRetain) != nrow(toAdd)) {
             toDrop <- nrow(toAdd) - sum(toRetain)
             print(paste0('Dropping ', toDrop, ' hits out of ', nrow(toAdd), ' because of mismatched second chain'))
-            toAdd <- toAdd[toRetain,]
+            toAdd <- toAdd[toRetain,,drop = FALSE]
           }
         }
 
@@ -1241,7 +1241,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     }
   }
 
-  if (any(duplicated(toAppend$CellBarcode))) {
+  if (!all(is.null(toAppend)) && any(duplicated(toAppend$CellBarcode))) {
     toAppend <- toAppend %>%
       group_by(CellBarcode) %>%
       summarize(
@@ -1298,41 +1298,42 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     }))
   }
 
-  rownames(toAppend) <- toAppend$CellBarcode
-  toAppend$CellBarcode <- NULL
-  toAppend$Clonotype <- NULL
-  toAppend$Chain <- NULL
+  if (!all(is.na(toAppend))){
+    rownames(toAppend) <- toAppend$CellBarcode
+    toAppend$CellBarcode <- NULL
+    toAppend$Clonotype <- NULL
+    toAppend$Chain <- NULL
 
-  toAppend$NumAntigens <- sapply(toAppend$Antigens, function(x){
-    if (is.na(x) || x == '') {
-      return(0)
+    toAppend$NumAntigens <- sapply(toAppend$Antigens, function(x){
+      if (is.na(x) || x == '') {
+        return(0)
+      }
+
+      x <- unique(unlist(strsplit(x, split = ',')))
+
+      return(length(x))
+    })
+    toAppend$NumAntigens[is.na(toAppend$NumAntigens)] <- 0
+
+    if (!is.null(fieldPrefix)) {
+      names(toAppend) <- paste0(fieldPrefix, names(toAppend))
     }
 
-    x <- unique(unlist(strsplit(x, split = ',')))
-
-    return(length(x))
-  })
-  toAppend$NumAntigens[is.na(toAppend$NumAntigens)] <- 0
-
-  if (!is.null(fieldPrefix)) {
-    names(toAppend) <- paste0(fieldPrefix, names(toAppend))
-  }
-
-  # Clear existing values:
-  for (n in names(toAppend)) {
-    if (n %in% names(seuratObj@meta.data)) {
-      seuratObj[[n]] <- NULL
+    # Clear existing values:
+    for (n in names(toAppend)) {
+      if (n %in% names(seuratObj@meta.data)) {
+        seuratObj[[n]] <- NULL
+      }
     }
-  }
 
-  if (!all(is.null(toAppend)) && nrow(toAppend) > 0) {
-    seuratObj <- Seurat::AddMetaData(seuratObj, toAppend)
+    if (nrow(toAppend) > 0) {
+      seuratObj <- Seurat::AddMetaData(seuratObj, toAppend)
+    }
   } else {
     print('No clonotypes found, skipping')
     seuratObj[[numAntigensFieldName]] <- 0
     seuratObj[[antigensFieldName]] <- NA
   }
-
 
   # Always provide a value
   seuratObj[[numAntigensFieldName]][is.na(seuratObj[[numAntigensFieldName]])] <- 0
