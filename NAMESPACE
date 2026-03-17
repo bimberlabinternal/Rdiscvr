@@ -2,6 +2,7 @@
 
 S3method(ggplot_add,dimplot_arrows)
 export(AppendClonotypeEnrichmentPVals)
+export(AppendVireoData)
 export(ApplyAcuteNxMetadata)
 export(ApplyCloneFilters)
 export(ApplyEC_Metadata)

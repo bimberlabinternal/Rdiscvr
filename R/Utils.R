@@ -332,3 +332,109 @@ GenerateSRATable <- function(cDNA_IDs) {
 
   return(seuratObj)
 }
+
+#' @title AppendVireoData
+#' @description This will identify, download and append Vireo genetic cell assignment data for each readset in the data.
+#' @param seuratObj The seurat object.
+#' @param donorAliases An optional named vector/list mapping the donorId as it appears in the vireo data (e.g., donor1) to the ID to be used in the metadata. This is currently one map for all objects, which could be problematic when merging multiple vireo datasets.
+#' @param outputFieldName The name of the metadata field that will hold the donor assignment
+#' @export
+AppendVireoData <- function(seuratObj, donorAliases = NULL, outputFieldName = 'DonorId') {
+  if (! 'BarcodePrefix' %in% names(seuratObj@meta.data)){
+    stop()
+  }
+
+  seuratObj@meta.data[[outputFieldName]] <- NA
+
+  prefixes <- unique(seuratObj$BarcodePrefix)
+  newData <- NULL
+  for (loupeDataId in prefixes) {
+    # Translate BarcodePrefix to Readset
+    rows <- suppressWarnings(labkey.selectRows(
+      baseUrl=.getBaseUrl(),
+      folderPath=.getLabKeyDefaultFolder(),
+      schemaName="sequenceanalysis",
+      queryName="outputfiles",
+      colSort="-rowid",
+      colSelect="readset",
+      colFilter=makeFilter(c("rowid", "EQUAL", loupeDataId)),
+      containerFilter=NULL,
+      colNameOpt="rname"
+    ))
+
+    if (nrow(rows) == 0) {
+      resolvedId <- .ResolveLoupeIdFromDeleted(loupeId = 12, throwOnError = FALSE)
+      if (!is.null(resolvedId)) {
+        readsetId <- resolvedId
+      } else {
+        stop(paste0('Unable to find readset for BarcodePrefix: ', loupeDataId))
+      }
+    } else {
+      readsetId <- max(rows$readset)
+    }
+    
+
+    outputs <- labkey.selectRows(
+      baseUrl="https://prime-seq.ohsu.edu",
+      folderPath="/Labs/Bimber/1966",
+      schemaName="sequenceanalysis",
+      queryName="outputfiles",
+      colSelect="rowid,readset,readset/subjectid",
+      colFilter=makeFilter(
+        c("category", "EQUAL", "Vireo Demultiplexing"),
+        c("readset", "EQUAL", paste0(readsetId, collapse = ';'))
+      ),
+      containerFilter=NULL,
+      colNameOpt="rname"
+    )
+
+    if (nrow(outputs) == 0) {
+      print(paste0('No vireo outputs found for readset: ', rs, ', skipping'))
+      next
+    } else if (nrow(outputs) > 1) {
+      print(paste0('More than one vireo output found for readset: ', rs, ', using the most recent'))
+    }
+
+    fn <- tempfile()
+    invisible(DownloadOutputFile(outputFileId = max(outputs$rowid), outFile = fn, overwrite = TRUE))
+    df <- read.table(fn, sep = '\t', header = TRUE) %>%
+      select(cell, donor_id) %>%
+      mutate(cell = gsub(cell, pattern = '-[0-9]+$', replacement = '')) %>%
+      filter(donor_id != 'unassigned')
+    
+    unlink(fn)
+
+    toAppend <- seuratObj@meta.data %>%
+      filter(BarcodePrefix == loupeDataId) %>%
+      tibble::rownames_to_column(var = 'CellBarcode') %>%
+      select(BarcodePrefix, CellBarcode) %>%
+      mutate(
+        CellBarcodeWithoutPrefix = gsub(CellBarcode, pattern = paste0('^', loupeDataId, '_'), replacement = '')
+      ) %>%
+      left_join(df, by = c('CellBarcodeWithoutPrefix' = 'cell')) %>%
+      tibble::column_to_rownames(var = 'CellBarcode') %>%
+      select(-CellBarcodeWithoutPrefix)
+    
+    toAppend$donor_id[is.na(toAppend$donor_id)] <- 'unassigned'
+    if (any(duplicated(rownames(toAppend)))) {
+      stop('Duplicate barcodes after joining the vireo data')
+    }
+
+    if (!all(is.null(donorAliases))) {
+      for (donorId in names(donorAliases)) {
+        if (donorId %in% toAppend$donor_id) {
+          paste0('Replacing ', donorId, ' with ', donorAliases[[donorId]])
+          toAppend$donor_id[toAppend$donor_id == donorId] <- donorAliases[[donorId]]
+        }
+      }
+    }
+
+    names(toAppend)[names(toAppend) == 'donor_id'] <- outputFieldName
+
+    newData <- rbind(newData, toAppend)
+  }
+
+  seuratObj <- Seurat::AddMetaData(seuratObj, newData)
+
+  return(seuratObj)
+}
