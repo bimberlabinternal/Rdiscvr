@@ -357,26 +357,28 @@ AppendVireoData <- function(seuratObj, donorAliases = NULL, outputFieldName = 'D
       queryName="outputfiles",
       colSort="-rowid",
       colSelect="readset",
-      colFilter=makeFilter(c("rowid", "EQUAL", loupeDataId)),
+      colFilter=makeFilter(
+        c("rowid", "EQUAL", loupeDataId),
+        c("readset", "NOT_MISSING", '')
+      ),
       containerFilter=NULL,
       colNameOpt="rname"
     ))
 
     if (nrow(rows) == 0) {
-      resolvedId <- .ResolveLoupeIdFromDeleted(loupeId = 12, throwOnError = FALSE)
-      if (!is.null(resolvedId)) {
-        readsetId <- resolvedId
+      resolvedRows <- .ResolveLoupeIdFromDeleted(loupeId = 12, throwOnError = FALSE)
+      if (!is.null(resolvedRows)) {
+        readsetId <- resolvedRows$readsetid
       } else {
         stop(paste0('Unable to find readset for BarcodePrefix: ', loupeDataId))
       }
     } else {
       readsetId <- max(rows$readset)
     }
-    
 
     outputs <- labkey.selectRows(
-      baseUrl="https://prime-seq.ohsu.edu",
-      folderPath="/Labs/Bimber/1966",
+      baseUrl=.getBaseUrl(),
+      folderPath=.getLabKeyDefaultFolder(),
       schemaName="sequenceanalysis",
       queryName="outputfiles",
       colSelect="rowid,readset,readset/subjectid",
@@ -389,14 +391,16 @@ AppendVireoData <- function(seuratObj, donorAliases = NULL, outputFieldName = 'D
     )
 
     if (nrow(outputs) == 0) {
-      print(paste0('No vireo outputs found for readset: ', rs, ', skipping'))
+      print(paste0('No vireo outputs found for readset: ', readsetId, ', skipping'))
       next
     } else if (nrow(outputs) > 1) {
-      print(paste0('More than one vireo output found for readset: ', rs, ', using the most recent'))
+      print(paste0('More than one vireo output found for readset: ', readsetId, ', using the most recent'))
     }
 
+    vireoId <- max(outputs$rowid)
+
     fn <- tempfile()
-    invisible(DownloadOutputFile(outputFileId = max(outputs$rowid), outFile = fn, overwrite = TRUE))
+    invisible(DownloadOutputFile(outputFileId = vireoId, outFile = fn, overwrite = TRUE))
     df <- read.table(fn, sep = '\t', header = TRUE) %>%
       select(cell, donor_id) %>%
       mutate(cell = gsub(cell, pattern = '-[0-9]+$', replacement = '')) %>%
