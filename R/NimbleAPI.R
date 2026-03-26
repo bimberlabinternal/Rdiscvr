@@ -391,6 +391,7 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
 PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, maxLibrarySizeRatio = 100, assayForLibrarySize = 'RNA', maxAmbiguityAllowedForKIR = 2, appendMHC = TRUE, appendKIR = TRUE, appendNKG = TRUE, appendIG = TRUE, appendViral = TRUE) {
   # MHC:
   if (appendMHC) {
+    logger::log_info('Appending Nimble/MHC')
     seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('Rhesus Macaque MHC V2'),
                                        targetAssayName = 'MHC',
@@ -404,6 +405,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
 
   # KIR:
   if (appendKIR) {
+    logger::log_info('Appending Nimble/KIR')
     seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('Rhesus_KIR'),
                                        targetAssayName = 'KIR',
@@ -419,6 +421,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
 
   # NKG:
   if (appendNKG) {
+    logger::log_info('Appending Nimble/NKG2')
     seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('RhesusSupplementalFeatures'),
                                        targetAssayName = 'Nimble',
@@ -439,6 +442,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
 
   # Ig
   if (appendIG) {
+    logger::log_info('Appending Nimble/Ig')
     seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('Rhesus_Ig'),
                                        targetAssayName = 'IG',
@@ -455,6 +459,7 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
 
   # Viruses:
   if (appendViral) {
+    logger::log_info('Appending Nimble/Viral')
     seuratObj <- DownloadAndAppendNimble(seuratObj,
                                        allowableGenomes = .FindLibraryByName('Viral_Genomes'),
                                        targetAssayName = 'Virus',

@@ -38,7 +38,8 @@ Imports:
     httr,
     plyr,
     stringr,
-    tibble
+    tibble,
+    logger
 Suggests:
     devtools,
     testthat (>= 2.1.0)
