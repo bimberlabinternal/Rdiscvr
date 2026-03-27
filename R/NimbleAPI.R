@@ -44,6 +44,7 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
   nimbleFileComponents <- list()
   genomeToDataset <- list()
   print(paste0('Total datasets: ', length(unique(seuratObj@meta.data[['DatasetId']]))))
+  logger::log_info('Downloading nimble data')
   for (datasetId in unique(seuratObj@meta.data[['DatasetId']])) {
     print(paste0('Possibly adding nimble data for dataset: ', datasetId))
     
@@ -92,6 +93,7 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
   }
 
   print('Merging into single matrix')
+  logger::log_info(paste0('Merging nimble data into single matrix: ', length(nimbleFileComponents)))
   df <- .mergeNimbleFiles(seuratObj, fileComponents=nimbleFileComponents, enforceUniqueFeatureNames, queryDatabaseForLineageUpdates = queryDatabaseForLineageUpdates)
   print(paste0('Total features: ', length(unique(df$V1))))
   
@@ -100,9 +102,11 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
   write.table(df, outFile, sep="\t", col.names=F, row.names=F, quote=F)
 
   print(paste0('Appending counts to ', targetAssayName))
+  logger::log_info('Appending counts to seurat object')
   seuratObj <- nimbleR::AppendNimbleCounts(seuratObj = seuratObj, targetAssayName = targetAssayName, nimbleFile=outFile, maxAmbiguityAllowed = maxAmbiguityAllowed, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio, replaceExistingAssayData = replaceExistingAssayData, featureRenameList = featureRenameList, doPlot = TRUE)
   unlink(outFile)
 
+  logger::log_info('Done with nimble append')
   return(seuratObj)
 }
 
