@@ -602,6 +602,19 @@ ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMe
   metadata2$Timepoint <- forcats::fct_relevel(metadata2$Timepoint, 'Baseline', after = 0)
   metadata2$Timepoint <- forcats::fct_relevel(metadata2$Timepoint, 'Chronic', after = Inf)
 
+  metadata2$TimepointLabel <- case_when(
+    metadata2$Timepoint == 'Baseline' ~ 'Baseline',
+    metadata2$Timepoint == 'D0' ~ 'Baseline',
+    metadata2$DPI %in% c(7,8,10) ~ 'DPI_7-10',
+    metadata2$DPI %in% c(14,15) ~ 'DPI_14-15',
+    metadata2$DPI %in% c(21,22,23) ~ 'DPI_21-23',
+    metadata2$DPI %in% c(28,29,30) ~ 'DPI_28-30',
+    metadata2$DPI > 200 ~ 'DPI>200',
+    .default = 'UNKNOWN'
+  )
+
+  metadata2$TimepointLabel <- naturalsort::naturalfactor(metadata2$TimepointLabel)
+
   cDNA <- cDNA %>%
     left_join(metadata2, by = c('SubjectId', 'SampleDate'))
 
