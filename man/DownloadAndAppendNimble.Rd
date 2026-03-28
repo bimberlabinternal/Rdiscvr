@@ -19,7 +19,8 @@ DownloadAndAppendNimble(
   maxLibrarySizeRatio = 0.05,
   queryDatabaseForLineageUpdates = FALSE,
   replaceExistingAssayData = TRUE,
-  featureRenameList = NULL
+  featureRenameList = NULL,
+  doPlot = FALSE
 )
 }
 \arguments{
@@ -52,6 +53,8 @@ DownloadAndAppendNimble(
 \item{replaceExistingAssayData}{If true, any existing data in the targetAssay will be deleted}
 
 \item{featureRenameList}{An optional named list in the format <OLD_NAME> = <NEW_NAME>. If any <OLD_NAME> are present, the will be renamed to <NEW_NAME>. The intention of this is to recover specific ambiguous classes.}
+
+\item{doPlot}{If true, each feature will be plotted after appending to the seurat object}
 }
 \value{
 A modified Seurat object.

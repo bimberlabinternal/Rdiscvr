@@ -27,9 +27,10 @@ utils::globalVariables(
 #' @param queryDatabaseForLineageUpdates If true, after downloading the raw nimble output, the code will query any feature not ending with 'g' against the database and replace that name with the current value of lineage.
 #' @param replaceExistingAssayData If true, any existing data in the targetAssay will be deleted
 #' @param featureRenameList An optional named list in the format <OLD_NAME> = <NEW_NAME>. If any <OLD_NAME> are present, the will be renamed to <NEW_NAME>. The intention of this is to recover specific ambiguous classes.
+#' @param doPlot If true, each feature will be plotted after appending to the seurat object
 #' @return A modified Seurat object.
 #' @export
-DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = FALSE, normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, queryDatabaseForLineageUpdates = FALSE, replaceExistingAssayData = TRUE, featureRenameList = NULL) {
+DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(), enforceUniqueFeatureNames=TRUE, allowableGenomes=NULL, ensureSamplesShareAllGenomes = TRUE, maxAmbiguityAllowed = 1, reuseExistingDownloads = FALSE, performDietSeurat = FALSE, normalizeData = TRUE, assayForLibrarySize = 'RNA', maxLibrarySizeRatio = 0.05, queryDatabaseForLineageUpdates = FALSE, replaceExistingAssayData = TRUE, featureRenameList = NULL, doPlot = FALSE) {
   # Ensure we have a DatasetId column
   if (is.null(seuratObj@meta.data[['DatasetId']])) {
     stop('Seurat object lacks DatasetId column')
@@ -103,7 +104,7 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
 
   print(paste0('Appending counts to ', targetAssayName))
   logger::log_info('Appending counts to seurat object')
-  seuratObj <- nimbleR::AppendNimbleCounts(seuratObj = seuratObj, targetAssayName = targetAssayName, nimbleFile=outFile, maxAmbiguityAllowed = maxAmbiguityAllowed, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio, replaceExistingAssayData = replaceExistingAssayData, featureRenameList = featureRenameList, doPlot = TRUE)
+  seuratObj <- nimbleR::AppendNimbleCounts(seuratObj = seuratObj, targetAssayName = targetAssayName, nimbleFile=outFile, maxAmbiguityAllowed = maxAmbiguityAllowed, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio, replaceExistingAssayData = replaceExistingAssayData, featureRenameList = featureRenameList, doPlot = doPlot, debugLogging = TRUE)
   unlink(outFile)
 
   logger::log_info('Done with nimble append')
