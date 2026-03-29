@@ -104,7 +104,8 @@ DownloadAndAppendNimble <- function(seuratObj, targetAssayName, outPath=tempdir(
 
   print(paste0('Appending counts to ', targetAssayName))
   logger::log_info('Appending counts to seurat object')
-  seuratObj <- nimbleR::AppendNimbleCounts(seuratObj = seuratObj, targetAssayName = targetAssayName, nimbleFile=outFile, maxAmbiguityAllowed = maxAmbiguityAllowed, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio, replaceExistingAssayData = replaceExistingAssayData, featureRenameList = featureRenameList, doPlot = doPlot, debugLogging = TRUE)
+  Sys.setenv('NIMBLE_DEGUG_LOGGING' = 1)
+  seuratObj <- nimbleR::AppendNimbleCounts(seuratObj = seuratObj, targetAssayName = targetAssayName, nimbleFile=outFile, maxAmbiguityAllowed = maxAmbiguityAllowed, performDietSeurat = FALSE, normalizeData = normalizeData, assayForLibrarySize = assayForLibrarySize, maxLibrarySizeRatio = maxLibrarySizeRatio, replaceExistingAssayData = replaceExistingAssayData, featureRenameList = featureRenameList, doPlot = doPlot)
   unlink(outFile)
 
   logger::log_info('Done with nimble append')
