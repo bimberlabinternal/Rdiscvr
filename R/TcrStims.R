@@ -934,7 +934,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
   } else {
     filterPlot1 <- ggplot(toPlot, aes(x = Stim, y = Fraction, fill = Filter)) +
       geom_col(color = 'black') +
-      facet_grid(. ~ SampleDate, scales = 'free', space = 'free_x') +
+      ggh4x::facet_nested(. ~ Tissue + SampleDate, scales = 'free', space = 'free_x') +
       scale_y_continuous(labels = scales::percent) +
       egg::theme_article() +
       theme(
@@ -957,7 +957,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
     filterPlot2 <- ggplot(toPlot, aes(x = Stim, y = FractionOfCloneWithState)) +
       geom_boxplot(color = 'black', outlier.shape = NA) +
       geom_jitter(aes(color = Filter, size = TotalCellsForCloneAndState)) +
-      facet_grid(IsActiveLabel ~ SampleDate, scales = 'free', space = 'free') +
+      ggh4x::facet_nested(IsActiveLabel ~ Tissue + SampleDate, scales = 'free', space = 'free') +
       scale_y_continuous(labels = scales::percent) +
       egg::theme_article() +
       theme(

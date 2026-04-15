@@ -39,7 +39,8 @@ Imports:
     plyr,
     stringr,
     tibble,
-    logger
+    logger,
+    ggh4x
 Suggests:
     devtools,
     testthat (>= 2.1.0)
