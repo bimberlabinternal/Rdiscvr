@@ -1617,7 +1617,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     dat <- PrepareTcrData(dat, subjectId = subjectId, minEDS = minEDS, retainRowsWithoutCDR3 = TRUE, chain = chain, enforceAllDataPresent = FALSE)
     dat$MethodString <- method
 
-    dat <- GroupOverlappingClones(dat, maxRatioToCombine = maxRatioToCombine, dataMask = dat$IsActive, groupingFields = c('cDNA_ID', 'SubjectId', 'SampleDate', 'Stim', 'NoStimId', 'IsControlSample', 'IsActiveLabel', 'MethodString', 'AssayType'))
+    dat <- GroupOverlappingClones(dat, maxRatioToCombine = maxRatioToCombine, dataMask = dat$IsActive, groupingFields = c('cDNA_ID', 'SubjectId', 'SampleDate', 'Tissue', 'Stim', 'NoStimId', 'IsControlSample', 'IsActiveLabel', 'MethodString', 'AssayType'))
     dat <- ApplyCloneFilters(dat, minCellsPerClone = 2, minFractionOfCloneActive = 0.025, minFoldChangeAboveNoStim = NA)
     dat$IsFiltered <- ifelse(is.na(dat$Filter), yes = 'No', no = 'Yes')
 
