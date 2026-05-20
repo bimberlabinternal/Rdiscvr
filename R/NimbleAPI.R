@@ -589,9 +589,12 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
   }
 
   seuratObj$KIR_Status <- .IterativeFeatureFiltering(seuratObj, assayName = 'KIR_Grouped', features = rownames(seuratObj@assays$KIR_Grouped), threshold = 0, maxAllowedClasses = 1)
-
   print(sort(table(seuratObj$KIR_Status)))
   print(DimPlot(seuratObj, group.by = 'KIR_Status'))
+
+  seuratObj$KIR_Status_LS <- .IterativeFeatureFiltering(seuratObj, assayName = 'KIR_Grouped', features = c("Activating-KIR", "Inhibitory-KIR"), threshold = 0, maxAllowedClasses = 1)
+  print(sort(table(seuratObj$KIR_Status_LS)))
+  print(DimPlot(seuratObj, group.by = 'KIR_Status_LS'))
 
   return(seuratObj)
 }
