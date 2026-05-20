@@ -321,7 +321,7 @@ ApplyMalariaMetadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApp
     seuratObj$TimepointLabel <- forcats::fct_relevel(seuratObj$TimepointLabel, 'Chall_12', after = Inf)
   }
   if ('Challenge-1' %in% seuratObj$TimepointLabel) {
-    seuratObj$TimepointLabel <- forcats::fct_relevel(seuratObj$TimepointLabel, 'Challenge-1', after = 3)
+    seuratObj$TimepointLabel <- forcats::fct_relevel(seuratObj$TimepointLabel, 'Challenge-1', after = ifelse('Baseline-1' %in% seuratObj$TimepointLabel, yes = 'Baseline-1', no = 0L))
   }
 
   seuratObj$GroupName <- naturalsort::naturalfactor(seuratObj$GroupName)
