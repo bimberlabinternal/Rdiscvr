@@ -442,9 +442,12 @@ PerformDefaultNimbleAppend <- function(seuratObj, isotypeFilterThreshold = 0.1, 
 
     seuratObj <- .GroupNkgData(seuratObj)
     seuratObj$NKG_Status <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E",  "NKG2D"), threshold = 0, maxAllowedClasses = 1, assayName = 'NKG')
-    seuratObj$NKG_Status_ACE <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E"), threshold = 0, maxAllowedClasses = 1, assayName = 'NKG')
     print(sort(table(seuratObj$NKG_Status)))
     print(DimPlot(seuratObj, group.by = 'NKG_Status'))
+
+    seuratObj$NKG_Status_ACE <- .IterativeFeatureFiltering(seuratObj, features = c("NKG2A", "NKG2C/E"), threshold = 0, maxAllowedClasses = 1, assayName = 'NKG')
+    print(sort(table(seuratObj$NKG_Status_ACE)))
+    print(DimPlot(seuratObj, group.by = 'NKG_Status_ACE'))
   }
 
   # Ig
