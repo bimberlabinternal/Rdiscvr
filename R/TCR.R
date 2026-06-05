@@ -86,10 +86,17 @@ DownloadAndAppendTcrClonotypes <- function(seuratObj, outPath = tempdir(), dropE
   ))
 
   if (nrow(loupeRows) == 0) {
-    return(NULL)
+    translated <- .ResolveLoupeIdFromDeleted(loupeDataId, throwOnError = FALSE)
+    if (all(is.null(translated))) {
+      print(paste0("Loupe File ID: ", loupeDataId, " not found"))
+      return(NULL)
+    }
+
+    rs <- translated$readsetid[1]
+  } else {
+    rs <- loupeRows$readset[1]
   }
 
-  rs <- loupeRows$readset[1]
   tcrRows <- suppressWarnings(labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
