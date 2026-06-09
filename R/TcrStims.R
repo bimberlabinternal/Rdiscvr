@@ -431,6 +431,10 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, xFacetField2 = NA, plotTitle 
     xFacetField <- '.'
   }
 
+  if (is.null(xFacetField2) || is.na(xFacetField2)) {
+    xFacetField2 <- '.'
+  }
+
   groupFields <- 'Stim'
   if (yFacetField != '.') {
     groupFields <- c(groupFields, yFacetField)
@@ -438,6 +442,10 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, xFacetField2 = NA, plotTitle 
 
   if (xFacetField != '.') {
     groupFields <- c(groupFields, xFacetField)
+  }
+
+  if (xFacetField2 != '.') {
+    groupFields <- c(groupFields, xFacetField2)
   }
 
   groupFields <- unique(groupFields)
@@ -506,7 +514,7 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, xFacetField2 = NA, plotTitle 
 
   if (xFacetField != '.' || yFacetField != '.') {
     wrap_by <- function(xFacetField, yFacetField, xFacetField2) {
-      if (is.na(xFacetField2) || xFacetField2 == '.') {
+      if (xFacetField2 == '.') {
         return(facet_grid(vars(!!sym(yFacetField)), vars(!!sym(xFacetField)), scales = 'free', space = 'free_x'))
       }
       else {
