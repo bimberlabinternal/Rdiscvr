@@ -58,6 +58,14 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
     }
   }
 
+  if (!'IsGammaDelta' %in% names(dat)) {
+    dat$IsGammaDelta <- FALSE
+  }
+
+  if (!'IsAlphaBeta' %in% names(dat)) {
+    dat$IsAlphaBeta <- FALSE
+  }
+
   dat <- dat %>%
     filter(SubjectId == subjectId)
 
@@ -180,7 +188,13 @@ PrepareTcrData <- function(seuratObjOrDf, subjectId, minEDS = 0, enforceAllDataP
 
   if (retainRowsWithoutCDR3) {
     dat$Clonotype <- as.character(dat$Clonotype)
-    dat$Clonotype[is.na(dat$Clonotype)] <- 'No TCR'
+    if (chain %in% c('TRA', 'TRB')) {
+      dat$Clonotype[is.na(dat$Clonotype) & !dplyr::coalesce(dat$IsGammaDelta, FALSE)] <- 'No TCR'
+      dat$Clonotype[is.na(dat$Clonotype) & dplyr::coalesce(dat$IsGammaDelta, FALSE)] <- 'GD T'
+    } else {
+      dat$Clonotype[is.na(dat$Clonotype) & !dplyr::coalesce(dat$IsAlphaBeta, FALSE)] <- 'No TCR'
+      dat$Clonotype[is.na(dat$Clonotype) & dplyr::coalesce(dat$IsAlphaBeta, FALSE)] <- 'AB T'
+    }
   } else {
     origRows <- nrow(dat)
     dat <- dat %>% filter(!is.na(Clonotype))
@@ -394,6 +408,14 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, xFacetField2 = NA, plotTitle 
   colorSteps <- max(min(length(unique(dat$Clonotype[dat$Clonotype != 'Low Freq'])), 9), 3)
   getPalette <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(colorSteps, 'Set1'))
 
+  if ('GD T' %in% dat$Clonotype) {
+    dat$Clonotype <- forcats::fct_relevel(dat$Clonotype, 'GD T', after = 0)
+  }
+
+  if ('AB T' %in% dat$Clonotype) {
+    dat$Clonotype <- forcats::fct_relevel(dat$Clonotype, 'AB T', after = 0)
+  }
+
   if ('No TCR' %in% dat$Clonotype) {
     dat$Clonotype <- forcats::fct_relevel(dat$Clonotype, 'No TCR', after = 0)
   }
@@ -402,10 +424,14 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, xFacetField2 = NA, plotTitle 
     dat$Clonotype <- forcats::fct_relevel(dat$Clonotype, 'Low Freq', after = 0)
   }
 
-  cols <- getPalette(length(unique(dat$Clonotype[! dat$Clonotype %in% c('Low Freq', 'No TCR')])))
+  cols <- getPalette(length(unique(dat$Clonotype[! dat$Clonotype %in% c('Low Freq', 'No TCR', 'GD T', 'AB T')])))
   cols <- sample(cols, size = length(cols))
   if ('No TCR' %in% dat$Clonotype) {
     cols <- c('#FFFFFF', cols)
+  }
+
+  if ('GD T' %in% dat$Clonotype || 'AB T' %in% dat$Clonotype) {
+    cols <- c('#36454F', cols)
   }
 
   if ('Low Freq' %in% dat$Clonotype) {
@@ -1074,6 +1100,8 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
       c('clonotype', "NEQ", "No TCR"),
+      c('clonotype', "NEQ", "GD T"),
+      c('clonotype', "NEQ", "AB T"),
       c('cDNA_ID/status', 'DOES_NOT_CONTAIN', 'Failed'),
       c('status', "MISSING", "")
     ),
@@ -1380,7 +1408,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 
     # Calculate/store frequencies for clones that responded in at least one sample:
     allClones <- unique(allDataWithPVal$Clonotype)
-    allClones <- allClones[allClones != 'No TCR']
+    allClones <- allClones[! allClones %in% c('No TCR', 'GD T', 'AB T')]
 
     if (!is.integer(allDataWithPVal$cDNA_ID)) {
       print('Converting cDNA_ID to an integer')
@@ -1594,10 +1622,6 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     print(paste0('Active cluster: ', activatedCluster$cluster, '. Total cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'sPLS') {
     # This is create by RIRA::PredictTcellActivation()
-    if (! 'GeneralizedTCR_sPLSDA_ConsensusClass' %in% names(seuratObj@meta.data)) {
-        stop('Missing field: GeneralizedTCR_sPLSDA_ConsensusClass')
-    }
-
     if (! 'Is_TCR_Stimulated' %in% names(seuratObj@meta.data)) {
       stop('Missing field: Is_TCR_Stimulated. This should be created by RIRA::PredictTcellActivation()')
     }
