@@ -1684,7 +1684,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     dataWithPVal$Status <- ifelse(dataWithPVal$FailedEnrichment, yes = 'Failed Odds Ratio', no = NA)
 
     tryCatch({
-      passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'Tissue', xFacetField2 = 'SampleDate', dropInactive = TRUE, patternField = 'FailedEnrichment', plotTitle = paste0(subjectId, ": EDS > ", minEDS, ", Passing Enrichment"), groupLowFreq = FALSE)
+      passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'Tissue', xFacetField2 = 'SampleDate', dropInactive = TRUE, patternField = 'FailedEnrichment', plotTitle = paste0(subjectId, ": ", chain, ", EDS > ", minEDS, ", Passing Enrichment"), groupLowFreq = FALSE)
       if (!all(is.null(passingClones))){
         passingClones <- passingClones +
           geom_hline(yintercept = 0.005, linetype = 'dotted', colour = 'red', linewidth = 1) +
