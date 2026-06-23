@@ -1099,9 +1099,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency,clonename,cognatecdr3s",
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
-      c('clonotype', "NEQ", "No TCR"),
-      c('clonotype', "NEQ", "GD T"),
-      c('clonotype', "NEQ", "AB T"),
+      c('clonotype', "NOT_IN", "No TCR;GD T;AB T"),
       c('cDNA_ID/status', 'DOES_NOT_CONTAIN', 'Failed'),
       c('status', "MISSING", "")
     ),
