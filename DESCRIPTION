@@ -62,4 +62,5 @@ Collate:
     'PlotFunctions.R'
     'SingleCell.R'
     'Studies.R'
+    'Quantify.R'
     'TcrStims.R'
