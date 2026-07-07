@@ -18,7 +18,7 @@
 #'   CD4/CD8 and other T/NK subtypes remain RIRA CellTypist labels. Set
 #'   \code{FALSE} to quantify from RIRA labels only.
 #' @return A list with \code{countsWide} (grouping columns plus one column per
-#'   \code{TargetField}, or \code{_p05}/\code{_median}/\code{_p95} for quantile
+#'   \code{TargetField}, or \code{__p05}/\code{__median}/\code{__p95} for quantile
 #'   rules), \code{failures} (tibble of deferred failures), and \code{laneSummary}
 #'   (per-\code{sourceOutputFileId} ingest summary).
 #' @details
@@ -30,7 +30,17 @@
 #' only, when type is \code{score}). Optional columns \code{ScopeField} and
 #' \code{ScopeMatchValue} restrict matching to cells where
 #' \code{ScopeField == ScopeMatchValue} before applying the \code{SourceField}
-#' filter.
+#' filter. Optional columns \code{EffectorDifferentiationScoreField},
+#' \code{SubsetCutpointLow},
+#' \code{SubsetCutpointHigh}, and \code{SubsetPhenotype} further restrict matched
+#' cells by a numeric score bin (\code{Naive}: score below low cutpoint;
+#' \code{MemoryLike}: score between cutpoints inclusive; \code{Effector}: score
+#' above high cutpoint). The score column must already exist in metadata (e.g.
+#' \code{Tcell_EffectorDifferentiation} from RIRA \code{ScoreUsingSavedComponent}).
+#'
+#' \code{TargetField} names in the default spec use \code{__} as a structural
+#' delimiter between prefix segments and sanitized class labels; quantile rules
+#' append \code{__p05}, \code{__median}, and \code{__p95} to \code{TargetField}.
 #'
 #' All spec rows must share the same \code{GroupingVariable}. Sum rules count
 #' cells where \code{SourceField == MatchValue} per group (0 when no matches).
@@ -195,11 +205,7 @@ Quantify10xData <- function(
         target_field <- as.character(spec_row$TargetField[[1]])
         quantification_type <- tolower(trimws(as.character(spec_row$QuantificationType[[1]])))
         output_columns <- if (identical(quantification_type, "score")) {
-          c(
-            paste0(target_field, "_p05"),
-            paste0(target_field, "_median"),
-            paste0(target_field, "_p95")
-          )
+          .QuantifyQuantileColumns(target_field)
         } else {
           target_field
         }
@@ -259,6 +265,12 @@ Quantify10xData <- function(
 }
 
 ## Helper Functions ##
+.QuantifyNameDelim <- "__"
+
+.QuantifyQuantileColumns <- function(target_field) {
+  paste0(target_field, .QuantifyNameDelim, c("p05", "median", "p95"))
+}
+
 .EmptyFailuresTibble <- function() {
   #returns an empty tibble with columns for spec row, output file, field name, and reason
   tibble::tibble(
@@ -293,7 +305,14 @@ Quantify10xData <- function(
     "QuantificationSourceField",
     "QuantificationScoreType"
   )
-  optional_columns <- c("ScopeField", "ScopeMatchValue")
+  optional_columns <- c(
+    "ScopeField",
+    "ScopeMatchValue",
+    "EffectorDifferentiationScoreField",
+    "SubsetCutpointLow",
+    "SubsetCutpointHigh",
+    "SubsetPhenotype"
+  )
 
   failures <- .EmptyFailuresTibble()
 
@@ -324,6 +343,12 @@ Quantify10xData <- function(
   for (optional_column in optional_columns) {
     if (!optional_column %in% names(spec_table)) {
       spec_table[[optional_column]] <- ""
+    } else {
+      spec_table[[optional_column]] <- ifelse(
+        is.na(spec_table[[optional_column]]),
+        "",
+        as.character(spec_table[[optional_column]])
+      )
     }
   }
 
@@ -476,6 +501,10 @@ Quantify10xData <- function(
   grouping_variable <- trimws(as.character(spec_row$GroupingVariable[[1]]))
   scope_field <- trimws(as.character(spec_row$ScopeField[[1]]))
   scope_match_value <- as.character(spec_row$ScopeMatchValue[[1]])
+  eds_score_field <- trimws(as.character(spec_row$EffectorDifferentiationScoreField[[1]]))
+  subset_cutpoint_low <- trimws(as.character(spec_row$SubsetCutpointLow[[1]]))
+  subset_cutpoint_high <- trimws(as.character(spec_row$SubsetCutpointHigh[[1]]))
+  subset_phenotype <- trimws(as.character(spec_row$SubsetPhenotype[[1]]))
 
   if (!nzchar(target_field)) {
     append_failure("TargetField", "malformed spec row: TargetField is blank")
@@ -564,7 +593,101 @@ Quantify10xData <- function(
     }
   }
 
+  subset_columns_set <- c(
+    nzchar(eds_score_field),
+    nzchar(subset_cutpoint_low),
+    nzchar(subset_cutpoint_high),
+    nzchar(subset_phenotype)
+  )
+  if (any(subset_columns_set) && !all(subset_columns_set)) {
+    if (!nzchar(subset_phenotype)) {
+      append_failure(
+        "SubsetPhenotype",
+        "malformed spec row: SubsetPhenotype is required when other subset columns are set"
+      )
+    }
+    if (!nzchar(eds_score_field)) {
+      append_failure(
+        "EffectorDifferentiationScoreField",
+        "malformed spec row: EffectorDifferentiationScoreField is required when SubsetPhenotype is set"
+      )
+    }
+    if (!nzchar(subset_cutpoint_low)) {
+      append_failure(
+        "SubsetCutpointLow",
+        "malformed spec row: SubsetCutpointLow is required when SubsetPhenotype is set"
+      )
+    }
+    if (!nzchar(subset_cutpoint_high)) {
+      append_failure(
+        "SubsetCutpointHigh",
+        "malformed spec row: SubsetCutpointHigh is required when SubsetPhenotype is set"
+      )
+    }
+  }
+
+  if (nzchar(subset_phenotype)) {
+    valid_phenotypes <- c("naive", "memorylike", "effector")
+    if (!tolower(subset_phenotype) %in% valid_phenotypes) {
+      append_failure(
+        "SubsetPhenotype",
+        paste0("invalid SubsetPhenotype: ", subset_phenotype)
+      )
+    }
+
+    low_value <- suppressWarnings(as.numeric(subset_cutpoint_low))
+    high_value <- suppressWarnings(as.numeric(subset_cutpoint_high))
+    if (is.na(low_value)) {
+      append_failure(
+        "SubsetCutpointLow",
+        paste0("invalid SubsetCutpointLow: ", subset_cutpoint_low)
+      )
+    }
+    if (is.na(high_value)) {
+      append_failure(
+        "SubsetCutpointHigh",
+        paste0("invalid SubsetCutpointHigh: ", subset_cutpoint_high)
+      )
+    }
+    if (!is.na(low_value) && !is.na(high_value) && low_value > high_value) {
+      append_failure(
+        "SubsetCutpointLow",
+        "SubsetCutpointLow must be less than or equal to SubsetCutpointHigh"
+      )
+    }
+
+    if (nzchar(eds_score_field) && !eds_score_field %in% metadata_columns) {
+      append_failure(
+        "EffectorDifferentiationScoreField",
+        paste0(
+          "EffectorDifferentiationScoreField not found in metadata: ",
+          eds_score_field
+        )
+      )
+    }
+  }
+
   failures
+}
+
+.ApplySubsetScoreFilter <- function(cells, spec_row) {
+  phenotype <- trimws(as.character(spec_row$SubsetPhenotype[[1]]))
+  if (!nzchar(phenotype) || !nrow(cells)) {
+    return(cells)
+  }
+
+  score_field <- trimws(as.character(spec_row$EffectorDifferentiationScoreField[[1]]))
+  low <- as.numeric(spec_row$SubsetCutpointLow[[1]])
+  high <- as.numeric(spec_row$SubsetCutpointHigh[[1]])
+  scores <- suppressWarnings(as.numeric(cells[[score_field]]))
+  keep <- switch(
+    tolower(phenotype),
+    naive = !is.na(scores) & scores < low,
+    memorylike = !is.na(scores) & scores >= low & scores <= high,
+    effector = !is.na(scores) & scores > high,
+    rep(FALSE, nrow(cells))
+  )
+  cells[keep, , drop = FALSE]
 }
 
 #this function does the bulk of the work for populating the output table.
@@ -593,6 +716,7 @@ Quantify10xData <- function(
 
   source_values <- as.character(scoped_cells[[source_field]])
   matched_cells <- scoped_cells[source_values == match_value, , drop = FALSE]
+  matched_cells <- .ApplySubsetScoreFilter(matched_cells, spec_row)
 
   if (identical(quantification_type, "sum")) {
     if (nrow(matched_cells) == 0) {
@@ -611,9 +735,10 @@ Quantify10xData <- function(
   }
 
   score_field <- as.character(spec_row$QuantificationSourceField[[1]])
-  p05_col <- paste0(target_field, "_p05")
-  median_col <- paste0(target_field, "_median")
-  p95_col <- paste0(target_field, "_p95")
+  quantile_columns <- .QuantifyQuantileColumns(target_field)
+  p05_col <- quantile_columns[[1]]
+  median_col <- quantile_columns[[2]]
+  p95_col <- quantile_columns[[3]]
 
   if (nrow(matched_cells) == 0) {
     all_groups[[p05_col]] <- NA_real_

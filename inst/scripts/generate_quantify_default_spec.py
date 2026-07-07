@@ -20,11 +20,17 @@ import warnings
 from pathlib import Path
 
 GROUPING = "cDNA_ID"
+DELIM = "__"
 IMMUNE_FIELD = "RIRA_Immune_v2.cellclass"
 TNK_FIELD = "RIRA_TNK_v2.cellclass"
 MYE_FINE = "RIRA_Myeloid_v3.cellclass"
 MYE_COARSE = "RIRA_Myeloid_v3.coarseclass"
 SCOPE_IMMUNE = IMMUNE_FIELD
+EDS_METADATA_FIELD = "Tcell_EffectorDifferentiation"
+EDS_CUTPOINT_LOW = "2"
+EDS_CUTPOINT_HIGH = "6"
+EDS_T_CELL_CLASSES = ["CD4+ T Cells", "CD8+ T Cells"]
+EDS_PHENOTYPES = ["Naive", "MemoryLike", "Effector"]
 
 # Post-pkl labels written by RIRA Classify_* functions (see CellTypist.R).
 IMMUNE_DERIVED = ["Non-Immune", "Unknown"]
@@ -56,10 +62,14 @@ def derive_coarse(fine_classes: list[str]) -> list[str]:
 
 
 def sanitize(label: str) -> str:
-    s = label.replace("+", "plus").replace("/", "_").replace(".", "")
+    s = label.replace("+", "plus")
     s = re.sub(r"[^\w]+", "_", s)
     s = re.sub(r"_+", "_", s).strip("_")
     return s
+
+
+def join_target(*parts: str) -> str:
+    return DELIM.join(parts)
 
 
 def spec_row(
@@ -71,6 +81,10 @@ def spec_row(
     qscore: str = "",
     scope_field: str = "",
     scope_match: str = "",
+    effector_differentiation_score_field: str = "",
+    subset_cutpoint_low: str = "",
+    subset_cutpoint_high: str = "",
+    subset_phenotype: str = "",
 ) -> str:
     return "\t".join(
         [
@@ -83,6 +97,10 @@ def spec_row(
             qscore,
             scope_field,
             scope_match,
+            effector_differentiation_score_field,
+            subset_cutpoint_low,
+            subset_cutpoint_high,
+            subset_phenotype,
         ]
     )
 
@@ -125,6 +143,10 @@ def main() -> None:
                 "QuantificationScoreType",
                 "ScopeField",
                 "ScopeMatchValue",
+                "EffectorDifferentiationScoreField",
+                "SubsetCutpointLow",
+                "SubsetCutpointHigh",
+                "SubsetPhenotype",
             ]
         )
     ]
@@ -132,14 +154,14 @@ def main() -> None:
     # Block 1 — Immune (no scope): all sum rows for RIRA_Immune_v2.cellclass
     for cls in immune_classes:
         rows.append(
-            spec_row(f"Immune_{sanitize(cls)}", IMMUNE_FIELD, cls, "sum")
+            spec_row(join_target("Immune", sanitize(cls)), IMMUNE_FIELD, cls, "sum")
         )
 
     # Block 2 — TNK (scoped T_NK): sums, then Cytotoxicity, then Interferon
     for cls in tnk_classes:
         rows.append(
             spec_row(
-                f"TNK_{sanitize(cls)}",
+                join_target("TNK", sanitize(cls)),
                 TNK_FIELD,
                 cls,
                 "sum",
@@ -150,7 +172,7 @@ def main() -> None:
     for cls in tnk_classes:
         rows.append(
             spec_row(
-                f"Cytotoxic_TNK_{sanitize(cls)}",
+                join_target("Cytotoxic", "TNK", sanitize(cls)),
                 TNK_FIELD,
                 cls,
                 "score",
@@ -163,7 +185,7 @@ def main() -> None:
     for cls in tnk_classes:
         rows.append(
             spec_row(
-                f"Interferon_TNK_{sanitize(cls)}",
+                join_target("Interferon", "TNK", sanitize(cls)),
                 TNK_FIELD,
                 cls,
                 "score",
@@ -174,11 +196,29 @@ def main() -> None:
             )
         )
 
+    # Block 2b — CD4/CD8 EDS phenotypes (scoped T_NK)
+    for cls in EDS_T_CELL_CLASSES:
+        for phenotype in EDS_PHENOTYPES:
+            rows.append(
+                spec_row(
+                    join_target("TNK", sanitize(cls), phenotype),
+                    TNK_FIELD,
+                    cls,
+                    "sum",
+                    scope_field=SCOPE_IMMUNE,
+                    scope_match="T_NK",
+                    effector_differentiation_score_field=EDS_METADATA_FIELD,
+                    subset_cutpoint_low=EDS_CUTPOINT_LOW,
+                    subset_cutpoint_high=EDS_CUTPOINT_HIGH,
+                    subset_phenotype=phenotype,
+                )
+            )
+
     # Block 3 — Myeloid (scoped Myeloid): fine sums, coarse sums, then IFN on coarse
     for cls in myeloid_fine:
         rows.append(
             spec_row(
-                f"Myeloid_fine_{sanitize(cls)}",
+                join_target("Myeloid", "fine", sanitize(cls)),
                 MYE_FINE,
                 cls,
                 "sum",
@@ -189,7 +229,7 @@ def main() -> None:
     for cls in myeloid_coarse:
         rows.append(
             spec_row(
-                f"Myeloid_coarse_{sanitize(cls)}",
+                join_target("Myeloid", "coarse", sanitize(cls)),
                 MYE_COARSE,
                 cls,
                 "sum",
@@ -200,7 +240,7 @@ def main() -> None:
     for cls in myeloid_coarse:
         rows.append(
             spec_row(
-                f"Interferon_Myeloid_coarse_{sanitize(cls)}",
+                join_target("Interferon", "Myeloid", "coarse", sanitize(cls)),
                 MYE_COARSE,
                 cls,
                 "score",

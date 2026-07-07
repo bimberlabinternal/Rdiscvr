@@ -1,69 +1,75 @@
-GroupingVariable	TargetField	SourceField	MatchValue	QuantificationType	QuantificationSourceField	QuantificationScoreType	ScopeField	ScopeMatchValue
-cDNA_ID	Immune_Bcell	RIRA_Immune_v2.cellclass	Bcell	sum				
-cDNA_ID	Immune_Epithelial	RIRA_Immune_v2.cellclass	Epithelial	sum				
-cDNA_ID	Immune_Erythrocyte	RIRA_Immune_v2.cellclass	Erythrocyte	sum				
-cDNA_ID	Immune_Myeloid	RIRA_Immune_v2.cellclass	Myeloid	sum				
-cDNA_ID	Immune_Stromal	RIRA_Immune_v2.cellclass	Stromal	sum				
-cDNA_ID	Immune_T_NK	RIRA_Immune_v2.cellclass	T_NK	sum				
-cDNA_ID	Immune_Non_Immune	RIRA_Immune_v2.cellclass	Non-Immune	sum				
-cDNA_ID	Immune_Unknown	RIRA_Immune_v2.cellclass	Unknown	sum				
-cDNA_ID	TNK_CD4plus_T_Cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	sum			RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	TNK_CD8plus_T_Cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	sum			RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	TNK_Gamma_Delta_Cells	RIRA_TNK_v2.cellclass	Gamma/Delta Cells	sum			RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	TNK_NK_Cells	RIRA_TNK_v2.cellclass	NK Cells	sum			RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	TNK_Other	RIRA_TNK_v2.cellclass	Other	sum			RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	TNK_Unassigned	RIRA_TNK_v2.cellclass	Unassigned	sum			RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	TNK_Ambiguous	RIRA_TNK_v2.cellclass	Ambiguous	sum			RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	TNK_Unknown	RIRA_TNK_v2.cellclass	Unknown	sum			RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Cytotoxic_TNK_CD4plus_T_Cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Cytotoxic_TNK_CD8plus_T_Cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Cytotoxic_TNK_Gamma_Delta_Cells	RIRA_TNK_v2.cellclass	Gamma/Delta Cells	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Cytotoxic_TNK_NK_Cells	RIRA_TNK_v2.cellclass	NK Cells	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Cytotoxic_TNK_Other	RIRA_TNK_v2.cellclass	Other	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Cytotoxic_TNK_Unassigned	RIRA_TNK_v2.cellclass	Unassigned	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Cytotoxic_TNK_Ambiguous	RIRA_TNK_v2.cellclass	Ambiguous	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Cytotoxic_TNK_Unknown	RIRA_TNK_v2.cellclass	Unknown	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Interferon_TNK_CD4plus_T_Cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Interferon_TNK_CD8plus_T_Cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Interferon_TNK_Gamma_Delta_Cells	RIRA_TNK_v2.cellclass	Gamma/Delta Cells	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Interferon_TNK_NK_Cells	RIRA_TNK_v2.cellclass	NK Cells	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Interferon_TNK_Other	RIRA_TNK_v2.cellclass	Other	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Interferon_TNK_Unassigned	RIRA_TNK_v2.cellclass	Unassigned	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Interferon_TNK_Ambiguous	RIRA_TNK_v2.cellclass	Ambiguous	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Interferon_TNK_Unknown	RIRA_TNK_v2.cellclass	Unknown	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK
-cDNA_ID	Myeloid_fine_Alv_mac	RIRA_Myeloid_v3.cellclass	Alv. mac.	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_CD14plus_Monocytes	RIRA_Myeloid_v3.cellclass	CD14+ Monocytes	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_CD16plus_Monocytes	RIRA_Myeloid_v3.cellclass	CD16+ Monocytes	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_DC	RIRA_Myeloid_v3.cellclass	DC	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_Inflammatory_Monocytes	RIRA_Myeloid_v3.cellclass	Inflammatory Monocytes	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_MacrophageM1	RIRA_Myeloid_v3.cellclass	MacrophageM1	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_Macrophages	RIRA_Myeloid_v3.cellclass	Macrophages	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_Mature_DC	RIRA_Myeloid_v3.cellclass	Mature DC	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_Myelocytes	RIRA_Myeloid_v3.cellclass	Myelocytes	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_Promyelocytes	RIRA_Myeloid_v3.cellclass	Promyelocytes	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_pDC	RIRA_Myeloid_v3.cellclass	pDC	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_Unassigned	RIRA_Myeloid_v3.cellclass	Unassigned	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_Ambiguous	RIRA_Myeloid_v3.cellclass	Ambiguous	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_fine_Unknown	RIRA_Myeloid_v3.cellclass	Unknown	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_coarse_Alv_mac	RIRA_Myeloid_v3.coarseclass	Alv. mac.	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_coarse_Ambiguous	RIRA_Myeloid_v3.coarseclass	Ambiguous	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_coarse_DC	RIRA_Myeloid_v3.coarseclass	DC	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_coarse_MacrophageM1	RIRA_Myeloid_v3.coarseclass	MacrophageM1	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_coarse_Macrophages	RIRA_Myeloid_v3.coarseclass	Macrophages	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_coarse_Monocytes	RIRA_Myeloid_v3.coarseclass	Monocytes	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_coarse_Myelocytes	RIRA_Myeloid_v3.coarseclass	Myelocytes	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_coarse_pDC	RIRA_Myeloid_v3.coarseclass	pDC	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_coarse_Promyelocytes	RIRA_Myeloid_v3.coarseclass	Promyelocytes	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_coarse_Unassigned	RIRA_Myeloid_v3.coarseclass	Unassigned	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Myeloid_coarse_Unknown	RIRA_Myeloid_v3.coarseclass	Unknown	sum			RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Interferon_Myeloid_coarse_Alv_mac	RIRA_Myeloid_v3.coarseclass	Alv. mac.	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Interferon_Myeloid_coarse_Ambiguous	RIRA_Myeloid_v3.coarseclass	Ambiguous	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Interferon_Myeloid_coarse_DC	RIRA_Myeloid_v3.coarseclass	DC	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Interferon_Myeloid_coarse_MacrophageM1	RIRA_Myeloid_v3.coarseclass	MacrophageM1	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Interferon_Myeloid_coarse_Macrophages	RIRA_Myeloid_v3.coarseclass	Macrophages	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Interferon_Myeloid_coarse_Monocytes	RIRA_Myeloid_v3.coarseclass	Monocytes	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Interferon_Myeloid_coarse_Myelocytes	RIRA_Myeloid_v3.coarseclass	Myelocytes	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Interferon_Myeloid_coarse_pDC	RIRA_Myeloid_v3.coarseclass	pDC	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Interferon_Myeloid_coarse_Promyelocytes	RIRA_Myeloid_v3.coarseclass	Promyelocytes	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Interferon_Myeloid_coarse_Unassigned	RIRA_Myeloid_v3.coarseclass	Unassigned	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid
-cDNA_ID	Interferon_Myeloid_coarse_Unknown	RIRA_Myeloid_v3.coarseclass	Unknown	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid
+GroupingVariable	TargetField	SourceField	MatchValue	QuantificationType	QuantificationSourceField	QuantificationScoreType	ScopeField	ScopeMatchValue	EffectorDifferentiationScoreField	SubsetCutpointLow	SubsetCutpointHigh	SubsetPhenotype
+cDNA_ID	Immune__Bcell	RIRA_Immune_v2.cellclass	Bcell	sum								
+cDNA_ID	Immune__Epithelial	RIRA_Immune_v2.cellclass	Epithelial	sum								
+cDNA_ID	Immune__Erythrocyte	RIRA_Immune_v2.cellclass	Erythrocyte	sum								
+cDNA_ID	Immune__Myeloid	RIRA_Immune_v2.cellclass	Myeloid	sum								
+cDNA_ID	Immune__Stromal	RIRA_Immune_v2.cellclass	Stromal	sum								
+cDNA_ID	Immune__T_NK	RIRA_Immune_v2.cellclass	T_NK	sum								
+cDNA_ID	Immune__Non_Immune	RIRA_Immune_v2.cellclass	Non-Immune	sum								
+cDNA_ID	Immune__Unknown	RIRA_Immune_v2.cellclass	Unknown	sum								
+cDNA_ID	TNK__CD4plus_T_Cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	sum			RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	TNK__CD8plus_T_Cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	sum			RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	TNK__Gamma_Delta_Cells	RIRA_TNK_v2.cellclass	Gamma/Delta Cells	sum			RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	TNK__NK_Cells	RIRA_TNK_v2.cellclass	NK Cells	sum			RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	TNK__Other	RIRA_TNK_v2.cellclass	Other	sum			RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	TNK__Unassigned	RIRA_TNK_v2.cellclass	Unassigned	sum			RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	TNK__Ambiguous	RIRA_TNK_v2.cellclass	Ambiguous	sum			RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	TNK__Unknown	RIRA_TNK_v2.cellclass	Unknown	sum			RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Cytotoxic__TNK__CD4plus_T_Cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Cytotoxic__TNK__CD8plus_T_Cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Cytotoxic__TNK__Gamma_Delta_Cells	RIRA_TNK_v2.cellclass	Gamma/Delta Cells	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Cytotoxic__TNK__NK_Cells	RIRA_TNK_v2.cellclass	NK Cells	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Cytotoxic__TNK__Other	RIRA_TNK_v2.cellclass	Other	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Cytotoxic__TNK__Unassigned	RIRA_TNK_v2.cellclass	Unassigned	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Cytotoxic__TNK__Ambiguous	RIRA_TNK_v2.cellclass	Ambiguous	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Cytotoxic__TNK__Unknown	RIRA_TNK_v2.cellclass	Unknown	score	Cytotoxicity_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Interferon__TNK__CD4plus_T_Cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Interferon__TNK__CD8plus_T_Cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Interferon__TNK__Gamma_Delta_Cells	RIRA_TNK_v2.cellclass	Gamma/Delta Cells	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Interferon__TNK__NK_Cells	RIRA_TNK_v2.cellclass	NK Cells	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Interferon__TNK__Other	RIRA_TNK_v2.cellclass	Other	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Interferon__TNK__Unassigned	RIRA_TNK_v2.cellclass	Unassigned	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Interferon__TNK__Ambiguous	RIRA_TNK_v2.cellclass	Ambiguous	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	Interferon__TNK__Unknown	RIRA_TNK_v2.cellclass	Unknown	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	T_NK				
+cDNA_ID	TNK__CD4plus_T_Cells__Naive	RIRA_TNK_v2.cellclass	CD4+ T Cells	sum			RIRA_Immune_v2.cellclass	T_NK	Tcell_EffectorDifferentiation	2	6	Naive
+cDNA_ID	TNK__CD4plus_T_Cells__MemoryLike	RIRA_TNK_v2.cellclass	CD4+ T Cells	sum			RIRA_Immune_v2.cellclass	T_NK	Tcell_EffectorDifferentiation	2	6	MemoryLike
+cDNA_ID	TNK__CD4plus_T_Cells__Effector	RIRA_TNK_v2.cellclass	CD4+ T Cells	sum			RIRA_Immune_v2.cellclass	T_NK	Tcell_EffectorDifferentiation	2	6	Effector
+cDNA_ID	TNK__CD8plus_T_Cells__Naive	RIRA_TNK_v2.cellclass	CD8+ T Cells	sum			RIRA_Immune_v2.cellclass	T_NK	Tcell_EffectorDifferentiation	2	6	Naive
+cDNA_ID	TNK__CD8plus_T_Cells__MemoryLike	RIRA_TNK_v2.cellclass	CD8+ T Cells	sum			RIRA_Immune_v2.cellclass	T_NK	Tcell_EffectorDifferentiation	2	6	MemoryLike
+cDNA_ID	TNK__CD8plus_T_Cells__Effector	RIRA_TNK_v2.cellclass	CD8+ T Cells	sum			RIRA_Immune_v2.cellclass	T_NK	Tcell_EffectorDifferentiation	2	6	Effector
+cDNA_ID	Myeloid__fine__Alv_mac	RIRA_Myeloid_v3.cellclass	Alv. mac.	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__CD14plus_Monocytes	RIRA_Myeloid_v3.cellclass	CD14+ Monocytes	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__CD16plus_Monocytes	RIRA_Myeloid_v3.cellclass	CD16+ Monocytes	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__DC	RIRA_Myeloid_v3.cellclass	DC	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__Inflammatory_Monocytes	RIRA_Myeloid_v3.cellclass	Inflammatory Monocytes	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__MacrophageM1	RIRA_Myeloid_v3.cellclass	MacrophageM1	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__Macrophages	RIRA_Myeloid_v3.cellclass	Macrophages	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__Mature_DC	RIRA_Myeloid_v3.cellclass	Mature DC	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__Myelocytes	RIRA_Myeloid_v3.cellclass	Myelocytes	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__Promyelocytes	RIRA_Myeloid_v3.cellclass	Promyelocytes	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__pDC	RIRA_Myeloid_v3.cellclass	pDC	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__Unassigned	RIRA_Myeloid_v3.cellclass	Unassigned	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__Ambiguous	RIRA_Myeloid_v3.cellclass	Ambiguous	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__fine__Unknown	RIRA_Myeloid_v3.cellclass	Unknown	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__coarse__Alv_mac	RIRA_Myeloid_v3.coarseclass	Alv. mac.	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__coarse__Ambiguous	RIRA_Myeloid_v3.coarseclass	Ambiguous	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__coarse__DC	RIRA_Myeloid_v3.coarseclass	DC	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__coarse__MacrophageM1	RIRA_Myeloid_v3.coarseclass	MacrophageM1	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__coarse__Macrophages	RIRA_Myeloid_v3.coarseclass	Macrophages	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__coarse__Monocytes	RIRA_Myeloid_v3.coarseclass	Monocytes	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__coarse__Myelocytes	RIRA_Myeloid_v3.coarseclass	Myelocytes	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__coarse__pDC	RIRA_Myeloid_v3.coarseclass	pDC	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__coarse__Promyelocytes	RIRA_Myeloid_v3.coarseclass	Promyelocytes	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__coarse__Unassigned	RIRA_Myeloid_v3.coarseclass	Unassigned	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Myeloid__coarse__Unknown	RIRA_Myeloid_v3.coarseclass	Unknown	sum			RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Interferon__Myeloid__coarse__Alv_mac	RIRA_Myeloid_v3.coarseclass	Alv. mac.	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Interferon__Myeloid__coarse__Ambiguous	RIRA_Myeloid_v3.coarseclass	Ambiguous	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Interferon__Myeloid__coarse__DC	RIRA_Myeloid_v3.coarseclass	DC	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Interferon__Myeloid__coarse__MacrophageM1	RIRA_Myeloid_v3.coarseclass	MacrophageM1	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Interferon__Myeloid__coarse__Macrophages	RIRA_Myeloid_v3.coarseclass	Macrophages	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Interferon__Myeloid__coarse__Monocytes	RIRA_Myeloid_v3.coarseclass	Monocytes	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Interferon__Myeloid__coarse__Myelocytes	RIRA_Myeloid_v3.coarseclass	Myelocytes	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Interferon__Myeloid__coarse__pDC	RIRA_Myeloid_v3.coarseclass	pDC	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Interferon__Myeloid__coarse__Promyelocytes	RIRA_Myeloid_v3.coarseclass	Promyelocytes	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Interferon__Myeloid__coarse__Unassigned	RIRA_Myeloid_v3.coarseclass	Unassigned	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid				
+cDNA_ID	Interferon__Myeloid__coarse__Unknown	RIRA_Myeloid_v3.coarseclass	Unknown	score	Interferon_Response_UCell	quantiles	RIRA_Immune_v2.cellclass	Myeloid				

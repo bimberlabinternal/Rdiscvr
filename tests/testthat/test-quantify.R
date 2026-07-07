@@ -86,7 +86,8 @@ library(testthat)
     HasCD3 = c(
       rep(TRUE, 14), rep(FALSE, 6), rep(TRUE, 18),
       rep(TRUE, 10), rep(FALSE, 5), rep(TRUE, 27)
-    )
+    ),
+    Tcell_EffectorDifferentiation = rep(4, 80)
   )
 }
 
@@ -159,22 +160,22 @@ test_that("Quantify10xData quantifies sum, score, and scope rules", {
 
   # score quantiles
   cd8_scores <- synthetic$ScoreCol[synthetic$CellType == "CD8_T" & synthetic$cDNA_ID == 1001]
-  expect_true(all(c("CD8_score_p05", "CD8_score_median", "CD8_score_p95") %in% names(result$countsWide)))
+  expect_true(all(c("CD8_score__p05", "CD8_score__median", "CD8_score__p95") %in% names(result$countsWide)))
   expect_equal(
-    result$countsWide$CD8_score_median[result$countsWide$cDNA_ID == 1001],
+    result$countsWide$CD8_score__median[result$countsWide$cDNA_ID == 1001],
     as.numeric(stats::quantile(cd8_scores, probs = 0.5, na.rm = TRUE, names = FALSE))
   )
 
   # ScopeField restricts matching to parent class
   expect_equal(result$countsWide$TNK_CD8_count[result$countsWide$cDNA_ID == 1001], 5L)
   expect_equal(
-    result$countsWide$TNK_CD8_score_median[result$countsWide$cDNA_ID == 1001],
+    result$countsWide$TNK_CD8_score__median[result$countsWide$cDNA_ID == 1001],
     as.numeric(stats::quantile(rep(0.1, 5), probs = 0.5, na.rm = TRUE, names = FALSE))
   )
 
   # zero-match sum is 0 and zero-match quantiles are NA
   expect_equal(result$countsWide$missing_count, rep(0L, 2))
-  expect_true(all(is.na(result$countsWide$missing_score_median)))
+  expect_true(all(is.na(result$countsWide$missing_score__median)))
 })
 
 test_that("Default RIRA spec integrates with synthetic metadata", {
@@ -190,14 +191,14 @@ test_that("Default RIRA spec integrates with synthetic metadata", {
   row_1001 <- result$countsWide[result$countsWide$cDNA_ID == 1001, ]
   row_1002 <- result$countsWide[result$countsWide$cDNA_ID == 1002, ]
 
-  expect_equal(row_1001$Immune_T_NK, 20L)
-  expect_equal(row_1001$TNK_CD8plus_T_Cells, 8L)
-  expect_equal(row_1001$Myeloid_coarse_Monocytes, 8L)
-  expect_false(is.na(row_1001$Cytotoxic_TNK_CD8plus_T_Cells_median))
+  expect_equal(row_1001$Immune__T_NK, 20L)
+  expect_equal(row_1001$TNK__CD8plus_T_Cells, 8L)
+  expect_equal(row_1001$Myeloid__coarse__Monocytes, 8L)
+  expect_false(is.na(row_1001$Cytotoxic__TNK__CD8plus_T_Cells__median))
 
-  expect_equal(row_1002$Immune_T_NK, 15L)
-  expect_equal(row_1002$TNK_CD8plus_T_Cells, 10L)
-  expect_equal(row_1002$Myeloid_coarse_Monocytes, 12L)
+  expect_equal(row_1002$Immune__T_NK, 15L)
+  expect_equal(row_1002$TNK__CD8plus_T_Cells, 10L)
+  expect_equal(row_1002$Myeloid__coarse__Monocytes, 12L)
 })
 
 test_that("TCR TNK override and failure tolerance", {
@@ -221,7 +222,7 @@ test_that("TCR TNK override and failure tolerance", {
 
   nk_spec <- tibble::tibble(
     GroupingVariable = "cDNA_ID",
-    TargetField = "TNK_NK_Cells",
+    TargetField = "TNK__NK_Cells",
     SourceField = "RIRA_TNK_v2.cellclass",
     MatchValue = "NK Cells",
     QuantificationType = "sum",
@@ -233,7 +234,7 @@ test_that("TCR TNK override and failure tolerance", {
 
   # NK cells: TCR evidence overrides RIRA CD8 label when classifyTNK=TRUE
   nk_result <- .runQuantifyWithMock(nk_synthetic, nk_spec, classify_tnk = TRUE)
-  expect_equal(nk_result$countsWide$TNK_NK_Cells, 3L)
+  expect_equal(nk_result$countsWide$TNK__NK_Cells, 3L)
 
   gd_synthetic <- tibble::tibble(
     sourceOutputFileId = rep(111L, 4),
@@ -254,7 +255,7 @@ test_that("TCR TNK override and failure tolerance", {
 
   gd_spec <- tibble::tibble(
     GroupingVariable = "cDNA_ID",
-    TargetField = "TNK_Gamma_Delta_Cells",
+    TargetField = "TNK__Gamma_Delta_Cells",
     SourceField = "RIRA_TNK_v2.cellclass",
     MatchValue = "Gamma/Delta Cells",
     QuantificationType = "sum",
@@ -266,11 +267,11 @@ test_that("TCR TNK override and failure tolerance", {
 
   # Gamma/Delta: counts Gamma/Delta, not Gamma Chain-Only
   gd_result <- .runQuantifyWithMock(gd_synthetic, gd_spec, classify_tnk = TRUE)
-  expect_equal(gd_result$countsWide$TNK_Gamma_Delta_Cells, 2L)
+  expect_equal(gd_result$countsWide$TNK__Gamma_Delta_Cells, 2L)
 
   # classifyTNK=FALSE: RIRA labels preserved (NK count stays 0)
   rira_only <- .runQuantifyWithMock(nk_synthetic, nk_spec, classify_tnk = FALSE)
-  expect_equal(rira_only$countsWide$TNK_NK_Cells, 0L)
+  expect_equal(rira_only$countsWide$TNK__NK_Cells, 0L)
 
   # Bad spec row: missing metadata column logs warning, records failure, continues
   bad_spec <- tibble::tibble(
@@ -290,4 +291,72 @@ test_that("TCR TNK override and failure tolerance", {
   expect_false("bad_count" %in% names(bad_result$countsWide))
   expect_true(any(bad_result$failures$field == "SourceField"))
   expect_gt(length(readLines(failure_log)), 0)
+})
+
+test_that("EDS subset columns split T cells by score cutpoints", {
+  eds_synthetic <- tibble::tibble(
+    sourceOutputFileId = rep(111L, 3),
+    cDNA_ID = rep(1001L, 3),
+    `RIRA_Immune_v2.cellclass` = rep("T_NK", 3),
+    `RIRA_TNK_v2.cellclass` = rep("CD4+ T Cells", 3),
+    `RIRA_Myeloid_v3.cellclass` = rep("Unassigned", 3),
+    `RIRA_Myeloid_v3.coarseclass` = rep("Unassigned", 3),
+    Tcell_EffectorDifferentiation = c(1, 4, 8),
+    HasCDR3Data = rep(TRUE, 3),
+    HasCD3 = rep(TRUE, 3)
+  )
+
+  eds_spec <- tibble::tibble(
+    GroupingVariable = rep("cDNA_ID", 3),
+    TargetField = c(
+      "TNK__CD4plus_T_Cells__Naive",
+      "TNK__CD4plus_T_Cells__MemoryLike",
+      "TNK__CD4plus_T_Cells__Effector"
+    ),
+    SourceField = rep("RIRA_TNK_v2.cellclass", 3),
+    MatchValue = rep("CD4+ T Cells", 3),
+    QuantificationType = rep("sum", 3),
+    QuantificationSourceField = rep("", 3),
+    QuantificationScoreType = rep("", 3),
+    ScopeField = rep("RIRA_Immune_v2.cellclass", 3),
+    ScopeMatchValue = rep("T_NK", 3),
+    EffectorDifferentiationScoreField = rep("Tcell_EffectorDifferentiation", 3),
+    SubsetCutpointLow = rep("2", 3),
+    SubsetCutpointHigh = rep("6", 3),
+    SubsetPhenotype = c("Naive", "MemoryLike", "Effector")
+  )
+
+  eds_result <- .runQuantifyWithMock(eds_synthetic, eds_spec)
+  expect_equal(nrow(eds_result$failures), 0)
+  expect_equal(eds_result$countsWide$TNK__CD4plus_T_Cells__Naive, 1L)
+  expect_equal(eds_result$countsWide$TNK__CD4plus_T_Cells__MemoryLike, 1L)
+  expect_equal(eds_result$countsWide$TNK__CD4plus_T_Cells__Effector, 1L)
+
+  missing_eds_spec <- tibble::tibble(
+    GroupingVariable = "cDNA_ID",
+    TargetField = "TNK__CD4plus_T_Cells__Naive",
+    SourceField = "RIRA_TNK_v2.cellclass",
+    MatchValue = "CD4+ T Cells",
+    QuantificationType = "sum",
+    QuantificationSourceField = "",
+    QuantificationScoreType = "",
+    ScopeField = "RIRA_Immune_v2.cellclass",
+    ScopeMatchValue = "T_NK",
+    EffectorDifferentiationScoreField = "Tcell_EffectorDifferentiation",
+    SubsetCutpointLow = "2",
+    SubsetCutpointHigh = "6",
+    SubsetPhenotype = "Naive"
+  )
+  eds_no_col <- eds_synthetic[, setdiff(names(eds_synthetic), "Tcell_EffectorDifferentiation")]
+  failure_log <- tempfile(fileext = ".txt")
+  expect_warning(
+    missing_result <- .runQuantifyWithMock(
+      eds_no_col,
+      missing_eds_spec,
+      failure_log_file = failure_log
+    ),
+    "quantification failure"
+  )
+  expect_true(any(missing_result$failures$field == "EffectorDifferentiationScoreField"))
+  expect_false("TNK__CD4plus_T_Cells__Naive" %in% names(missing_result$countsWide))
 })
