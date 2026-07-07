@@ -31,8 +31,9 @@
 #' \code{ScopeMatchValue} restrict matching to cells where
 #' \code{ScopeField == ScopeMatchValue} before applying the \code{SourceField}
 #' filter. Optional columns \code{EffectorDifferentiationScoreField},
-#' \code{SubsetCutpointLow},
-#' \code{SubsetCutpointHigh}, and \code{SubsetPhenotype} further restrict matched
+#' \code{EffectorDifferentiationCutpointLow},
+#' \code{EffectorDifferentiationCutpointHigh}, and
+#' \code{SubsetPhenotypeOutputFieldName} further restrict matched
 #' cells by a numeric score bin (\code{Naive}: score below low cutpoint;
 #' \code{MemoryLike}: score between cutpoints inclusive; \code{Effector}: score
 #' above high cutpoint). The score column must already exist in metadata (e.g.
@@ -309,9 +310,9 @@ Quantify10xData <- function(
     "ScopeField",
     "ScopeMatchValue",
     "EffectorDifferentiationScoreField",
-    "SubsetCutpointLow",
-    "SubsetCutpointHigh",
-    "SubsetPhenotype"
+    "EffectorDifferentiationCutpointLow",
+    "EffectorDifferentiationCutpointHigh",
+    "SubsetPhenotypeOutputFieldName"
   )
 
   failures <- .EmptyFailuresTibble()
@@ -502,9 +503,9 @@ Quantify10xData <- function(
   scope_field <- trimws(as.character(spec_row$ScopeField[[1]]))
   scope_match_value <- as.character(spec_row$ScopeMatchValue[[1]])
   eds_score_field <- trimws(as.character(spec_row$EffectorDifferentiationScoreField[[1]]))
-  subset_cutpoint_low <- trimws(as.character(spec_row$SubsetCutpointLow[[1]]))
-  subset_cutpoint_high <- trimws(as.character(spec_row$SubsetCutpointHigh[[1]]))
-  subset_phenotype <- trimws(as.character(spec_row$SubsetPhenotype[[1]]))
+  eds_cutpoint_low <- trimws(as.character(spec_row$EffectorDifferentiationCutpointLow[[1]]))
+  eds_cutpoint_high <- trimws(as.character(spec_row$EffectorDifferentiationCutpointHigh[[1]]))
+  phenotype_output_field <- trimws(as.character(spec_row$SubsetPhenotypeOutputFieldName[[1]]))
 
   if (!nzchar(target_field)) {
     append_failure("TargetField", "malformed spec row: TargetField is blank")
@@ -593,66 +594,66 @@ Quantify10xData <- function(
     }
   }
 
-  subset_columns_set <- c(
+  eds_subset_columns_set <- c(
     nzchar(eds_score_field),
-    nzchar(subset_cutpoint_low),
-    nzchar(subset_cutpoint_high),
-    nzchar(subset_phenotype)
+    nzchar(eds_cutpoint_low),
+    nzchar(eds_cutpoint_high),
+    nzchar(phenotype_output_field)
   )
-  if (any(subset_columns_set) && !all(subset_columns_set)) {
-    if (!nzchar(subset_phenotype)) {
+  if (any(eds_subset_columns_set) && !all(eds_subset_columns_set)) {
+    if (!nzchar(phenotype_output_field)) {
       append_failure(
-        "SubsetPhenotype",
-        "malformed spec row: SubsetPhenotype is required when other subset columns are set"
+        "SubsetPhenotypeOutputFieldName",
+        "malformed spec row: SubsetPhenotypeOutputFieldName is required when other effector-differentiation subset columns are set"
       )
     }
     if (!nzchar(eds_score_field)) {
       append_failure(
         "EffectorDifferentiationScoreField",
-        "malformed spec row: EffectorDifferentiationScoreField is required when SubsetPhenotype is set"
+        "malformed spec row: EffectorDifferentiationScoreField is required when SubsetPhenotypeOutputFieldName is set"
       )
     }
-    if (!nzchar(subset_cutpoint_low)) {
+    if (!nzchar(eds_cutpoint_low)) {
       append_failure(
-        "SubsetCutpointLow",
-        "malformed spec row: SubsetCutpointLow is required when SubsetPhenotype is set"
+        "EffectorDifferentiationCutpointLow",
+        "malformed spec row: EffectorDifferentiationCutpointLow is required when SubsetPhenotypeOutputFieldName is set"
       )
     }
-    if (!nzchar(subset_cutpoint_high)) {
+    if (!nzchar(eds_cutpoint_high)) {
       append_failure(
-        "SubsetCutpointHigh",
-        "malformed spec row: SubsetCutpointHigh is required when SubsetPhenotype is set"
+        "EffectorDifferentiationCutpointHigh",
+        "malformed spec row: EffectorDifferentiationCutpointHigh is required when SubsetPhenotypeOutputFieldName is set"
       )
     }
   }
 
-  if (nzchar(subset_phenotype)) {
+  if (nzchar(phenotype_output_field)) {
     valid_phenotypes <- c("naive", "memorylike", "effector")
-    if (!tolower(subset_phenotype) %in% valid_phenotypes) {
+    if (!tolower(phenotype_output_field) %in% valid_phenotypes) {
       append_failure(
-        "SubsetPhenotype",
-        paste0("invalid SubsetPhenotype: ", subset_phenotype)
+        "SubsetPhenotypeOutputFieldName",
+        paste0("invalid SubsetPhenotypeOutputFieldName: ", phenotype_output_field)
       )
     }
 
-    low_value <- suppressWarnings(as.numeric(subset_cutpoint_low))
-    high_value <- suppressWarnings(as.numeric(subset_cutpoint_high))
+    low_value <- suppressWarnings(as.numeric(eds_cutpoint_low))
+    high_value <- suppressWarnings(as.numeric(eds_cutpoint_high))
     if (is.na(low_value)) {
       append_failure(
-        "SubsetCutpointLow",
-        paste0("invalid SubsetCutpointLow: ", subset_cutpoint_low)
+        "EffectorDifferentiationCutpointLow",
+        paste0("invalid EffectorDifferentiationCutpointLow: ", eds_cutpoint_low)
       )
     }
     if (is.na(high_value)) {
       append_failure(
-        "SubsetCutpointHigh",
-        paste0("invalid SubsetCutpointHigh: ", subset_cutpoint_high)
+        "EffectorDifferentiationCutpointHigh",
+        paste0("invalid EffectorDifferentiationCutpointHigh: ", eds_cutpoint_high)
       )
     }
     if (!is.na(low_value) && !is.na(high_value) && low_value > high_value) {
       append_failure(
-        "SubsetCutpointLow",
-        "SubsetCutpointLow must be less than or equal to SubsetCutpointHigh"
+        "EffectorDifferentiationCutpointLow",
+        "EffectorDifferentiationCutpointLow must be less than or equal to EffectorDifferentiationCutpointHigh"
       )
     }
 
@@ -671,17 +672,17 @@ Quantify10xData <- function(
 }
 
 .ApplySubsetScoreFilter <- function(cells, spec_row) {
-  phenotype <- trimws(as.character(spec_row$SubsetPhenotype[[1]]))
-  if (!nzchar(phenotype) || !nrow(cells)) {
+  phenotype_output_field <- trimws(as.character(spec_row$SubsetPhenotypeOutputFieldName[[1]]))
+  if (!nzchar(phenotype_output_field) || !nrow(cells)) {
     return(cells)
   }
 
   score_field <- trimws(as.character(spec_row$EffectorDifferentiationScoreField[[1]]))
-  low <- as.numeric(spec_row$SubsetCutpointLow[[1]])
-  high <- as.numeric(spec_row$SubsetCutpointHigh[[1]])
+  low <- as.numeric(spec_row$EffectorDifferentiationCutpointLow[[1]])
+  high <- as.numeric(spec_row$EffectorDifferentiationCutpointHigh[[1]])
   scores <- suppressWarnings(as.numeric(cells[[score_field]]))
   keep <- switch(
-    tolower(phenotype),
+    tolower(phenotype_output_field),
     naive = !is.na(scores) & scores < low,
     memorylike = !is.na(scores) & scores >= low & scores <= high,
     effector = !is.na(scores) & scores > high,

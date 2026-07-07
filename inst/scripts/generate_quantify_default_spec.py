@@ -29,6 +29,8 @@ SCOPE_IMMUNE = IMMUNE_FIELD
 EDS_METADATA_FIELD = "Tcell_EffectorDifferentiation"
 EDS_CUTPOINT_LOW = "2"
 EDS_CUTPOINT_HIGH = "6"
+CYTOTOXICITY_SCORE_SUFFIX = "CytotoxicityScore"
+INTERFERON_RESPONSE_SCORE_SUFFIX = "InterferonResponseScore"
 EDS_T_CELL_CLASSES = ["CD4+ T Cells", "CD8+ T Cells"]
 EDS_PHENOTYPES = ["Naive", "MemoryLike", "Effector"]
 
@@ -82,9 +84,9 @@ def spec_row(
     scope_field: str = "",
     scope_match: str = "",
     effector_differentiation_score_field: str = "",
-    subset_cutpoint_low: str = "",
-    subset_cutpoint_high: str = "",
-    subset_phenotype: str = "",
+    effector_differentiation_cutpoint_low: str = "",
+    effector_differentiation_cutpoint_high: str = "",
+    subset_phenotype_output_field_name: str = "",
 ) -> str:
     return "\t".join(
         [
@@ -98,9 +100,9 @@ def spec_row(
             scope_field,
             scope_match,
             effector_differentiation_score_field,
-            subset_cutpoint_low,
-            subset_cutpoint_high,
-            subset_phenotype,
+            effector_differentiation_cutpoint_low,
+            effector_differentiation_cutpoint_high,
+            subset_phenotype_output_field_name,
         ]
     )
 
@@ -144,9 +146,9 @@ def main() -> None:
                 "ScopeField",
                 "ScopeMatchValue",
                 "EffectorDifferentiationScoreField",
-                "SubsetCutpointLow",
-                "SubsetCutpointHigh",
-                "SubsetPhenotype",
+                "EffectorDifferentiationCutpointLow",
+                "EffectorDifferentiationCutpointHigh",
+                "SubsetPhenotypeOutputFieldName",
             ]
         )
     ]
@@ -172,7 +174,7 @@ def main() -> None:
     for cls in tnk_classes:
         rows.append(
             spec_row(
-                join_target("Cytotoxic", "TNK", sanitize(cls)),
+                join_target("TNK", sanitize(cls), CYTOTOXICITY_SCORE_SUFFIX),
                 TNK_FIELD,
                 cls,
                 "score",
@@ -185,7 +187,7 @@ def main() -> None:
     for cls in tnk_classes:
         rows.append(
             spec_row(
-                join_target("Interferon", "TNK", sanitize(cls)),
+                join_target("TNK", sanitize(cls), INTERFERON_RESPONSE_SCORE_SUFFIX),
                 TNK_FIELD,
                 cls,
                 "score",
@@ -208,9 +210,9 @@ def main() -> None:
                     scope_field=SCOPE_IMMUNE,
                     scope_match="T_NK",
                     effector_differentiation_score_field=EDS_METADATA_FIELD,
-                    subset_cutpoint_low=EDS_CUTPOINT_LOW,
-                    subset_cutpoint_high=EDS_CUTPOINT_HIGH,
-                    subset_phenotype=phenotype,
+                    effector_differentiation_cutpoint_low=EDS_CUTPOINT_LOW,
+                    effector_differentiation_cutpoint_high=EDS_CUTPOINT_HIGH,
+                    subset_phenotype_output_field_name=phenotype,
                 )
             )
 
@@ -240,7 +242,9 @@ def main() -> None:
     for cls in myeloid_coarse:
         rows.append(
             spec_row(
-                join_target("Interferon", "Myeloid", "coarse", sanitize(cls)),
+                join_target(
+                    "Myeloid", "coarse", sanitize(cls), INTERFERON_RESPONSE_SCORE_SUFFIX
+                ),
                 MYE_COARSE,
                 cls,
                 "score",

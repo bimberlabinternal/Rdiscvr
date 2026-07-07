@@ -194,7 +194,7 @@ test_that("Default RIRA spec integrates with synthetic metadata", {
   expect_equal(row_1001$Immune__T_NK, 20L)
   expect_equal(row_1001$TNK__CD8plus_T_Cells, 8L)
   expect_equal(row_1001$Myeloid__coarse__Monocytes, 8L)
-  expect_false(is.na(row_1001$Cytotoxic__TNK__CD8plus_T_Cells__median))
+  expect_false(is.na(row_1001$TNK__CD8plus_T_Cells__CytotoxicityScore__median))
 
   expect_equal(row_1002$Immune__T_NK, 15L)
   expect_equal(row_1002$TNK__CD8plus_T_Cells, 10L)
@@ -321,9 +321,9 @@ test_that("EDS subset columns split T cells by score cutpoints", {
     ScopeField = rep("RIRA_Immune_v2.cellclass", 3),
     ScopeMatchValue = rep("T_NK", 3),
     EffectorDifferentiationScoreField = rep("Tcell_EffectorDifferentiation", 3),
-    SubsetCutpointLow = rep("2", 3),
-    SubsetCutpointHigh = rep("6", 3),
-    SubsetPhenotype = c("Naive", "MemoryLike", "Effector")
+    EffectorDifferentiationCutpointLow = rep("2", 3),
+    EffectorDifferentiationCutpointHigh = rep("6", 3),
+    SubsetPhenotypeOutputFieldName = c("Naive", "MemoryLike", "Effector")
   )
 
   eds_result <- .runQuantifyWithMock(eds_synthetic, eds_spec)
@@ -343,9 +343,9 @@ test_that("EDS subset columns split T cells by score cutpoints", {
     ScopeField = "RIRA_Immune_v2.cellclass",
     ScopeMatchValue = "T_NK",
     EffectorDifferentiationScoreField = "Tcell_EffectorDifferentiation",
-    SubsetCutpointLow = "2",
-    SubsetCutpointHigh = "6",
-    SubsetPhenotype = "Naive"
+    EffectorDifferentiationCutpointLow = "2",
+    EffectorDifferentiationCutpointHigh = "6",
+    SubsetPhenotypeOutputFieldName = "Naive"
   )
   eds_no_col <- eds_synthetic[, setdiff(names(eds_synthetic), "Tcell_EffectorDifferentiation")]
   failure_log <- tempfile(fileext = ".txt")
