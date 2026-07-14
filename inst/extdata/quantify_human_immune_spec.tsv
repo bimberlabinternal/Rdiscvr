@@ -1,82 +1,255 @@
 GroupingVariable	TargetField	SourceField	MatchValue	QuantificationType	QuantificationSourceField	QuantificationScoreType	ScopeField	ScopeMatchValue	EffectorDifferentiationScoreField	EffectorDifferentiationCutpointLow	EffectorDifferentiationCutpointHigh	SubsetPhenotypeOutputFieldName
 cDNA_ID	ImmuneHigh__B_cells	celltypist.Immune_All_High.cellclass	B cells	sum								
-cDNA_ID	ImmuneHigh__T_cells	celltypist.Immune_All_High.cellclass	T cells	sum								
-cDNA_ID	ImmuneHigh__Monocytes	celltypist.Immune_All_High.cellclass	Monocytes	sum								
-cDNA_ID	ImmuneHigh__Macrophages	celltypist.Immune_All_High.cellclass	Macrophages	sum								
-cDNA_ID	ImmuneHigh__DC	celltypist.Immune_All_High.cellclass	DC	sum								
-cDNA_ID	ImmuneHigh__ILC	celltypist.Immune_All_High.cellclass	ILC	sum								
-cDNA_ID	ImmuneHigh__Plasma_cells	celltypist.Immune_All_High.cellclass	Plasma cells	sum								
-cDNA_ID	ImmuneHigh__pDC	celltypist.Immune_All_High.cellclass	pDC	sum								
-cDNA_ID	ImmuneHigh__Granulocytes	celltypist.Immune_All_High.cellclass	Granulocytes	sum								
-cDNA_ID	ImmuneHigh__Mast_cells	celltypist.Immune_All_High.cellclass	Mast cells	sum								
-cDNA_ID	ImmuneHigh__Erythrocytes	celltypist.Immune_All_High.cellclass	Erythrocytes	sum								
-cDNA_ID	ImmuneHigh__Epithelial_cells	celltypist.Immune_All_High.cellclass	Epithelial cells	sum								
-cDNA_ID	ImmuneHigh__Endothelial_cells	celltypist.Immune_All_High.cellclass	Endothelial cells	sum								
-cDNA_ID	ImmuneHigh__Fibroblasts	celltypist.Immune_All_High.cellclass	Fibroblasts	sum								
+cDNA_ID	ImmuneHigh__B_cell_lineage	celltypist.Immune_All_High.cellclass	B-cell lineage	sum								
 cDNA_ID	ImmuneHigh__Cycling_cells	celltypist.Immune_All_High.cellclass	Cycling cells	sum								
+cDNA_ID	ImmuneHigh__DC	celltypist.Immune_All_High.cellclass	DC	sum								
+cDNA_ID	ImmuneHigh__DC_precursor	celltypist.Immune_All_High.cellclass	DC precursor	sum								
+cDNA_ID	ImmuneHigh__Double_negative_thymocytes	celltypist.Immune_All_High.cellclass	Double-negative thymocytes	sum								
+cDNA_ID	ImmuneHigh__Double_positive_thymocytes	celltypist.Immune_All_High.cellclass	Double-positive thymocytes	sum								
+cDNA_ID	ImmuneHigh__ETP	celltypist.Immune_All_High.cellclass	ETP	sum								
+cDNA_ID	ImmuneHigh__Early_MK	celltypist.Immune_All_High.cellclass	Early MK	sum								
+cDNA_ID	ImmuneHigh__Endothelial_cells	celltypist.Immune_All_High.cellclass	Endothelial cells	sum								
+cDNA_ID	ImmuneHigh__Epithelial_cells	celltypist.Immune_All_High.cellclass	Epithelial cells	sum								
+cDNA_ID	ImmuneHigh__Erythrocytes	celltypist.Immune_All_High.cellclass	Erythrocytes	sum								
+cDNA_ID	ImmuneHigh__Erythroid	celltypist.Immune_All_High.cellclass	Erythroid	sum								
+cDNA_ID	ImmuneHigh__Fibroblasts	celltypist.Immune_All_High.cellclass	Fibroblasts	sum								
+cDNA_ID	ImmuneHigh__Granulocytes	celltypist.Immune_All_High.cellclass	Granulocytes	sum								
+cDNA_ID	ImmuneHigh__HSC_MPP	celltypist.Immune_All_High.cellclass	HSC/MPP	sum								
+cDNA_ID	ImmuneHigh__ILC	celltypist.Immune_All_High.cellclass	ILC	sum								
+cDNA_ID	ImmuneHigh__ILC_precursor	celltypist.Immune_All_High.cellclass	ILC precursor	sum								
+cDNA_ID	ImmuneHigh__MNP	celltypist.Immune_All_High.cellclass	MNP	sum								
+cDNA_ID	ImmuneHigh__Macrophages	celltypist.Immune_All_High.cellclass	Macrophages	sum								
+cDNA_ID	ImmuneHigh__Mast_cells	celltypist.Immune_All_High.cellclass	Mast cells	sum								
+cDNA_ID	ImmuneHigh__Megakaryocyte_precursor	celltypist.Immune_All_High.cellclass	Megakaryocyte precursor	sum								
+cDNA_ID	ImmuneHigh__Megakaryocytes_platelets	celltypist.Immune_All_High.cellclass	Megakaryocytes/platelets	sum								
+cDNA_ID	ImmuneHigh__Mono_mac	celltypist.Immune_All_High.cellclass	Mono-mac	sum								
+cDNA_ID	ImmuneHigh__Monocyte_precursor	celltypist.Immune_All_High.cellclass	Monocyte precursor	sum								
+cDNA_ID	ImmuneHigh__Monocytes	celltypist.Immune_All_High.cellclass	Monocytes	sum								
+cDNA_ID	ImmuneHigh__Myelocytes	celltypist.Immune_All_High.cellclass	Myelocytes	sum								
+cDNA_ID	ImmuneHigh__Plasma_cells	celltypist.Immune_All_High.cellclass	Plasma cells	sum								
+cDNA_ID	ImmuneHigh__Promyelocytes	celltypist.Immune_All_High.cellclass	Promyelocytes	sum								
+cDNA_ID	ImmuneHigh__T_cells	celltypist.Immune_All_High.cellclass	T cells	sum								
+cDNA_ID	ImmuneHigh__pDC	celltypist.Immune_All_High.cellclass	pDC	sum								
+cDNA_ID	ImmuneHigh__pDC_precursor	celltypist.Immune_All_High.cellclass	pDC precursor	sum								
 cDNA_ID	ImmuneHigh__Unassigned	celltypist.Immune_All_High.cellclass	Unassigned	sum								
-cDNA_ID	ImmuneHigh__Unknown	celltypist.Immune_All_High.cellclass	Unknown	sum								
 cDNA_ID	ImmuneHigh__Ambiguous	celltypist.Immune_All_High.cellclass	Ambiguous	sum								
+cDNA_ID	ImmuneHigh__Unknown	celltypist.Immune_All_High.cellclass	Unknown	sum								
+cDNA_ID	ImmuneLow__Age_associated_B_cells	celltypist.Immune_All_Low.cellclass	Age-associated B cells	sum			celltypist.Immune_All_High.cellclass	B cells				
 cDNA_ID	ImmuneLow__Alveolar_macrophages	celltypist.Immune_All_Low.cellclass	Alveolar macrophages	sum			celltypist.Immune_All_High.cellclass	Macrophages				
+cDNA_ID	ImmuneLow__B_cells	celltypist.Immune_All_Low.cellclass	B cells	sum			celltypist.Immune_All_High.cellclass	B cells				
+cDNA_ID	ImmuneLow__CD16plus_NK_cells	celltypist.Immune_All_Low.cellclass	CD16+ NK cells	sum			celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__CD16_NK_cells	celltypist.Immune_All_Low.cellclass	CD16- NK cells	sum			celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__CD8a_a	celltypist.Immune_All_Low.cellclass	CD8a/a	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CD8a_b_entry	celltypist.Immune_All_Low.cellclass	CD8a/b(entry)	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CMP	celltypist.Immune_All_Low.cellclass	CMP	sum			celltypist.Immune_All_High.cellclass	HSC/MPP				
+cDNA_ID	ImmuneLow__CRTAMplus_gamma_delta_T_cells	celltypist.Immune_All_Low.cellclass	CRTAM+ gamma-delta T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Classical_monocytes	celltypist.Immune_All_Low.cellclass	Classical monocytes	sum			celltypist.Immune_All_High.cellclass	Monocytes				
-cDNA_ID	ImmuneLow__Non_classical_monocytes	celltypist.Immune_All_Low.cellclass	Non-classical monocytes	sum			celltypist.Immune_All_High.cellclass	Monocytes				
-cDNA_ID	ImmuneLow__Macrophages	celltypist.Immune_All_Low.cellclass	Macrophages	sum			celltypist.Immune_All_High.cellclass	Macrophages				
+cDNA_ID	ImmuneLow__Cycling_B_cells	celltypist.Immune_All_Low.cellclass	Cycling B cells	sum			celltypist.Immune_All_High.cellclass	Cycling cells				
+cDNA_ID	ImmuneLow__Cycling_DCs	celltypist.Immune_All_Low.cellclass	Cycling DCs	sum			celltypist.Immune_All_High.cellclass	Cycling cells				
+cDNA_ID	ImmuneLow__Cycling_NK_cells	celltypist.Immune_All_Low.cellclass	Cycling NK cells	sum			celltypist.Immune_All_High.cellclass	Cycling cells				
+cDNA_ID	ImmuneLow__Cycling_T_cells	celltypist.Immune_All_Low.cellclass	Cycling T cells	sum			celltypist.Immune_All_High.cellclass	Cycling cells				
+cDNA_ID	ImmuneLow__Cycling_gamma_delta_T_cells	celltypist.Immune_All_Low.cellclass	Cycling gamma-delta T cells	sum			celltypist.Immune_All_High.cellclass	Cycling cells				
+cDNA_ID	ImmuneLow__Cycling_monocytes	celltypist.Immune_All_Low.cellclass	Cycling monocytes	sum			celltypist.Immune_All_High.cellclass	Cycling cells				
+cDNA_ID	ImmuneLow__DC	celltypist.Immune_All_Low.cellclass	DC	sum			celltypist.Immune_All_High.cellclass	DC				
+cDNA_ID	ImmuneLow__DC_precursor	celltypist.Immune_All_Low.cellclass	DC precursor	sum			celltypist.Immune_All_High.cellclass	DC precursor				
 cDNA_ID	ImmuneLow__DC1	celltypist.Immune_All_Low.cellclass	DC1	sum			celltypist.Immune_All_High.cellclass	DC				
 cDNA_ID	ImmuneLow__DC2	celltypist.Immune_All_Low.cellclass	DC2	sum			celltypist.Immune_All_High.cellclass	DC				
-cDNA_ID	ImmuneLow__pDC	celltypist.Immune_All_Low.cellclass	pDC	sum			celltypist.Immune_All_High.cellclass	pDC				
-cDNA_ID	ImmuneLow__CD16plus_NK_cells	celltypist.Immune_All_Low.cellclass	CD16+ NK cells	sum			celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__DC3	celltypist.Immune_All_Low.cellclass	DC3	sum			celltypist.Immune_All_High.cellclass	DC				
+cDNA_ID	ImmuneLow__Double_negative_thymocytes	celltypist.Immune_All_Low.cellclass	Double-negative thymocytes	sum			celltypist.Immune_All_High.cellclass	Double-negative thymocytes				
+cDNA_ID	ImmuneLow__Double_positive_thymocytes	celltypist.Immune_All_Low.cellclass	Double-positive thymocytes	sum			celltypist.Immune_All_High.cellclass	Double-positive thymocytes				
+cDNA_ID	ImmuneLow__ELP	celltypist.Immune_All_Low.cellclass	ELP	sum			celltypist.Immune_All_High.cellclass	HSC/MPP				
+cDNA_ID	ImmuneLow__ETP	celltypist.Immune_All_Low.cellclass	ETP	sum			celltypist.Immune_All_High.cellclass	ETP				
+cDNA_ID	ImmuneLow__Early_MK	celltypist.Immune_All_Low.cellclass	Early MK	sum			celltypist.Immune_All_High.cellclass	Early MK				
+cDNA_ID	ImmuneLow__Early_erythroid	celltypist.Immune_All_Low.cellclass	Early erythroid	sum			celltypist.Immune_All_High.cellclass	Erythroid				
+cDNA_ID	ImmuneLow__Early_lymphoid_T_lymphoid	celltypist.Immune_All_Low.cellclass	Early lymphoid/T lymphoid	sum			celltypist.Immune_All_High.cellclass	HSC/MPP				
+cDNA_ID	ImmuneLow__Endothelial_cells	celltypist.Immune_All_Low.cellclass	Endothelial cells	sum			celltypist.Immune_All_High.cellclass	Endothelial cells				
+cDNA_ID	ImmuneLow__Epithelial_cells	celltypist.Immune_All_Low.cellclass	Epithelial cells	sum			celltypist.Immune_All_High.cellclass	Epithelial cells				
+cDNA_ID	ImmuneLow__Erythrocytes	celltypist.Immune_All_Low.cellclass	Erythrocytes	sum			celltypist.Immune_All_High.cellclass	Erythrocytes				
+cDNA_ID	ImmuneLow__Erythrophagocytic_macrophages	celltypist.Immune_All_Low.cellclass	Erythrophagocytic macrophages	sum			celltypist.Immune_All_High.cellclass	Macrophages				
+cDNA_ID	ImmuneLow__Fibroblasts	celltypist.Immune_All_Low.cellclass	Fibroblasts	sum			celltypist.Immune_All_High.cellclass	Fibroblasts				
+cDNA_ID	ImmuneLow__Follicular_B_cells	celltypist.Immune_All_Low.cellclass	Follicular B cells	sum			celltypist.Immune_All_High.cellclass	B cells				
+cDNA_ID	ImmuneLow__Follicular_helper_T_cells	celltypist.Immune_All_Low.cellclass	Follicular helper T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__GMP	celltypist.Immune_All_Low.cellclass	GMP	sum			celltypist.Immune_All_High.cellclass	HSC/MPP				
+cDNA_ID	ImmuneLow__Germinal_center_B_cells	celltypist.Immune_All_Low.cellclass	Germinal center B cells	sum			celltypist.Immune_All_High.cellclass	B cells				
+cDNA_ID	ImmuneLow__Granulocytes	celltypist.Immune_All_Low.cellclass	Granulocytes	sum			celltypist.Immune_All_High.cellclass	Granulocytes				
+cDNA_ID	ImmuneLow__HSC_MPP	celltypist.Immune_All_Low.cellclass	HSC/MPP	sum			celltypist.Immune_All_High.cellclass	HSC/MPP				
+cDNA_ID	ImmuneLow__Hofbauer_cells	celltypist.Immune_All_Low.cellclass	Hofbauer cells	sum			celltypist.Immune_All_High.cellclass	Macrophages				
+cDNA_ID	ImmuneLow__ILC	celltypist.Immune_All_Low.cellclass	ILC	sum			celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__ILC_precursor	celltypist.Immune_All_Low.cellclass	ILC precursor	sum			celltypist.Immune_All_High.cellclass	ILC precursor				
+cDNA_ID	ImmuneLow__ILC1	celltypist.Immune_All_Low.cellclass	ILC1	sum			celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__ILC2	celltypist.Immune_All_Low.cellclass	ILC2	sum			celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__ILC3	celltypist.Immune_All_Low.cellclass	ILC3	sum			celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__Intermediate_macrophages	celltypist.Immune_All_Low.cellclass	Intermediate macrophages	sum			celltypist.Immune_All_High.cellclass	Macrophages				
+cDNA_ID	ImmuneLow__Intestinal_macrophages	celltypist.Immune_All_Low.cellclass	Intestinal macrophages	sum			celltypist.Immune_All_High.cellclass	Macrophages				
+cDNA_ID	ImmuneLow__Kidney_resident_macrophages	celltypist.Immune_All_Low.cellclass	Kidney-resident macrophages	sum			celltypist.Immune_All_High.cellclass	Macrophages				
+cDNA_ID	ImmuneLow__Kupffer_cells	celltypist.Immune_All_Low.cellclass	Kupffer cells	sum			celltypist.Immune_All_High.cellclass	Macrophages				
+cDNA_ID	ImmuneLow__Large_pre_B_cells	celltypist.Immune_All_Low.cellclass	Large pre-B cells	sum			celltypist.Immune_All_High.cellclass	B-cell lineage				
+cDNA_ID	ImmuneLow__Late_erythroid	celltypist.Immune_All_Low.cellclass	Late erythroid	sum			celltypist.Immune_All_High.cellclass	Erythroid				
+cDNA_ID	ImmuneLow__MAIT_cells	celltypist.Immune_All_Low.cellclass	MAIT cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__MEMP	celltypist.Immune_All_Low.cellclass	MEMP	sum			celltypist.Immune_All_High.cellclass	HSC/MPP				
+cDNA_ID	ImmuneLow__MNP	celltypist.Immune_All_Low.cellclass	MNP	sum			celltypist.Immune_All_High.cellclass	MNP				
+cDNA_ID	ImmuneLow__Macrophages	celltypist.Immune_All_Low.cellclass	Macrophages	sum			celltypist.Immune_All_High.cellclass	Macrophages				
+cDNA_ID	ImmuneLow__Mast_cells	celltypist.Immune_All_Low.cellclass	Mast cells	sum			celltypist.Immune_All_High.cellclass	Mast cells				
+cDNA_ID	ImmuneLow__Megakaryocyte_precursor	celltypist.Immune_All_Low.cellclass	Megakaryocyte precursor	sum			celltypist.Immune_All_High.cellclass	Megakaryocyte precursor				
+cDNA_ID	ImmuneLow__Megakaryocyte_erythroid_mast_cell_progenitor	celltypist.Immune_All_Low.cellclass	Megakaryocyte-erythroid-mast cell progenitor	sum			celltypist.Immune_All_High.cellclass	HSC/MPP				
+cDNA_ID	ImmuneLow__Megakaryocytes_platelets	celltypist.Immune_All_Low.cellclass	Megakaryocytes/platelets	sum			celltypist.Immune_All_High.cellclass	Megakaryocytes/platelets				
+cDNA_ID	ImmuneLow__Memory_B_cells	celltypist.Immune_All_Low.cellclass	Memory B cells	sum			celltypist.Immune_All_High.cellclass	B cells				
+cDNA_ID	ImmuneLow__Memory_CD4plus_cytotoxic_T_cells	celltypist.Immune_All_Low.cellclass	Memory CD4+ cytotoxic T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Mid_erythroid	celltypist.Immune_All_Low.cellclass	Mid erythroid	sum			celltypist.Immune_All_High.cellclass	Erythroid				
+cDNA_ID	ImmuneLow__Migratory_DCs	celltypist.Immune_All_Low.cellclass	Migratory DCs	sum			celltypist.Immune_All_High.cellclass	DC				
+cDNA_ID	ImmuneLow__Mono_mac	celltypist.Immune_All_Low.cellclass	Mono-mac	sum			celltypist.Immune_All_High.cellclass	Mono-mac				
+cDNA_ID	ImmuneLow__Monocyte_precursor	celltypist.Immune_All_Low.cellclass	Monocyte precursor	sum			celltypist.Immune_All_High.cellclass	Monocyte precursor				
+cDNA_ID	ImmuneLow__Monocytes	celltypist.Immune_All_Low.cellclass	Monocytes	sum			celltypist.Immune_All_High.cellclass	Monocytes				
+cDNA_ID	ImmuneLow__Myelocytes	celltypist.Immune_All_Low.cellclass	Myelocytes	sum			celltypist.Immune_All_High.cellclass	Myelocytes				
 cDNA_ID	ImmuneLow__NK_cells	celltypist.Immune_All_Low.cellclass	NK cells	sum			celltypist.Immune_All_High.cellclass	ILC				
-cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__NKT_cells	celltypist.Immune_All_Low.cellclass	NKT cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Naive_B_cells	celltypist.Immune_All_Low.cellclass	Naive B cells	sum			celltypist.Immune_All_High.cellclass	B cells				
+cDNA_ID	ImmuneLow__Neutrophil_myeloid_progenitor	celltypist.Immune_All_Low.cellclass	Neutrophil-myeloid progenitor	sum			celltypist.Immune_All_High.cellclass	HSC/MPP				
+cDNA_ID	ImmuneLow__Neutrophils	celltypist.Immune_All_Low.cellclass	Neutrophils	sum			celltypist.Immune_All_High.cellclass	Granulocytes				
+cDNA_ID	ImmuneLow__Non_classical_monocytes	celltypist.Immune_All_Low.cellclass	Non-classical monocytes	sum			celltypist.Immune_All_High.cellclass	Monocytes				
+cDNA_ID	ImmuneLow__Plasma_cells	celltypist.Immune_All_Low.cellclass	Plasma cells	sum			celltypist.Immune_All_High.cellclass	Plasma cells				
+cDNA_ID	ImmuneLow__Plasmablasts	celltypist.Immune_All_Low.cellclass	Plasmablasts	sum			celltypist.Immune_All_High.cellclass	Plasma cells				
+cDNA_ID	ImmuneLow__Pre_pro_B_cells	celltypist.Immune_All_Low.cellclass	Pre-pro-B cells	sum			celltypist.Immune_All_High.cellclass	B-cell lineage				
+cDNA_ID	ImmuneLow__Pro_B_cells	celltypist.Immune_All_Low.cellclass	Pro-B cells	sum			celltypist.Immune_All_High.cellclass	B-cell lineage				
+cDNA_ID	ImmuneLow__Proliferative_germinal_center_B_cells	celltypist.Immune_All_Low.cellclass	Proliferative germinal center B cells	sum			celltypist.Immune_All_High.cellclass	B cells				
+cDNA_ID	ImmuneLow__Promyelocytes	celltypist.Immune_All_Low.cellclass	Promyelocytes	sum			celltypist.Immune_All_High.cellclass	Promyelocytes				
+cDNA_ID	ImmuneLow__Regulatory_T_cells	celltypist.Immune_All_Low.cellclass	Regulatory T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Small_pre_B_cells	celltypist.Immune_All_Low.cellclass	Small pre-B cells	sum			celltypist.Immune_All_High.cellclass	B-cell lineage				
+cDNA_ID	ImmuneLow__T_agonist	celltypist.Immune_All_Low.cellclass	T(agonist)	sum			celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Tcm_Naive_cytotoxic_T_cells	celltypist.Immune_All_Low.cellclass	Tcm/Naive cytotoxic T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells_PD1plus	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells PD1+	sum			celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Tem_Trm_cytotoxic_T_cells	celltypist.Immune_All_Low.cellclass	Tem/Trm cytotoxic T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
-cDNA_ID	ImmuneLow__Regulatory_T_cells	celltypist.Immune_All_Low.cellclass	Regulatory T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
-cDNA_ID	ImmuneLow__MAIT_cells	celltypist.Immune_All_Low.cellclass	MAIT cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Transitional_B_cells	celltypist.Immune_All_Low.cellclass	Transitional B cells	sum			celltypist.Immune_All_High.cellclass	B cells				
+cDNA_ID	ImmuneLow__Transitional_DC	celltypist.Immune_All_Low.cellclass	Transitional DC	sum			celltypist.Immune_All_High.cellclass	DC				
+cDNA_ID	ImmuneLow__Transitional_NK	celltypist.Immune_All_Low.cellclass	Transitional NK	sum			celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__Treg_diff	celltypist.Immune_All_Low.cellclass	Treg(diff)	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Trm_cytotoxic_T_cells	celltypist.Immune_All_Low.cellclass	Trm cytotoxic T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_1_helper_T_cells	celltypist.Immune_All_Low.cellclass	Type 1 helper T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_17_helper_T_cells	celltypist.Immune_All_Low.cellclass	Type 17 helper T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__gamma_delta_T_cells	celltypist.Immune_All_Low.cellclass	gamma-delta T cells	sum			celltypist.Immune_All_High.cellclass	T cells				
-cDNA_ID	ImmuneLow__Memory_B_cells	celltypist.Immune_All_Low.cellclass	Memory B cells	sum			celltypist.Immune_All_High.cellclass	B cells				
-cDNA_ID	ImmuneLow__Naive_B_cells	celltypist.Immune_All_Low.cellclass	Naive B cells	sum			celltypist.Immune_All_High.cellclass	B cells				
-cDNA_ID	ImmuneLow__Plasma_cells	celltypist.Immune_All_Low.cellclass	Plasma cells	sum			celltypist.Immune_All_High.cellclass	Plasma cells				
+cDNA_ID	ImmuneLow__pDC	celltypist.Immune_All_Low.cellclass	pDC	sum			celltypist.Immune_All_High.cellclass	pDC				
+cDNA_ID	ImmuneLow__pDC_precursor	celltypist.Immune_All_Low.cellclass	pDC precursor	sum			celltypist.Immune_All_High.cellclass	pDC precursor				
 cDNA_ID	ImmuneLow__Unassigned	celltypist.Immune_All_Low.cellclass	Unassigned	sum								
 cDNA_ID	ImmuneLow__Ambiguous	celltypist.Immune_All_Low.cellclass	Ambiguous	sum								
 cDNA_ID	ImmuneLow__Unknown	celltypist.Immune_All_Low.cellclass	Unknown	sum								
-cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
-cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CD8a_a__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	CD8a/a	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CD8a_a__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	CD8a/a	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CD8a_b_entry__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	CD8a/b(entry)	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CD8a_b_entry__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	CD8a/b(entry)	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CRTAMplus_gamma_delta_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	CRTAM+ gamma-delta T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CRTAMplus_gamma_delta_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	CRTAM+ gamma-delta T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Follicular_helper_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Follicular helper T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Follicular_helper_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Follicular helper T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__MAIT_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	MAIT cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__MAIT_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	MAIT cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Memory_CD4plus_cytotoxic_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Memory CD4+ cytotoxic T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Memory_CD4plus_cytotoxic_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Memory CD4+ cytotoxic T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__NKT_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	NKT cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__NKT_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	NKT cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Regulatory_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Regulatory T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Regulatory_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Regulatory T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__T_agonist__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	T(agonist)	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__T_agonist__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	T(agonist)	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Tcm_Naive_cytotoxic_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Tcm/Naive cytotoxic T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Tcm_Naive_cytotoxic_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Tcm/Naive cytotoxic T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells_PD1plus__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells PD1+	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells_PD1plus__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells PD1+	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Tem_Trm_cytotoxic_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Tem/Trm cytotoxic T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Tem_Trm_cytotoxic_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Tem/Trm cytotoxic T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
-cDNA_ID	ImmuneLow__Regulatory_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Regulatory T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
-cDNA_ID	ImmuneLow__Regulatory_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Regulatory T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
-cDNA_ID	ImmuneLow__MAIT_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	MAIT cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
-cDNA_ID	ImmuneLow__MAIT_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	MAIT cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Treg_diff__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Treg(diff)	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Treg_diff__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Treg(diff)	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Trm_cytotoxic_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Trm cytotoxic T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Trm_cytotoxic_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Trm cytotoxic T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_1_helper_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Type 1 helper T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_1_helper_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Type 1 helper T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_17_helper_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Type 17 helper T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_17_helper_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Type 17 helper T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__gamma_delta_T_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	gamma-delta T cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__gamma_delta_T_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	gamma-delta T cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__CD16plus_NK_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	CD16+ NK cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
 cDNA_ID	ImmuneLow__CD16plus_NK_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	CD16+ NK cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__CD16_NK_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	CD16- NK cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__CD16_NK_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	CD16- NK cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__ILC__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	ILC	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__ILC__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	ILC	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__ILC1__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	ILC1	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__ILC1__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	ILC1	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__ILC2__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	ILC2	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__ILC2__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	ILC2	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__ILC3__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	ILC3	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__ILC3__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	ILC3	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
 cDNA_ID	ImmuneLow__NK_cells__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	NK cells	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
 cDNA_ID	ImmuneLow__NK_cells__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	NK cells	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
-cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	pct_positive	PDCD1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	pct_positive	KLRK1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	pct_positive	GZMB	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tcm_Naive_cytotoxic_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Tcm/Naive cytotoxic T cells	pct_positive	PDCD1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tcm_Naive_cytotoxic_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Tcm/Naive cytotoxic T cells	pct_positive	KLRK1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tcm_Naive_cytotoxic_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Tcm/Naive cytotoxic T cells	pct_positive	GZMB	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	pct_positive	PDCD1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	pct_positive	KLRK1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	pct_positive	GZMB	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tem_Trm_cytotoxic_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Tem/Trm cytotoxic T cells	pct_positive	PDCD1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tem_Trm_cytotoxic_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Tem/Trm cytotoxic T cells	pct_positive	KLRK1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tem_Trm_cytotoxic_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Tem/Trm cytotoxic T cells	pct_positive	GZMB	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Regulatory_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Regulatory T cells	pct_positive	PDCD1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Regulatory_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Regulatory T cells	pct_positive	KLRK1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Regulatory_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Regulatory T cells	pct_positive	GZMB	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__MAIT_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	MAIT cells	pct_positive	PDCD1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__MAIT_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	MAIT cells	pct_positive	KLRK1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__MAIT_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	MAIT cells	pct_positive	GZMB	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__gamma_delta_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	gamma-delta T cells	pct_positive	PDCD1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__gamma_delta_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	gamma-delta T cells	pct_positive	KLRK1	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__gamma_delta_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	gamma-delta T cells	pct_positive	GZMB	celltypist.Immune_All_High.cellclass	T cells					
-cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__Diversity	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	diversity	celltypist.Immune_All_High.cellclass	T cells						
-cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__Diversity	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	diversity	celltypist.Immune_All_High.cellclass	T cells						
+cDNA_ID	ImmuneLow__Transitional_NK__CytotoxicityScore	celltypist.Immune_All_Low.cellclass	Transitional NK	score	Cytotoxicity_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__Transitional_NK__InterferonResponseScore	celltypist.Immune_All_Low.cellclass	Transitional NK	score	Interferon_Response_UCell	quantiles	celltypist.Immune_All_High.cellclass	ILC				
+cDNA_ID	ImmuneLow__CD8a_a__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	CD8a/a	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CD8a_a__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	CD8a/a	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CD8a_a__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	CD8a/a	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CD8a_b_entry__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	CD8a/b(entry)	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CD8a_b_entry__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	CD8a/b(entry)	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CD8a_b_entry__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	CD8a/b(entry)	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CRTAMplus_gamma_delta_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	CRTAM+ gamma-delta T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CRTAMplus_gamma_delta_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	CRTAM+ gamma-delta T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CRTAMplus_gamma_delta_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	CRTAM+ gamma-delta T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Follicular_helper_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Follicular helper T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Follicular_helper_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Follicular helper T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Follicular_helper_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Follicular helper T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__MAIT_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	MAIT cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__MAIT_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	MAIT cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__MAIT_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	MAIT cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Memory_CD4plus_cytotoxic_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Memory CD4+ cytotoxic T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Memory_CD4plus_cytotoxic_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Memory CD4+ cytotoxic T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Memory_CD4plus_cytotoxic_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Memory CD4+ cytotoxic T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__NKT_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	NKT cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__NKT_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	NKT cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__NKT_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	NKT cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Regulatory_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Regulatory T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Regulatory_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Regulatory T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Regulatory_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Regulatory T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__T_agonist__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	T(agonist)	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__T_agonist__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	T(agonist)	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__T_agonist__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	T(agonist)	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tcm_Naive_cytotoxic_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Tcm/Naive cytotoxic T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tcm_Naive_cytotoxic_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Tcm/Naive cytotoxic T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tcm_Naive_cytotoxic_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Tcm/Naive cytotoxic T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells_PD1plus__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells PD1+	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells_PD1plus__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells PD1+	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells_PD1plus__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells PD1+	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Trm_cytotoxic_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Tem/Trm cytotoxic T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Trm_cytotoxic_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Tem/Trm cytotoxic T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Trm_cytotoxic_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Tem/Trm cytotoxic T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Treg_diff__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Treg(diff)	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Treg_diff__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Treg(diff)	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Treg_diff__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Treg(diff)	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Trm_cytotoxic_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Trm cytotoxic T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Trm_cytotoxic_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Trm cytotoxic T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Trm_cytotoxic_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Trm cytotoxic T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_1_helper_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Type 1 helper T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_1_helper_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Type 1 helper T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_1_helper_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Type 1 helper T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_17_helper_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	Type 17 helper T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_17_helper_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	Type 17 helper T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Type_17_helper_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	Type 17 helper T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__gamma_delta_T_cells__PctPositive__PDCD1	celltypist.Immune_All_Low.cellclass	gamma-delta T cells	pct_positive	PDCD1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__gamma_delta_T_cells__PctPositive__KLRK1	celltypist.Immune_All_Low.cellclass	gamma-delta T cells	pct_positive	KLRK1		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__gamma_delta_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	gamma-delta T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__Diversity	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	diversity			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__Diversity	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	diversity			celltypist.Immune_All_High.cellclass	T cells				
