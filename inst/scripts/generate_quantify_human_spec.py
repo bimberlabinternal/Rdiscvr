@@ -31,6 +31,8 @@ LOW_FIELD = "celltypist.Immune_All_Low.cellclass"
 HIGH_PKL = "Immune_All_High.pkl"
 LOW_PKL = "Immune_All_Low.pkl"
 
+#these are classes that aren't predicted by the CellTypist model
+#these classes are called post-hoc by processing the cell type probabilities. 
 PIPELINE_META = ["Unassigned", "Ambiguous", "Unknown"]
 
 # Frozen snapshot of Model.classes_ from CellTypist Pan Immune Atlas v2
@@ -172,6 +174,7 @@ HARDCODED_LOW = [
 ]
 
 # Low→High parents from celltypist_wiki Basic_celltype_information.xlsx (v2).
+# https://github.com/Teichlab/celltypist_wiki/blob/main/atlases/Pan_Immune_CellTypist/v2/encyclopedia/encyclopedia_table.xlsx
 LOW_HIGH_SCOPE = {
     "Age-associated B cells": "B cells",
     "Alveolar macrophages": "Macrophages",
@@ -280,12 +283,13 @@ LOW_SCORE_MODULES = [
 
 LOW_PCT_POSITIVE_GENES = ["PDCD1", "KLRK1", "GZMB"]  # subset of Quantify.PctPositive in R/Quantify.R
 
-# Curated diversity targets (must remain in the Low class list).
+# TCR diversity targets (retained in the "low" class).
 DIVERSITY_LOW_CLASSES = [
     "Tcm/Naive helper T cells",
     "Tem/Temra cytotoxic T cells",
 ]
 
+#schema 
 SPEC_HEADER = "\t".join(
     [
         "GroupingVariable",
@@ -371,7 +375,8 @@ def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str
             spec_row(join_target("ImmuneHigh", sanitize(cls)), HIGH_FIELD, cls, "sum")
         )
 
-    # Block 2 — Immune Low sums (scoped to High parent when mapped)
+    # Block 2 — Immune Low sums (scoped to High parent when mapped, see LOW_HIGH_SCOPE above)
+    # TODO: we may want to be less strict here, e.g. "Low" in macaques is all T/NK cells. 
     for cls in low_classes:
         scope_match = LOW_HIGH_SCOPE.get(cls, "")
         scope_field = HIGH_FIELD if scope_match else ""
