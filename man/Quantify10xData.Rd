@@ -15,54 +15,66 @@ Quantify10xData(
 \arguments{
 \item{outputFileIds}{Integer vector of LabKey sequenceanalysis output file row IDs.}
 
-\item{spec}{Path to a tab-separated spec file or a data.frame with the required
-columns (see Details).}
+\item{spec}{Path to a tab-separated spec file, or a data.frame with the required
+columns (see Details). A rhesus RIRA spec is bundled at
+\code{system.file("extdata", "quantify_rhesus_spec.tsv", package = "Rdiscvr")}.
+A human Immune_All_High/Low CellTypist spec is at
+\code{system.file("extdata", "quantify_human_immune_spec.tsv", package = "Rdiscvr")}.}
 
 \item{failureLogFile}{Path for a text log of validation and processing failures.
-Defaults to \code{quantification_failures_<timestamp>.txt}.}
+Defaults to \code{quantification_failures_<timestamp>.txt}. Also returned in
+the \code{failures} tibble.}
 
-\item{classifyTNK}{If \code{TRUE} (default), gamma-delta and NK labels in
-\code{RIRA_TNK_v2.cellclass} are overridden within the \code{T_NK} immune
-compartment using TCR-based rules matching \code{ClassifyTNKByExpression}.
-CD4/CD8 and other T/NK subtypes remain RIRA CellTypist labels. Set
-\code{FALSE} to quantify from RIRA labels only.}
+\item{classifyTNK}{If \code{TRUE} (default), per lane run TCR-aware TNK
+classification when RIRA immune and TNK metadata columns are present, then
+apply gamma-delta and NK overrides on \code{RIRA_TNK_v2.cellclass} within the
+\code{T_NK} compartment. Soft-skips when RIRA fields are absent. Set
+\code{FALSE} to quantify from downloaded RIRA labels only.}
 }
 \value{
-A list with \code{countsWide} (grouping columns plus one column per
-  \code{TargetField}, or \code{_p05}/\code{_median}/\code{_p95} for quantile
-  rules), \code{failures} (tibble of deferred failures), and \code{laneSummary}
-  (per-\code{sourceOutputFileId} ingest summary).
+A named list with:
+\describe{
+  \item{\code{countsWide}}{One row per distinct grouping key. Sum,
+    \code{pct_positive}, and \code{diversity} rules add one column per
+    \code{TargetField}. Score rules add \code{TargetField__p05},
+    \code{__median}, and \code{__p95}.}
+  \item{\code{failures}}{Tibble of deferred validation and processing failures
+    (\code{specRow}, \code{outputFileId}, \code{field}, \code{reason}).}
+  \item{\code{laneSummary}}{Per-\code{sourceOutputFileId} ingest counts
+    (\code{nCellsIngested}).}
+}
 }
 \description{
-Download per-cell metadata for LabKey output file IDs and quantify
-metrics from a TSV spec. Each spec row defines a grouping, filter, and either a
-raw count (\code{sum}) or quantiles of a score column (\code{score}).
+Download full Seurat objects for LabKey output file IDs and quantify
+grouped metrics from a TSV or data.frame spec.
 }
 \details{
-Required spec columns: \code{GroupingVariable} (pipe-separated metadata
-column names, e.g. \code{cDNA_ID} or \code{SubjectId|Tissue|TimepointLabel}),
-\code{TargetField}, \code{SourceField}, \code{MatchValue}, \code{QuantificationType}
-(\code{sum} or \code{score}), \code{QuantificationSourceField} (required when
-type is \code{score}), and \code{QuantificationScoreType} (\code{quantiles}
-only, when type is \code{score}). Optional columns \code{ScopeField} and
-\code{ScopeMatchValue} restrict matching to cells where
-\code{ScopeField == ScopeMatchValue} before applying the \code{SourceField}
-filter.
+Each spec row defines a grouping, cell filter, and a quantification type:
+\code{sum} (cell count), \code{score} (quantiles of a numeric column),
+\code{pct_positive} (percent of matched cells with a gene detected in counts),
+or \code{diversity} (TCR clone Hill number q=2 via rarefaction with
+\pkg{iNEXT}).
 
-All spec rows must share the same \code{GroupingVariable}. Sum rules count
-cells where \code{SourceField == MatchValue} per group (0 when no matches).
-Score rules compute p05, median, and p95 of \code{QuantificationSourceField}
-among matched cells (NA when no matches). Processing continues after failures;
-see \code{failures} and \code{failureLogFile}.
+Required columns: \code{GroupingVariable} (pipe-separated metadata column
+names), \code{TargetField}, \code{SourceField}, \code{MatchValue},
+\code{QuantificationType}, \code{QuantificationSourceField} (required for
+\code{score} and \code{pct_positive}), and \code{QuantificationScoreType}
+(\code{quantiles} when type is \code{score}).
 
-A default spec is bundled at
-\code{system.file("extdata", "quantify_default_spec.tsv", package = "Rdiscvr")}.
-Regenerate it from RIRA CellTypist pkl models with
-\code{inst/scripts/generate_quantify_default_spec.py} (see script header).
+Optional columns \code{ScopeField} and \code{ScopeMatchValue} restrict
+matching before the \code{SourceField} filter. Optional effector-
+differentiation subset columns further restrict matched cells by a numeric
+score bin.
 
-When \code{classifyTNK = TRUE}, gamma-delta and NK quantification rows use
-TCR evidence (\code{TNK_Type}, \code{TRD}, \code{HasCDR3Data}, \code{HasCD3})
-from the downloaded metadata rather than RIRA CellTypist for those two
-subtypes. Original RIRA labels are retained in
-\code{RIRA_TNK_v2.cellclass_rira}.
+Per lane, missing standard UCell score columns (names ending in \code{_UCell})
+are computed with \code{RIRA::CalculateUCellScores}; \code{Proliferation_UCell}
+is added separately when needed. \code{Is_TCR_Stimulated} is predicted with
+\code{RIRA::PredictTcellActivation} when absent.
+
+All spec rows must share the same \code{GroupingVariable}. Processing
+continues after failures; see \code{failures} and \code{failureLogFile}.
+
+Bundled-spec \code{TargetField} names use \code{__} between prefix segments.
+Regenerate the rhesus RIRA spec with \code{inst/scripts/generate_quantify_rhesus_spec.py}
+and the human immune spec with \code{inst/scripts/generate_quantify_human_spec.py}.
 }

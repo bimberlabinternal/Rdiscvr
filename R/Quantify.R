@@ -3,66 +3,68 @@
 #' @include Studies.R
 
 #' @title Quantify10xData
-#' @description Download Seurat Object metadata for output file IDs and quantify
-#' metrics from a TSV spec. Each spec row defines a grouping, filter, and either a
-#' raw count (\code{sum}) or quantiles of a score column (\code{score}).
+#' @description Download full Seurat objects for LabKey output file IDs and quantify
+#' grouped metrics from a TSV or data.frame spec.
 #'
-#' @param outputFileIds Integer vector of output file row IDs.
-#' @param spec Path to a tab-separated spec file or a data.frame with the required
-#'   columns (see Details).
+#' @param outputFileIds Integer vector of LabKey sequenceanalysis output file row IDs.
+#' @param spec Path to a tab-separated spec file, or a data.frame with the required
+#'   columns (see Details). A rhesus RIRA spec is bundled at
+#'   \code{system.file("extdata", "quantify_rhesus_spec.tsv", package = "Rdiscvr")}.
+#'   A human Immune_All_High/Low CellTypist spec is at
+#'   \code{system.file("extdata", "quantify_human_immune_spec.tsv", package = "Rdiscvr")}.
 #' @param failureLogFile Path for a text log of validation and processing failures.
-#'   Defaults to \code{quantification_failures_<timestamp>.txt}.
-#' @param classifyTNK If \code{TRUE} (default), gamma-delta and NK labels in
-#'   \code{RIRA_TNK_v2.cellclass} are overridden within the \code{T_NK} immune
-#'   compartment using TCR-based rules matching \code{ClassifyTNKByExpression}.
-#'   CD4/CD8 and other T/NK subtypes remain RIRA CellTypist labels. Set
-#'   \code{FALSE} to quantify from RIRA labels only.
-#' @return A list with \code{countsWide} (grouping columns plus one column per
-#'   \code{TargetField}, or \code{__p05}/\code{__median}/\code{__p95} for quantile
-#'   rules), \code{failures} (tibble of deferred failures), and \code{laneSummary}
-#'   (per-\code{sourceOutputFileId} ingest summary).
+#'   Defaults to \code{quantification_failures_<timestamp>.txt}. Also returned in
+#'   the \code{failures} tibble.
+#' @param classifyTNK If \code{TRUE} (default), per lane run TCR-aware TNK
+#'   classification when RIRA immune and TNK metadata columns are present, then
+#'   apply gamma-delta and NK overrides on \code{RIRA_TNK_v2.cellclass} within the
+#'   \code{T_NK} compartment. Soft-skips when RIRA fields are absent. Set
+#'   \code{FALSE} to quantify from downloaded RIRA labels only.
+#' @return A named list with:
+#' \describe{
+#'   \item{\code{countsWide}}{One row per distinct grouping key. Sum,
+#'     \code{pct_positive}, and \code{diversity} rules add one column per
+#'     \code{TargetField}. Score rules add \code{TargetField__p05},
+#'     \code{__median}, and \code{__p95}.}
+#'   \item{\code{failures}}{Tibble of deferred validation and processing failures
+#'     (\code{specRow}, \code{outputFileId}, \code{field}, \code{reason}).}
+#'   \item{\code{laneSummary}}{Per-\code{sourceOutputFileId} ingest counts
+#'     (\code{nCellsIngested}).}
+#' }
 #' @details
-#' Required spec columns: \code{GroupingVariable} (pipe-separated metadata
-#' column names, e.g. \code{cDNA_ID} or \code{SubjectId|Tissue|TimepointLabel}),
-#' \code{TargetField}, \code{SourceField}, \code{MatchValue}, \code{QuantificationType}
-#' (\code{sum} or \code{score}), \code{QuantificationSourceField} (required when
-#' type is \code{score}), and \code{QuantificationScoreType} (\code{quantiles}
-#' only, when type is \code{score}). Optional columns \code{ScopeField} and
-#' \code{ScopeMatchValue} restrict matching to cells where
-#' \code{ScopeField == ScopeMatchValue} before applying the \code{SourceField}
-#' filter. Optional columns \code{EffectorDifferentiationScoreField},
-#' \code{EffectorDifferentiationCutpointLow},
-#' \code{EffectorDifferentiationCutpointHigh}, and
-#' \code{SubsetPhenotypeOutputFieldName} further restrict matched
-#' cells by a numeric score bin (\code{Naive}: score below low cutpoint;
-#' \code{MemoryLike}: score between cutpoints inclusive; \code{Effector}: score
-#' above high cutpoint). The score column must already exist in metadata (e.g.
-#' \code{Tcell_EffectorDifferentiation} from RIRA \code{ScoreUsingSavedComponent}).
+#' Each spec row defines a grouping, cell filter, and a quantification type:
+#' \code{sum} (cell count), \code{score} (quantiles of a numeric column),
+#' \code{pct_positive} (percent of matched cells with a gene detected in counts),
+#' or \code{diversity} (TCR clone Hill number q=2 via rarefaction with
+#' \pkg{iNEXT}).
 #'
-#' \code{TargetField} names in the default spec use \code{__} as a structural
-#' delimiter between prefix segments and sanitized class labels; quantile rules
-#' append \code{__p05}, \code{__median}, and \code{__p95} to \code{TargetField}.
+#' Required columns: \code{GroupingVariable} (pipe-separated metadata column
+#' names), \code{TargetField}, \code{SourceField}, \code{MatchValue},
+#' \code{QuantificationType}, \code{QuantificationSourceField} (required for
+#' \code{score} and \code{pct_positive}), and \code{QuantificationScoreType}
+#' (\code{quantiles} when type is \code{score}).
 #'
-#' All spec rows must share the same \code{GroupingVariable}. Sum rules count
-#' cells where \code{SourceField == MatchValue} per group (0 when no matches).
-#' Score rules compute p05, median, and p95 of \code{QuantificationSourceField}
-#' among matched cells (NA when no matches). Processing continues after failures;
-#' see \code{failures} and \code{failureLogFile}.
+#' Optional columns \code{ScopeField} and \code{ScopeMatchValue} restrict
+#' matching before the \code{SourceField} filter. Optional effector-
+#' differentiation subset columns further restrict matched cells by a numeric
+#' score bin.
 #'
-#' A default spec is bundled at
-#' \code{system.file("extdata", "quantify_default_spec.tsv", package = "Rdiscvr")}.
-#' Regenerate it from RIRA CellTypist pkl models with
-#' \code{inst/scripts/generate_quantify_default_spec.py} (see script header).
+#' Per lane, missing standard UCell score columns (names ending in \code{_UCell})
+#' are computed with \code{RIRA::CalculateUCellScores}; \code{Proliferation_UCell}
+#' is added separately when needed. \code{Is_TCR_Stimulated} is predicted with
+#' \code{RIRA::PredictTcellActivation} when absent.
 #'
-#' When \code{classifyTNK = TRUE}, gamma-delta and NK quantification rows use
-#' TCR evidence (\code{TNK_Type}, \code{TRD}, \code{HasCDR3Data}, \code{HasCD3})
-#' from the downloaded metadata rather than RIRA CellTypist for those two
-#' subtypes. Original RIRA labels are retained in
-#' \code{RIRA_TNK_v2.cellclass_rira}.
+#' All spec rows must share the same \code{GroupingVariable}. Processing
+#' continues after failures; see \code{failures} and \code{failureLogFile}.
+#'
+#' Bundled-spec \code{TargetField} names use \code{__} between prefix segments.
+#' Regenerate the rhesus RIRA spec with \code{inst/scripts/generate_quantify_rhesus_spec.py}
+#' and the human immune spec with \code{inst/scripts/generate_quantify_human_spec.py}.
 #' @export
-#' @importFrom dplyr %>% group_by summarize mutate filter distinct left_join bind_rows count
+#' @importFrom dplyr %>% group_by summarize mutate filter distinct left_join bind_rows count pull across
 #' @importFrom tibble as_tibble tibble
 #' @importFrom stats quantile
+#' @importFrom Seurat DefaultAssay GetAssayData
 Quantify10xData <- function(
   outputFileIds,
   spec,
@@ -96,18 +98,22 @@ Quantify10xData <- function(
   lane_tables <- list()
   lane_summary_pieces <- list()
 
-  #download cell metadata for each output file, and record failures when a download fails
+  #prepare each lane (download seurat, ensure scores/activation, classify TNK, extract cell table), and record failures when a lane fails
   for (output_file_id in output_file_ids) {
     lane_result <- tryCatch(
       {
-        lane_table <- .DownloadCellMetadataPerLane(output_file_id)
+        prepare_result <- .PrepareLaneCellTable(
+          output_file_id = output_file_id,
+          spec_table = spec_table,
+          classify_tnk = classifyTNK
+        )
         list(
-          lane_table = lane_table,
+          lane_table = prepare_result$cell_table,
           lane_summary = tibble::tibble(
             sourceOutputFileId = output_file_id,
-            nCellsIngested = nrow(lane_table)
+            nCellsIngested = nrow(prepare_result$cell_table)
           ),
-          failures = .EmptyFailuresTibble()
+          failures = prepare_result$failures
         )
       },
       error = function(error_condition) {
@@ -143,13 +149,6 @@ Quantify10xData <- function(
     rownames(cell_table) <- NULL
   } else {
     cell_table <- tibble::tibble()
-  }
-
-  #override gamma-delta and NK labels in RIRA_TNK using TCR-based classification
-  if (classifyTNK && nrow(cell_table) > 0) {
-    override_result <- .ApplyTcrTNKOverridesToCellTable(cell_table)
-    cell_table <- override_result$cell_table
-    failures <- dplyr::bind_rows(failures, override_result$failures)
   }
 
   #initialize the wide results table; metric columns are added one spec rule at a time
@@ -193,6 +192,13 @@ Quantify10xData <- function(
         counts_wide <- tibble::as_tibble(empty_group_table)
       }
 
+      #shared rarefaction depth across diversity rules so Hill numbers are comparable
+      rarefaction_level <- .ComputeSharedRarefactionLevel(
+        spec_table = spec_table,
+        cell_table = cell_table,
+        grouping_columns = grouping_columns
+      )
+
       #iterate through each spec rule, validate columns, compute metrics, and join onto the wide table
       for (spec_row_idx in seq_len(nrow(spec_table))) {
         spec_row <- spec_table[spec_row_idx, , drop = FALSE]
@@ -206,7 +212,7 @@ Quantify10xData <- function(
         target_field <- as.character(spec_row$TargetField[[1]])
         quantification_type <- tolower(trimws(as.character(spec_row$QuantificationType[[1]])))
         output_columns <- if (identical(quantification_type, "score")) {
-          .QuantifyQuantileColumns(target_field)
+          .BuildScoreQuantileColumnNames(target_field)
         } else {
           target_field
         }
@@ -227,10 +233,11 @@ Quantify10xData <- function(
           next
         }
 
-        metrics_table <- .QuantifySpecRow(
+        metrics_table <- .ComputeMetricsForSpecRow(
           spec_row = spec_row,
           cell_table = cell_table,
-          grouping_columns = grouping_columns
+          grouping_columns = grouping_columns,
+          rarefaction_level = rarefaction_level
         )
 
         if (nrow(counts_wide) == 0 && nrow(metrics_table) > 0) {
@@ -266,14 +273,67 @@ Quantify10xData <- function(
 }
 
 ## Helper Functions ##
+
+# register Quantify pct-positive gene panels into RIRA's gene-set registry
+.RegisterQuantifyGeneSets <- function() {
+  if (!requireNamespace("RIRA", quietly = TRUE)) {
+    return(invisible(FALSE))
+  }
+
+  register_if_absent <- function(name, genes) {
+    tryCatch(
+      RIRA:::.RegisterGeneSet(name, genes),
+      error = function(error_condition) invisible(NULL)
+    )
+  }
+
+  register_if_absent(
+    "Quantify.PctPositive",
+    c(
+      "PDCD1",
+      "KLRK1",
+      "KLRB1",
+      "HAVCR2",
+      "TIGIT",
+      "PRF1",
+      "GZMB",
+      "KLRC1",
+      "FCGR3",
+      "FCGR3A",
+      "FOXP3",
+      "IL2RA"
+    )
+  )
+  register_if_absent(
+    "Quantify.PctPositive.Inhibitory",
+    c("PDCD1", "HAVCR2", "TIGIT")
+  )
+  register_if_absent(
+    "Quantify.PctPositive.NK",
+    c("KLRK1", "KLRC1", "FCGR3A", "FCGR3", "KLRB1")
+  )
+  register_if_absent(
+    "Quantify.PctPositive.Treg",
+    c("FOXP3", "IL2RA")
+  )
+  register_if_absent(
+    "Quantify.PctPositive.Effector",
+    c("GZMB", "KLRK1")
+  )
+
+  invisible(TRUE)
+}
+
+.RegisterQuantifyGeneSets()
+
 .QuantifyNameDelim <- "__"
 
-.QuantifyQuantileColumns <- function(target_field) {
+.BuildScoreQuantileColumnNames <- function(target_field) {
   paste0(target_field, .QuantifyNameDelim, c("p05", "median", "p95"))
 }
 
+#returns an empty tibble with columns for spec row, output file, field name, and reason
 .EmptyFailuresTibble <- function() {
-  #returns an empty tibble with columns for spec row, output file, field name, and reason
   tibble::tibble(
     specRow = integer(0),
     outputFileId = integer(0),
@@ -283,15 +343,212 @@ Quantify10xData <- function(
 }
 
 #assumes output_file_id refers to a valid LabKey output file row
-#assumes DownloadMetadataForSeuratObject returns one row per cell for that file
-.DownloadCellMetadataPerLane <- function(output_file_id) {
-  df <- DownloadMetadataForSeuratObject(
+.DownloadSeuratPerLane <- function(output_file_id) {
+  out_file <- tempfile(fileext = ".rds")
+  on.exit(unlink(out_file), add = TRUE)
+  DownloadOutputFile(
     outputFileId = output_file_id,
-    outFile = tempfile(fileext = ".txt.gz"),
-    returnDataFrame = TRUE
+    outFile = out_file,
+    overwrite = TRUE
   )
-  df$sourceOutputFileId <- output_file_id
-  tibble::as_tibble(df)
+  readRDS(out_file)
+}
+
+# download seurat, ensure scores/activation, classify TNK, extract lightweight cell table
+.PrepareLaneCellTable <- function(output_file_id, spec_table, classify_tnk) {
+  seurat_obj <- .DownloadSeuratPerLane(output_file_id)
+  ensure_result <- .EnsureUCellAndActivationMetadata(seurat_obj, spec_table)
+  seurat_obj <- ensure_result$seurat_obj
+  failures <- ensure_result$failures
+
+  if (classify_tnk) {
+    classify_result <- .ClassifyTNKWithTcrOverrides(seurat_obj)
+    seurat_obj <- classify_result$seurat_obj
+    failures <- dplyr::bind_rows(failures, classify_result$failures)
+  }
+
+  cell_table <- .BuildCellTableFromSeurat(seurat_obj, output_file_id, spec_table)
+  list(cell_table = cell_table, failures = failures)
+}
+
+.UCellColumnNeedsComputation <- function(seurat_obj, column_name) {
+  if (!column_name %in% names(seurat_obj@meta.data)) {
+    return(TRUE)
+  }
+  any(is.na(seurat_obj@meta.data[[column_name]]))
+}
+
+# ensure UCell scores and TCR activation metadata exist on the Seurat object
+.EnsureUCellAndActivationMetadata <- function(seurat_obj, spec_table) {
+  failures <- .EmptyFailuresTibble()
+  append_failure <- function(field_name, reason_text) {
+    failures <<- dplyr::bind_rows(
+      failures,
+      tibble::tibble(
+        specRow = NA_integer_,
+        outputFileId = NA_integer_,
+        field = field_name,
+        reason = reason_text
+      )
+    )
+  }
+
+  score_rows <- spec_table[
+    tolower(trimws(spec_table$QuantificationType)) == "score",
+    ,
+    drop = FALSE
+  ]
+  ucell_fields <- unique(trimws(as.character(score_rows$QuantificationSourceField)))
+  ucell_fields <- ucell_fields[grepl("_UCell$", ucell_fields, perl = TRUE)]
+  standard_ucells <- setdiff(ucell_fields, "Proliferation_UCell")
+
+  #RIRA::CalculateUCellScores covers standard *_UCell columns; Proliferation_UCell is handled below
+  needs_standard_ucells <- standard_ucells[
+    vapply(standard_ucells, .UCellColumnNeedsComputation, logical(1), seurat_obj = seurat_obj)
+  ]
+
+  if (length(needs_standard_ucells)) {
+    if (!requireNamespace("RIRA", quietly = TRUE)) {
+      append_failure(
+        "RIRA",
+        "RIRA package unavailable; skipping standard UCell score computation"
+      )
+    } else {
+      seurat_obj <- tryCatch(
+        RIRA::CalculateUCellScores(seurat_obj, plotCor = FALSE),
+        error = function(error_condition) {
+          append_failure(
+            "RIRA::CalculateUCellScores",
+            conditionMessage(error_condition)
+          )
+          seurat_obj
+        }
+      )
+    }
+  }
+
+  #Proliferation_UCell is not in CalculateUCellScores; compute separately when needed
+  if ("Proliferation_UCell" %in% ucell_fields &&
+      .UCellColumnNeedsComputation(seurat_obj, "Proliferation_UCell")) {
+    if (!requireNamespace("UCell", quietly = TRUE)) {
+      append_failure(
+        "UCell",
+        "UCell package unavailable; skipping Proliferation_UCell computation"
+      )
+    } else {
+      proliferation_genes <- tryCatch(
+        RIRA::GetGeneSet("Proliferation"),
+        error = function(error_condition) {
+          append_failure(
+            "RIRA::GetGeneSet",
+            paste0(
+              "GetGeneSet(Proliferation) failed: ",
+              conditionMessage(error_condition),
+              "; using MKI67/TOP2A fallback"
+            )
+          )
+          c("MKI67", "TOP2A")
+        }
+      )
+      seurat_obj <- tryCatch(
+        UCell::AddModuleScore_UCell(
+          seurat_obj,
+          features = list(Proliferation = proliferation_genes),
+          missing_genes = "skip"
+        ),
+        error = function(error_condition) {
+          append_failure(
+            "UCell::AddModuleScore_UCell",
+            conditionMessage(error_condition)
+          )
+          seurat_obj
+        }
+      )
+    }
+  }
+
+  #predict TCR stimulation status when the metadata column is absent
+  if (!"Is_TCR_Stimulated" %in% names(seurat_obj@meta.data)) {
+    if (!requireNamespace("RIRA", quietly = TRUE)) {
+      append_failure(
+        "RIRA",
+        "RIRA package unavailable; skipping Is_TCR_Stimulated prediction"
+      )
+    } else {
+      seurat_obj <- tryCatch(
+        RIRA::PredictTcellActivation(seurat_obj),
+        error = function(error_condition) {
+          append_failure(
+            "RIRA::PredictTcellActivation",
+            conditionMessage(error_condition)
+          )
+          seurat_obj
+        }
+      )
+    }
+  }
+
+  list(seurat_obj = seurat_obj, failures = failures)
+}
+
+# run ClassifyTNKByExpression when possible, then apply TCR TNK overrides
+.ClassifyTNKWithTcrOverrides <- function(seurat_obj) {
+  failures <- .EmptyFailuresTibble()
+  immune_field <- "RIRA_Immune_v2.cellclass"
+  tnk_field <- "RIRA_TNK_v2.cellclass"
+
+  if (!immune_field %in% names(seurat_obj@meta.data) ||
+      !tnk_field %in% names(seurat_obj@meta.data)) {
+    return(list(seurat_obj = seurat_obj, failures = failures))
+  }
+
+  meta_cols <- names(seurat_obj@meta.data)
+  has_cdr3 <- "HasCDR3Data" %in% meta_cols &&
+    any(as.logical(seurat_obj$HasCDR3Data), na.rm = TRUE)
+  has_tra <- "TRA" %in% meta_cols && any(!is.na(seurat_obj$TRA))
+  has_trb <- "TRB" %in% meta_cols && any(!is.na(seurat_obj$TRB))
+
+  if (has_cdr3 || has_tra || has_trb) {
+    seurat_obj <- tryCatch(
+      ClassifyTNKByExpression(seurat_obj),
+      error = function(error_condition) seurat_obj
+    )
+  }
+
+  cell_table <- tibble::as_tibble(seurat_obj@meta.data)
+  override_result <- .ApplyTcrTNKOverridesToCellTable(cell_table)
+  seurat_obj[[tnk_field]] <- override_result$cell_table[[tnk_field]]
+
+  list(
+    seurat_obj = seurat_obj,
+    failures = dplyr::bind_rows(failures, override_result$failures)
+  )
+}
+
+# extract metadata and materialize pct_positive gene columns from counts
+.BuildCellTableFromSeurat <- function(seurat_obj, output_file_id, spec_table) {
+  cell_table <- tibble::as_tibble(seurat_obj@meta.data)
+  cell_table$sourceOutputFileId <- output_file_id
+
+  pct_genes <- spec_table %>%
+    dplyr::filter(tolower(trimws(.data$QuantificationType)) == "pct_positive") %>%
+    dplyr::pull(.data$QuantificationSourceField) %>%
+    unique()
+  pct_genes <- trimws(as.character(pct_genes))
+  pct_genes <- pct_genes[nzchar(pct_genes)]
+
+  if (length(pct_genes)) {
+    assay_name <- Seurat::DefaultAssay(seurat_obj)
+    counts <- Seurat::GetAssayData(seurat_obj, assay = assay_name, layer = "counts")
+    gene_rownames <- rownames(counts)
+    for (gene in pct_genes) {
+      if (gene %in% gene_rownames) {
+        cell_table[[gene]] <- as.numeric(counts[gene, ] > 0)
+      }
+    }
+  }
+
+  cell_table
 }
 
 #assumes spec is a file path or data.frame containing the required columns
@@ -393,8 +650,6 @@ Quantify10xData <- function(
     return(list(cell_table = cell_table, failures = failures))
   }
 
-  #column fallbacks mirror ClassifyTNKByExpression metadata fields;
-  # upgrade path is shared helper if a third caller appears.
   has_cdr3_data <- if ("HasCDR3Data" %in% names(cell_table)) {
     as.logical(cell_table$HasCDR3Data)
   } else if ("CDR3s" %in% names(cell_table)) {
@@ -416,6 +671,7 @@ Quantify10xData <- function(
     return(list(cell_table = cell_table, failures = failures))
   }
 
+  #column fallbacks mirror ClassifyTNKByExpression metadata fields
   is_gamma_delta <- if ("TNK_Type" %in% names(cell_table)) {
     as.character(cell_table$TNK_Type) == "Gamma/Delta"
   } else if ("IsGammaDelta" %in% names(cell_table)) {
@@ -467,7 +723,6 @@ Quantify10xData <- function(
     is_nk_cell <- rep(FALSE, nrow(cell_table))
   }
 
-  cell_table[[paste0(tnk_field, "_rira")]] <- as.character(cell_table[[tnk_field]])
   tnk_scope <- as.character(cell_table[[immune_field]]) == "T_NK"
   updated_tnk <- as.character(cell_table[[tnk_field]])
 
@@ -477,7 +732,29 @@ Quantify10xData <- function(
 
   list(cell_table = cell_table, failures = failures)
 }
-#assumes cell_table column names match the downloaded metadata when cells were ingested
+
+# scope, source/match, and EDS filters shared by quantify row handlers
+.FilterCellsBySpecRow <- function(cell_table, spec_row) {
+  if (nrow(cell_table) == 0) {
+    return(cell_table)
+  }
+
+  scoped_cells <- cell_table
+  scope_field <- trimws(as.character(spec_row$ScopeField[[1]]))
+  scope_match_value <- as.character(spec_row$ScopeMatchValue[[1]])
+  if (nzchar(scope_field)) {
+    scope_values <- as.character(scoped_cells[[scope_field]])
+    scoped_cells <- scoped_cells[scope_values == scope_match_value, , drop = FALSE]
+  }
+
+  source_field <- as.character(spec_row$SourceField[[1]])
+  match_value <- as.character(spec_row$MatchValue[[1]])
+  source_values <- as.character(scoped_cells[[source_field]])
+  filtered_cells <- scoped_cells[source_values == match_value, , drop = FALSE]
+  .FilterCellsByEffectorDifferentiationBin(filtered_cells, spec_row)
+}
+
+#assumes cell_table column names match ingested metadata when cells were materialized
 #returns validation failures for this rule without stopping the rest of the run
 .ValidateSpecRow <- function(spec_row, cell_table) {
   failures <- .EmptyFailuresTibble()
@@ -518,7 +795,7 @@ Quantify10xData <- function(
   }
   if (!nzchar(quantification_type)) {
     append_failure("QuantificationType", "malformed spec row: QuantificationType is blank")
-  } else if (!quantification_type %in% c("sum", "score")) {
+  } else if (!quantification_type %in% c("sum", "score", "pct_positive", "diversity")) {
     append_failure(
       "QuantificationType",
       paste0("invalid QuantificationType: ", quantification_type)
@@ -591,6 +868,32 @@ Quantify10xData <- function(
         "QuantificationScoreType",
         paste0("invalid QuantificationScoreType: ", score_type)
       )
+    }
+  }
+
+  if (identical(quantification_type, "pct_positive")) {
+    if (!nzchar(score_field)) {
+      append_failure(
+        "QuantificationSourceField",
+        "malformed spec row: QuantificationSourceField is required when QuantificationType is pct_positive"
+      )
+    } else if (!score_field %in% metadata_columns) {
+      append_failure(
+        "QuantificationSourceField",
+        paste0(
+          "QuantificationSourceField not found in cell table: ",
+          score_field
+        )
+      )
+    }
+  }
+
+  if (identical(quantification_type, "diversity")) {
+    if (!"TRA" %in% metadata_columns) {
+      append_failure("TRA", "TRA not found in metadata")
+    }
+    if (!"TRB" %in% metadata_columns) {
+      append_failure("TRB", "TRB not found in metadata")
     }
   }
 
@@ -671,7 +974,8 @@ Quantify10xData <- function(
   failures
 }
 
-.ApplySubsetScoreFilter <- function(cells, spec_row) {
+#restrict matched cells to Naive/MemoryLike/Effector bin of EffectorDifferentiationScoreField
+.FilterCellsByEffectorDifferentiationBin <- function(cells, spec_row) {
   phenotype_output_field <- trimws(as.character(spec_row$SubsetPhenotypeOutputFieldName[[1]]))
   if (!nzchar(phenotype_output_field) || !nrow(cells)) {
     return(cells)
@@ -691,13 +995,130 @@ Quantify10xData <- function(
   cells[keep, , drop = FALSE]
 }
 
-#this function does the bulk of the work for populating the output table.
+# minimum TCR+ cell count per group across diversity spec rows for shared rarefaction
+.ComputeSharedRarefactionLevel <- function(spec_table, cell_table, grouping_columns) {
+  diversity_rows <- spec_table[
+    tolower(trimws(spec_table$QuantificationType)) == "diversity",
+    ,
+    drop = FALSE
+  ]
+  if (!nrow(diversity_rows) || !nrow(cell_table) || !length(grouping_columns)) {
+    return(NA_integer_)
+  }
+  if (!all(c("TRA", "TRB") %in% names(cell_table))) {
+    return(NA_integer_)
+  }
+
+  min_counts <- integer(0)
+  for (diversity_row_idx in seq_len(nrow(diversity_rows))) {
+    spec_row <- diversity_rows[diversity_row_idx, , drop = FALSE]
+    filtered_cells <- .FilterCellsBySpecRow(cell_table, spec_row)
+    tra <- as.character(filtered_cells$TRA)
+    trb <- as.character(filtered_cells$TRB)
+    tcr_plus <- !is.na(tra) & nzchar(tra) & !is.na(trb) & nzchar(trb)
+    filtered_tcr <- filtered_cells[tcr_plus, , drop = FALSE]
+
+    if (nrow(filtered_tcr)) {
+      group_counts <- filtered_tcr %>%
+        dplyr::count(dplyr::across(dplyr::all_of(grouping_columns)), name = "n_tcr")
+      min_counts <- c(min_counts, min(group_counts$n_tcr))
+    }
+  }
+
+  if (!length(min_counts)) {
+    NA_integer_
+  } else {
+    as.integer(min(min_counts))
+  }
+}
+
+# computes Hill number q=2 at shared rarefaction level per grouping key
+.ComputeRarefiedHillDiversity <- function(
+  filtered_cells,
+  all_groups,
+  grouping_columns,
+  target_field,
+  rarefaction_level
+) {
+  all_groups[[target_field]] <- NA_real_
+
+  if (is.na(rarefaction_level) || rarefaction_level < 1L || nrow(filtered_cells) == 0) {
+    return(all_groups)
+  }
+
+  if (!requireNamespace("iNEXT", quietly = TRUE)) {
+    return(all_groups)
+  }
+
+  tra <- as.character(filtered_cells$TRA)
+  trb <- as.character(filtered_cells$TRB)
+  tcr_plus <- !is.na(tra) & nzchar(tra) & !is.na(trb) & nzchar(trb)
+  tcr_cells <- filtered_cells[tcr_plus, , drop = FALSE]
+
+  if (!nrow(tcr_cells)) {
+    return(all_groups)
+  }
+
+  #clone identity is TRA/TRB, plus TRA_V/TRB_V when present
+  clone_cols <- c("TRA", "TRB")
+  if ("TRA_V" %in% names(tcr_cells)) {
+    clone_cols <- c(clone_cols, "TRA_V")
+  }
+  if ("TRB_V" %in% names(tcr_cells)) {
+    clone_cols <- c(clone_cols, "TRB_V")
+  }
+
+  clone_sizes <- tcr_cells %>%
+    dplyr::count(dplyr::across(dplyr::all_of(c(grouping_columns, clone_cols))), name = "clone_size")
+
+  group_key <- interaction(clone_sizes[, grouping_columns, drop = FALSE], drop = TRUE)
+  split_clones <- split(clone_sizes$clone_size, group_key)
+
+  diversity_by_key <- vapply(
+    names(split_clones),
+    function(key_name) {
+      abund <- as.integer(split_clones[[key_name]])
+      if (sum(abund) < rarefaction_level) {
+        return(NA_real_)
+      }
+      est <- tryCatch(
+        iNEXT::estimateD(
+          list(Group = abund),
+          q = 2,
+          datatype = "abundance",
+          base = "size",
+          level = as.integer(rarefaction_level)
+        ),
+        error = function(error_condition) NULL
+      )
+      if (is.null(est) || !is.data.frame(est) || !nrow(est)) {
+        return(NA_real_)
+      }
+      qd_values <- est$qD[est$Order.q == 2]
+      if (!length(qd_values)) {
+        NA_real_
+      } else {
+        as.numeric(qd_values[[1]])
+      }
+    },
+    FUN.VALUE = numeric(1)
+  )
+
+  all_group_keys <- interaction(all_groups[, grouping_columns, drop = FALSE], drop = TRUE)
+  matched_idx <- match(as.character(all_group_keys), names(diversity_by_key))
+  all_groups[[target_field]] <- as.numeric(diversity_by_key[matched_idx])
+  all_groups
+}
+
 #assumes the rule passed validation and grouping columns are present in cell_table
 #returns one row per group with the target metric column(s) for this rule
-.QuantifySpecRow <- function(spec_row, cell_table, grouping_columns) {
+.ComputeMetricsForSpecRow <- function(
+  spec_row,
+  cell_table,
+  grouping_columns,
+  rarefaction_level = NA_integer_
+) {
   target_field <- as.character(spec_row$TargetField[[1]])
-  source_field <- as.character(spec_row$SourceField[[1]])
-  match_value <- as.character(spec_row$MatchValue[[1]])
   quantification_type <- tolower(trimws(as.character(spec_row$QuantificationType[[1]])))
 
   if (nrow(cell_table) == 0 || !length(grouping_columns)) {
@@ -707,23 +1128,14 @@ Quantify10xData <- function(
   all_groups <- cell_table %>%
     dplyr::distinct(dplyr::across(dplyr::all_of(grouping_columns)))
 
-  scoped_cells <- cell_table
-  scope_field <- trimws(as.character(spec_row$ScopeField[[1]]))
-  scope_match_value <- as.character(spec_row$ScopeMatchValue[[1]])
-  if (nzchar(scope_field)) {
-    scope_values <- as.character(scoped_cells[[scope_field]])
-    scoped_cells <- scoped_cells[scope_values == scope_match_value, , drop = FALSE]
-  }
+  filtered_cells <- .FilterCellsBySpecRow(cell_table, spec_row)
 
-  source_values <- as.character(scoped_cells[[source_field]])
-  matched_cells <- scoped_cells[source_values == match_value, , drop = FALSE]
-  matched_cells <- .ApplySubsetScoreFilter(matched_cells, spec_row)
-
+  #sum: cell counts per group
   if (identical(quantification_type, "sum")) {
-    if (nrow(matched_cells) == 0) {
+    if (nrow(filtered_cells) == 0) {
       count_values <- rep(0L, nrow(all_groups))
     } else {
-      count_values <- matched_cells %>%
+      count_values <- filtered_cells %>%
         dplyr::count(dplyr::across(dplyr::all_of(grouping_columns)), name = target_field) %>%
         dplyr::right_join(all_groups, by = grouping_columns) %>%
         dplyr::mutate(!!target_field := ifelse(is.na(.data[[target_field]]), 0L, .data[[target_field]])) %>%
@@ -735,56 +1147,94 @@ Quantify10xData <- function(
     return(all_groups)
   }
 
-  score_field <- as.character(spec_row$QuantificationSourceField[[1]])
-  quantile_columns <- .QuantifyQuantileColumns(target_field)
-  p05_col <- quantile_columns[[1]]
-  median_col <- quantile_columns[[2]]
-  p95_col <- quantile_columns[[3]]
+  #pct_positive: percent of matched cells with the gene detected
+  if (identical(quantification_type, "pct_positive")) {
+    gene_field <- as.character(spec_row$QuantificationSourceField[[1]])
 
-  if (nrow(matched_cells) == 0) {
-    all_groups[[p05_col]] <- NA_real_
-    all_groups[[median_col]] <- NA_real_
-    all_groups[[p95_col]] <- NA_real_
-    return(all_groups)
-  }
+    if (nrow(filtered_cells) == 0) {
+      all_groups[[target_field]] <- 0
+      return(all_groups)
+    }
 
-  score_values <- suppressWarnings(as.numeric(matched_cells[[score_field]]))
-  matched_cells[[score_field]] <- score_values
+    gene_values <- filtered_cells[[gene_field]]
+    is_positive <- if (is.logical(gene_values)) {
+      gene_values
+    } else {
+      numeric_values <- suppressWarnings(as.numeric(gene_values))
+      !is.na(numeric_values) & numeric_values > 0
+    }
+    filtered_cells$.pct_positive_flag <- is_positive
 
-  quantile_metrics <- matched_cells %>%
-    dplyr::group_by(dplyr::across(dplyr::all_of(grouping_columns))) %>%
-    dplyr::summarize(
-      !!p05_col := {
-        score_vector <- .data[[score_field]]
-        score_vector <- score_vector[!is.na(score_vector)]
-        if (!length(score_vector)) {
-          NA_real_
-        } else {
-          as.numeric(stats::quantile(score_vector, probs = 0.05, na.rm = TRUE, names = FALSE))
-        }
-      },
-      !!median_col := {
-        score_vector <- .data[[score_field]]
-        score_vector <- score_vector[!is.na(score_vector)]
-        if (!length(score_vector)) {
-          NA_real_
-        } else {
-          as.numeric(stats::quantile(score_vector, probs = 0.5, na.rm = TRUE, names = FALSE))
-        }
-      },
-      !!p95_col := {
-        score_vector <- .data[[score_field]]
-        score_vector <- score_vector[!is.na(score_vector)]
-        if (!length(score_vector)) {
-          NA_real_
-        } else {
-          as.numeric(stats::quantile(score_vector, probs = 0.95, na.rm = TRUE, names = FALSE))
-        }
-      },
-      .groups = "drop"
+    pct_metrics <- filtered_cells %>%
+      dplyr::group_by(dplyr::across(dplyr::all_of(grouping_columns))) %>%
+      dplyr::summarize(
+        !!target_field := 100 * mean(.data$.pct_positive_flag, na.rm = TRUE),
+        .groups = "drop"
+      )
+
+    dplyr::left_join(all_groups, pct_metrics, by = grouping_columns)
+  } else if (identical(quantification_type, "diversity")) {
+    #diversity: rarefied Hill number q=2 at the shared TCR+ depth
+    .ComputeRarefiedHillDiversity(
+      filtered_cells = filtered_cells,
+      all_groups = all_groups,
+      grouping_columns = grouping_columns,
+      target_field = target_field,
+      rarefaction_level = rarefaction_level
     )
+  } else {
+    #score: p05/median/p95 of QuantificationSourceField among matched cells
+    score_field <- as.character(spec_row$QuantificationSourceField[[1]])
+    quantile_columns <- .BuildScoreQuantileColumnNames(target_field)
+    p05_col <- quantile_columns[[1]]
+    median_col <- quantile_columns[[2]]
+    p95_col <- quantile_columns[[3]]
 
-  dplyr::left_join(all_groups, quantile_metrics, by = grouping_columns)
+    if (nrow(filtered_cells) == 0) {
+      all_groups[[p05_col]] <- NA_real_
+      all_groups[[median_col]] <- NA_real_
+      all_groups[[p95_col]] <- NA_real_
+      return(all_groups)
+    }
+
+    score_values <- suppressWarnings(as.numeric(filtered_cells[[score_field]]))
+    filtered_cells[[score_field]] <- score_values
+
+    quantile_metrics <- filtered_cells %>%
+      dplyr::group_by(dplyr::across(dplyr::all_of(grouping_columns))) %>%
+      dplyr::summarize(
+        !!p05_col := {
+          score_vector <- .data[[score_field]]
+          score_vector <- score_vector[!is.na(score_vector)]
+          if (!length(score_vector)) {
+            NA_real_
+          } else {
+            as.numeric(stats::quantile(score_vector, probs = 0.05, na.rm = TRUE, names = FALSE))
+          }
+        },
+        !!median_col := {
+          score_vector <- .data[[score_field]]
+          score_vector <- score_vector[!is.na(score_vector)]
+          if (!length(score_vector)) {
+            NA_real_
+          } else {
+            as.numeric(stats::quantile(score_vector, probs = 0.5, na.rm = TRUE, names = FALSE))
+          }
+        },
+        !!p95_col := {
+          score_vector <- .data[[score_field]]
+          score_vector <- score_vector[!is.na(score_vector)]
+          if (!length(score_vector)) {
+            NA_real_
+          } else {
+            as.numeric(stats::quantile(score_vector, probs = 0.95, na.rm = TRUE, names = FALSE))
+          }
+        },
+        .groups = "drop"
+      )
+
+    dplyr::left_join(all_groups, quantile_metrics, by = grouping_columns)
+  }
 }
 
 #assumes failure_log_file is a path where we can write a text log
@@ -795,7 +1245,7 @@ Quantify10xData <- function(
   }
 
   log_lines <- apply(failures, 1, function(failure_row) {
-  paste0(
+    paste0(
       "row=", failure_row[["specRow"]],
       " outputFileId=", failure_row[["outputFileId"]],
       " field=", failure_row[["field"]],

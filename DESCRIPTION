@@ -40,14 +40,18 @@ Imports:
     stringr,
     tibble,
     logger,
-    ggh4x
+    ggh4x,
+    RIRA,
+    iNEXT,
+    UCell
 Suggests:
     devtools,
     testthat (>= 2.1.0)
 Remotes:
     bimberlab/cellhashR,
     bimberlabinternal/CellMembrane,
-    bimberlab/nimbleR
+    bimberlab/nimbleR,
+    bimberlab/RIRA
 RoxygenNote: 7.3.3
 URL: https://github.com/BimberLabInternal/Rdiscvr
 BugReports: https://github.com/BimberLabInternal/Rdiscvr/issues
@@ -60,7 +64,7 @@ Collate:
     'MHC.R'
     'NimbleAPI.R'
     'PlotFunctions.R'
-    'SingleCell.R'
     'Studies.R'
+    'SingleCell.R'
     'Quantify.R'
     'TcrStims.R'
