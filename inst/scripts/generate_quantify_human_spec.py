@@ -289,6 +289,9 @@ DIVERSITY_LOW_CLASSES = [
     "Tem/Temra cytotoxic T cells",
 ]
 
+ACTIVATION_SOURCE_FIELD = "Is_TCR_Stimulated"
+ACTIVATION_MATCH_VALUE = "TRUE"
+
 #schema 
 SPEC_HEADER = "\t".join(
     [
@@ -448,6 +451,19 @@ def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str
                 "diversity",
                 scope_field=HIGH_FIELD,
                 scope_match="T cells",
+            )
+        )
+
+    # Block 7 — activation sums for all Low labels under High "T cells"
+    for cls in t_cell_labels:
+        rows.append(
+            spec_row(
+                join_target("ImmuneLow", sanitize(cls), "Activated"),
+                ACTIVATION_SOURCE_FIELD,
+                ACTIVATION_MATCH_VALUE,
+                "sum",
+                scope_field=LOW_FIELD,
+                scope_match=cls,
             )
         )
 

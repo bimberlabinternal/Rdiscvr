@@ -253,3 +253,23 @@ cDNA_ID	ImmuneLow__gamma_delta_T_cells__PctPositive__KLRK1	celltypist.Immune_All
 cDNA_ID	ImmuneLow__gamma_delta_T_cells__PctPositive__GZMB	celltypist.Immune_All_Low.cellclass	gamma-delta T cells	pct_positive	GZMB		celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__Diversity	celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells	diversity			celltypist.Immune_All_High.cellclass	T cells				
 cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__Diversity	celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells	diversity			celltypist.Immune_All_High.cellclass	T cells				
+cDNA_ID	ImmuneLow__CD8a_a__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	CD8a/a				
+cDNA_ID	ImmuneLow__CD8a_b_entry__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	CD8a/b(entry)				
+cDNA_ID	ImmuneLow__CRTAMplus_gamma_delta_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	CRTAM+ gamma-delta T cells				
+cDNA_ID	ImmuneLow__Follicular_helper_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Follicular helper T cells				
+cDNA_ID	ImmuneLow__MAIT_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	MAIT cells				
+cDNA_ID	ImmuneLow__Memory_CD4plus_cytotoxic_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Memory CD4+ cytotoxic T cells				
+cDNA_ID	ImmuneLow__NKT_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	NKT cells				
+cDNA_ID	ImmuneLow__Regulatory_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Regulatory T cells				
+cDNA_ID	ImmuneLow__T_agonist__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	T(agonist)				
+cDNA_ID	ImmuneLow__Tcm_Naive_cytotoxic_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Tcm/Naive cytotoxic T cells				
+cDNA_ID	ImmuneLow__Tcm_Naive_helper_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Tcm/Naive helper T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells				
+cDNA_ID	ImmuneLow__Tem_Effector_helper_T_cells_PD1plus__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Tem/Effector helper T cells PD1+				
+cDNA_ID	ImmuneLow__Tem_Temra_cytotoxic_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Tem/Temra cytotoxic T cells				
+cDNA_ID	ImmuneLow__Tem_Trm_cytotoxic_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Tem/Trm cytotoxic T cells				
+cDNA_ID	ImmuneLow__Treg_diff__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Treg(diff)				
+cDNA_ID	ImmuneLow__Trm_cytotoxic_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Trm cytotoxic T cells				
+cDNA_ID	ImmuneLow__Type_1_helper_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Type 1 helper T cells				
+cDNA_ID	ImmuneLow__Type_17_helper_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	Type 17 helper T cells				
+cDNA_ID	ImmuneLow__gamma_delta_T_cells__Activated	Is_TCR_Stimulated	TRUE	sum			celltypist.Immune_All_Low.cellclass	gamma-delta T cells				
