@@ -1163,16 +1163,17 @@ Quantify10xData <- function(
       numeric_values <- suppressWarnings(as.numeric(gene_values))
       !is.na(numeric_values) & numeric_values > 0
     }
-    filtered_cells$.pct_positive_flag <- is_positive
+    filtered_cells$pct_positive_flag <- is_positive
 
     pct_metrics <- filtered_cells %>%
       dplyr::group_by(dplyr::across(dplyr::all_of(grouping_columns))) %>%
       dplyr::summarize(
-        !!target_field := 100 * mean(.data$.pct_positive_flag, na.rm = TRUE),
+        !!target_field := 100 * mean(.data[["pct_positive_flag"]], na.rm = TRUE),
         .groups = "drop"
       )
 
-    dplyr::left_join(all_groups, pct_metrics, by = grouping_columns)
+    dplyr::left_join(all_groups, pct_metrics, by = grouping_columns) %>%
+      dplyr::mutate(!!target_field := ifelse(is.na(.data[[target_field]]), 0, .data[[target_field]]))
   } else if (identical(quantification_type, "diversity")) {
     #diversity: rarefied Hill number q=2 at the shared TCR+ depth
     .ComputeRarefiedHillDiversity(

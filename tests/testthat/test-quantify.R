@@ -94,7 +94,7 @@ library(testthat)
   )
 }
 
-# Minimal metadata for QuantificationType (sum/score/pct_positive) and ScopeField
+# minimal metadata for QuantificationType (sum/score/pct_positive) and ScopeField
 .makeTypedQuantifyCellTable <- function() {
   tibble::tibble(
     sourceOutputFileId = rep(111L, 9),
@@ -191,6 +191,11 @@ test_that("Quantify10xData applies QuantificationType and ScopeField rules", {
   expect_equal(
     result$countsWide$CD8_PDCD1_pct[result$countsWide$cDNA_ID == 1001],
     100 * (2 / 3)
+  )
+  # groups with no matched cells get 0 (same as sum), not NA from left_join
+  expect_equal(
+    result$countsWide$CD8_PDCD1_pct[result$countsWide$cDNA_ID == 1002],
+    0
   )
 })
 
