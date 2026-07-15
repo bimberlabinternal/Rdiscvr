@@ -232,6 +232,39 @@ test_that("Quantify10xData applies QuantificationType and ScopeField rules", {
   )
 })
 
+test_that(".RunQuantifyMetricLoop handles empty cells and blank grouping", {
+  failures <- tibble::tibble(
+    specRow = integer(0),
+    outputFileId = integer(0),
+    field = character(0),
+    reason = character(0)
+  )
+  spec <- tibble::tibble(
+    GroupingVariable = "",
+    TargetField = "T_count",
+    SourceField = "CellType",
+    MatchValue = "T",
+    QuantificationType = "sum",
+    QuantificationSourceField = "",
+    QuantificationScoreType = "",
+    ScopeField = "",
+    ScopeMatchValue = "",
+    EffectorDifferentiationScoreField = "",
+    EffectorDifferentiationCutpointLow = "",
+    EffectorDifferentiationCutpointHigh = "",
+    SubsetPhenotypeOutputFieldName = "",
+    specRow = 1L
+  )
+
+  result <- Rdiscvr:::.RunQuantifyMetricLoop(
+    spec_table = spec,
+    cell_table = tibble::tibble(),
+    failures = failures
+  )
+  expect_equal(nrow(result$countsWide), 0)
+  expect_true(any(result$failures$field == "GroupingVariable"))
+})
+
 test_that("Quantify10xData records SourceField failures and continues", {
   cell_table <- tibble::tibble(
     sourceOutputFileId = 111L,

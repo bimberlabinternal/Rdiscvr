@@ -385,10 +385,13 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   grouping_columns <- trimws(strsplit(as.character(grouping_specs[[1]]), "|", fixed = TRUE)[[1]])
   grouping_columns <- grouping_columns[nzchar(grouping_columns)]
 
-  if (nrow(cell_table) > 0 && length(grouping_columns)) {
+  if (!length(grouping_columns)) {
+    # No grouping columns: keep the empty scaffold from initialization.
+    counts_wide <- tibble::tibble()
+  } else if (nrow(cell_table) > 0) {
     counts_wide <- cell_table %>%
       dplyr::distinct(dplyr::across(dplyr::all_of(grouping_columns)))
-  } else if (length(grouping_columns)) {
+  } else {
     empty_group_table <- as.data.frame(
       stats::setNames(
         rep(list(integer(0)), length(grouping_columns)),
