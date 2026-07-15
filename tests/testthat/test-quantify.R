@@ -108,12 +108,33 @@ library(testthat)
 }
 
 .mockPrepareLaneCellTable <- function(cell_table) {
-  function(output_file_id, spec_table, classify_tnk) {
+  function(
+    output_file_id,
+    spec_table,
+    classify_tnk,
+    apply_role_map = FALSE,
+    role_map = NULL,
+    rhesus_spec_table = NULL
+  ) {
     lane <- cell_table[cell_table$sourceOutputFileId == output_file_id, , drop = FALSE]
     lane$sourceOutputFileId <- output_file_id
     lane <- tibble::as_tibble(lane)
 
-    if (classify_tnk) {
+    detected_species <- if ("celltypist.Immune_All_High.cellclass" %in% names(lane)) {
+      "human"
+    } else if ("RIRA_Immune_v2.cellclass" %in% names(lane)) {
+      "rhesus"
+    } else {
+      NULL
+    }
+
+    lane_apply_map <- isTRUE(apply_role_map) && identical(detected_species, "human")
+    if (lane_apply_map && !is.null(role_map) && nrow(role_map)) {
+      lane <- Rdiscvr:::.ApplyHumanToRhesusRoleMap(lane, role_map)
+    }
+
+    lane_classify_tnk <- isTRUE(classify_tnk) && identical(detected_species, "rhesus")
+    if (lane_classify_tnk) {
       override_result <- Rdiscvr:::.ApplyTcrTNKOverridesToCellTable(lane)
       lane <- override_result$cell_table
       failures <- override_result$failures
@@ -121,7 +142,11 @@ library(testthat)
       failures <- Rdiscvr:::.EmptyFailuresTibble()
     }
 
-    list(cell_table = lane, failures = failures)
+    list(
+      cell_table = lane,
+      failures = failures,
+      detected_species = detected_species
+    )
   }
 }
 
@@ -129,7 +154,12 @@ library(testthat)
   cell_table,
   spec,
   failure_log_file = tempfile(fileext = ".txt"),
-  classify_tnk = TRUE
+  classify_tnk = TRUE,
+  species = NULL,
+  coerceToRIRA = FALSE,
+  outputPrefix = NULL,
+  apply_role_map = coerceToRIRA,
+  role_map = if (apply_role_map) LoadQuantifyRoleMap() else NULL
 ) {
   with_mocked_bindings(
     `.PrepareLaneCellTable` = .mockPrepareLaneCellTable(cell_table),
@@ -139,7 +169,10 @@ library(testthat)
         outputFileIds = unique(cell_table$sourceOutputFileId),
         spec = spec,
         failureLogFile = failure_log_file,
-        classifyTNK = classify_tnk
+        classifyTNK = classify_tnk,
+        species = species,
+        coerceToRIRA = coerceToRIRA,
+        outputPrefix = outputPrefix
       )
     }
   )
@@ -323,11 +356,146 @@ test_that("EffectorDifferentiationScore cutpoints split Naive/MemoryLike/Effecto
   expect_equal(result$countsWide$TNK__CD4plus_T_Cells__Effector, 1L)
 })
 
+.makeHumanCellTypistCellTable <- function() {
+  tibble::tibble(
+    sourceOutputFileId = rep(222L, 12),
+    cDNA_ID = rep(2001L, 12),
+    `celltypist.Immune_All_High.cellclass` = c(
+      rep("T cells", 6), rep("B cells", 3), rep("Monocytes", 3)
+    ),
+    `celltypist.Immune_All_Low.cellclass` = c(
+      rep("Tcm/Naive helper T cells", 3),
+      rep("Tem/Temra cytotoxic T cells", 3),
+      rep("Naive B cells", 3),
+      rep("Classical monocytes", 3)
+    ),
+    Cytotoxicity_UCell = seq(0.1, 0.9, length.out = 12),
+    Interferon_Response_UCell = rep(0.4, 12),
+    TandNK_Activation2_UCell = rep(0.2, 12),
+    MHCII_UCell = rep(0.15, 12),
+    Proliferation_UCell = rep(0.05, 12),
+    Perforin_UCell = rep(0.12, 12),
+    Tcell_EffectorDifferentiation = c(1, 4, 8, 2, 5, 7, rep(4, 6)),
+    Is_TCR_Stimulated = rep(c(TRUE, FALSE), length.out = 12),
+    TRA = ifelse(seq_len(12) %% 3 == 0, NA_character_, paste0("TRA", seq_len(12))),
+    TRB = ifelse(seq_len(12) %% 3 == 0, NA_character_, paste0("TRB", seq_len(12))),
+    PDCD1 = as.integer(seq_len(12) %% 2 == 0),
+    KLRK1 = as.integer(seq_len(12) %% 3 == 0),
+    KLRB1 = 0L,
+    HAVCR2 = 0L,
+    TIGIT = 0L,
+    PRF1 = 0L,
+    GZMB = as.integer(seq_len(12) %% 4 == 0),
+    KLRC1 = 0L,
+    FCGR3 = 0L,
+    FCGR3A = 0L,
+    FOXP3 = 0L,
+    IL2RA = 0L
+  )
+}
+
+test_that("ApplyHumanToRhesusRoleMap prefers Low over High labels", {
+  cell_table <- tibble::tibble(
+    `celltypist.Immune_All_High.cellclass` = c("T cells", "B cells"),
+    `celltypist.Immune_All_Low.cellclass` = c(
+      "Tcm/Naive helper T cells",
+      "Naive B cells"
+    )
+  )
+  mapped <- Rdiscvr:::.ApplyHumanToRhesusRoleMap(cell_table, LoadQuantifyRoleMap())
+  expect_equal(mapped$`RIRA_Immune_v2.cellclass`, c("T_NK", "Bcell"))
+  expect_equal(mapped$`RIRA_TNK_v2.cellclass`[1], "CD4+ T Cells")
+  expect_equal(mapped$`RIRA_TNK_v2.cellclass`[2], "Unknown")
+})
+
+test_that("role map puts helper ILCs on TNK Other and NKT on CD8", {
+  role_map <- LoadQuantifyRoleMap()
+  cell_table <- tibble::tibble(
+    `celltypist.Immune_All_High.cellclass` = c(
+      "ILC", "ILC", "T cells", "ILC", "Cycling cells", "Cycling cells"
+    ),
+    `celltypist.Immune_All_Low.cellclass` = c(
+      "ILC1", "ILC2", "NKT cells", "NK cells",
+      "Cycling NK cells", "Cycling B cells"
+    )
+  )
+  mapped <- Rdiscvr:::.ApplyHumanToRhesusRoleMap(cell_table, role_map)
+
+  expect_equal(
+    mapped$`RIRA_Immune_v2.cellclass`,
+    c("T_NK", "T_NK", "T_NK", "T_NK", "T_NK", "Bcell")
+  )
+  expect_equal(
+    mapped$`RIRA_TNK_v2.cellclass`,
+    c("Other", "Other", "CD8+ T Cells", "NK Cells", "NK Cells", "Unknown")
+  )
+
+  ilc_roles <- role_map[
+    role_map$humanSourceField == "Immune_All_Low" &
+      role_map$humanLabel %in% c("ILC1", "ILC2", "ILC3", "ILC", "ILC precursor") &
+      role_map$rhesusTargetField == "RIRA_TNK_v2.cellclass",
+    ,
+    drop = FALSE
+  ]
+  expect_true(nrow(ilc_roles) >= 5)
+  expect_true(all(ilc_roles$rhesusLabel == "Other"))
+  expect_true(all(ilc_roles$lineageRole == "NK_ILC"))
+})
+
+test_that("human coerceToRIRA returns rhesus-shaped countsWideRIRA columns", {
+  human_path <- .humanImmuneQuantifySpecPath()
+  rhesus_path <- .rhesusQuantifySpecPath()
+  cell_table <- .makeHumanCellTypistCellTable()
+
+  result <- .quantifyWithMockedPrepare(
+    cell_table,
+    human_path,
+    species = "human",
+    coerceToRIRA = TRUE
+  )
+
+  expect_true("countsWideRIRA" %in% names(result))
+  expect_true(any(grepl("^ImmuneHigh__", names(result$countsWide))))
+  expect_true("Immune__T_NK" %in% names(result$countsWideRIRA))
+  expect_true("TNK__CD4plus_T_Cells" %in% names(result$countsWideRIRA))
+
+  expect_equal(nrow(result$failures), 0)
+
+  rhesus_only <- .quantifyWithMockedPrepare(
+    Rdiscvr:::.ApplyHumanToRhesusRoleMap(cell_table, LoadQuantifyRoleMap()),
+    rhesus_path,
+    species = "rhesus",
+    coerceToRIRA = FALSE
+  )
+  expect_equal(
+    sort(names(result$countsWideRIRA)),
+    sort(names(rhesus_only$countsWide))
+  )
+})
+
+test_that("outputPrefix writes native and coerced counts TSV files", {
+  cell_table <- .makeHumanCellTypistCellTable()
+  prefix <- tempfile()
+  on.exit(unlink(c(
+    paste0(prefix, "_counts_wide.tsv"),
+    paste0(prefix, "_counts_wide_coercedToRIRA.tsv")
+  )))
+  .quantifyWithMockedPrepare(
+    cell_table,
+    .humanImmuneQuantifySpecPath(),
+    species = "human",
+    coerceToRIRA = TRUE,
+    outputPrefix = prefix
+  )
+  expect_true(file.exists(paste0(prefix, "_counts_wide.tsv")))
+  expect_true(file.exists(paste0(prefix, "_counts_wide_coercedToRIRA.tsv")))
+})
+
 test_that("bundled quantify specs parse properly; rhesus RIRA panel quantifies", {
   rhesus_path <- .rhesusQuantifySpecPath()
   human_path <- .humanImmuneQuantifySpecPath()
-  expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(rhesus_path)$spec), 0)
-  expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(human_path)$spec), 0)
+  expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(rhesus_path)$spec), 150)
+  expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(human_path)$spec), 700)
 
   result <- .quantifyWithMockedPrepare(.makeRhesusRiraCellTable(), rhesus_path)
   expect_equal(nrow(result$failures), 0)

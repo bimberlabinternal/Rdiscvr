@@ -20,12 +20,22 @@
 #'   apply gamma-delta and NK overrides on \code{RIRA_TNK_v2.cellclass} within the
 #'   \code{T_NK} compartment. Soft-skips when RIRA fields are absent. Set
 #'   \code{FALSE} to quantify from downloaded RIRA labels only.
+#' @param species \code{"rhesus"} or \code{"human"}. When \code{NULL} (default),
+#'   inferred from lane metadata (\code{RIRA_Immune_v2.cellclass} vs
+#'   \code{celltypist.Immune_All_High.cellclass}).
+#' @param coerceToRIRA For human datasets, when \code{TRUE} (default), map CellTypist
+#'   High/Low labels to RIRA fields via
+#'   \code{quantify_human_to_rhesus_role_map.tsv} and also compute
+#'   \code{countsWideRIRA} using the bundled rhesus spec. Ignored for rhesus.
+#' @param outputPrefix Optional path prefix for writing wide count tables. When
+#'   set, writes \code{<prefix>_counts_wide.tsv} and, for human with
+#'   \code{coerceToRIRA = TRUE}, \code{<prefix>_counts_wide_coercedToRIRA.tsv}.
 #' @return A named list with:
 #' \describe{
-#'   \item{\code{countsWide}}{One row per distinct grouping key. Sum,
-#'     \code{pct_positive}, and \code{diversity} rules add one column per
-#'     \code{TargetField}. Score rules add \code{TargetField__p05},
-#'     \code{__median}, and \code{__p95}.}
+#'   \item{\code{countsWide}}{Native species spec output (RIRA for rhesus;
+#'     CellTypist High/Low for human).}
+#'   \item{\code{countsWideRIRA}}{Human-only RIRA-shaped table when
+#'     \code{coerceToRIRA = TRUE}; otherwise omitted.}
 #'   \item{\code{failures}}{Tibble of deferred validation and processing failures
 #'     (\code{specRow}, \code{outputFileId}, \code{field}, \code{reason}).}
 #'   \item{\code{laneSummary}}{Per-\code{sourceOutputFileId} ingest counts
@@ -58,8 +68,10 @@
 #' continues after failures; see \code{failures} and \code{failureLogFile}.
 #'
 #' Bundled-spec \code{TargetField} names use \code{__} between prefix segments.
-#' Regenerate the rhesus RIRA spec with \code{inst/scripts/generate_quantify_rhesus_spec.py}
-#' and the human immune spec with \code{inst/scripts/generate_quantify_human_spec.py}.
+#' Regenerate the rhesus RIRA spec with \code{inst/scripts/generate_quantify_rhesus_spec.py},
+#' the human immune spec with \code{inst/scripts/generate_quantify_human_spec.py},
+#' and the human→RIRA role map with
+#' \code{inst/scripts/generate_quantify_human_to_rhesus_role_map.py}.
 #' @export
 #' @importFrom dplyr %>% group_by summarize mutate filter distinct left_join bind_rows count pull across
 #' @importFrom tibble as_tibble tibble
@@ -73,7 +85,10 @@ Quantify10xData <- function(
     format(Sys.time(), "%Y%m%d_%H%M%S"),
     ".txt"
   ),
-  classifyTNK = TRUE
+  classifyTNK = TRUE,
+  species = NULL,
+  coerceToRIRA = TRUE,
+  outputPrefix = NULL
 ) {
   if (missing(outputFileIds) || !length(outputFileIds)) {
     stop("outputFileIds must be a non-empty integer vector")
@@ -89,23 +104,42 @@ Quantify10xData <- function(
   }
 
   failures <- .EmptyFailuresTibble()
-  #santize spec
   parsed_spec <- .ParseQuantifySpec(spec)
   failures <- dplyr::bind_rows(failures, parsed_spec$failures)
-  #sanitized spec table
   spec_table <- parsed_spec$spec
+
+  resolved_species <- if (!is.null(species) && length(species) == 1 && nzchar(species)) {
+    match.arg(tolower(species), c("rhesus", "human"))
+  } else {
+    NULL
+  }
+
+  apply_role_map <- isTRUE(coerceToRIRA) &&
+    (identical(resolved_species, "human") || is.null(resolved_species))
+  role_map <- if (apply_role_map) {
+    LoadQuantifyRoleMap()
+  } else {
+    NULL
+  }
+  rhesus_spec_table <- if (apply_role_map) {
+    .ParseQuantifySpec(.BundledRhesusQuantifySpecPath())$spec
+  } else {
+    NULL
+  }
 
   lane_tables <- list()
   lane_summary_pieces <- list()
 
-  #prepare each lane (download seurat, ensure scores/activation, classify TNK, extract cell table), and record failures when a lane fails
   for (output_file_id in output_file_ids) {
     lane_result <- tryCatch(
       {
         prepare_result <- .PrepareLaneCellTable(
           output_file_id = output_file_id,
           spec_table = spec_table,
-          classify_tnk = classifyTNK
+          classify_tnk = classifyTNK,
+          apply_role_map = apply_role_map,
+          role_map = role_map,
+          rhesus_spec_table = rhesus_spec_table
         )
         list(
           lane_table = prepare_result$cell_table,
@@ -113,7 +147,8 @@ Quantify10xData <- function(
             sourceOutputFileId = output_file_id,
             nCellsIngested = nrow(prepare_result$cell_table)
           ),
-          failures = prepare_result$failures
+          failures = prepare_result$failures,
+          detected_species = prepare_result$detected_species
         )
       },
       error = function(error_condition) {
@@ -128,22 +163,24 @@ Quantify10xData <- function(
             outputFileId = output_file_id,
             field = NA_character_,
             reason = paste0("download failed: ", conditionMessage(error_condition))
-          )
+          ),
+          detected_species = NULL
         )
       }
     )
 
     failures <- dplyr::bind_rows(failures, lane_result$failures)
     lane_summary_pieces[[length(lane_summary_pieces) + 1]] <- lane_result$lane_summary
+    if (!is.null(lane_result$detected_species) && is.null(resolved_species)) {
+      resolved_species <- lane_result$detected_species
+    }
     if (!is.null(lane_result$lane_table)) {
       lane_tables[[length(lane_tables) + 1]] <- lane_result$lane_table
     }
   }
 
-  #summarize how many cells were ingested from each output file
   lane_summary <- dplyr::bind_rows(lane_summary_pieces)
 
-  #stack all downloaded lane tables into one table with one row per cell
   if (length(lane_tables)) {
     cell_table <- tibble::as_tibble(do.call(rbind, lane_tables))
     rownames(cell_table) <- NULL
@@ -151,111 +188,32 @@ Quantify10xData <- function(
     cell_table <- tibble::tibble()
   }
 
-  #initialize the wide results table; metric columns are added one spec rule at a time
-  counts_wide <- tibble::tibble()
-  target_fields_seen <- character(0)
-
-  if (nrow(spec_table) > 0) {
-    grouping_specs <- unique(spec_table$GroupingVariable)
-    mixed_grouping <- length(grouping_specs) > 1
-    if (mixed_grouping) {
-      failures <- dplyr::bind_rows(
-        failures,
-        tibble::tibble(
-          specRow = NA_integer_,
-          outputFileId = NA_integer_,
-          field = "GroupingVariable",
-          reason = paste0(
-            "mixed grouping across spec rows: ",
-            paste(grouping_specs, collapse = "; ")
-          )
-        )
-      )
-    }
-
-    #metadata columns that define each group, shared across all spec rules
-    grouping_columns <- trimws(strsplit(as.character(grouping_specs[[1]]), "|", fixed = TRUE)[[1]])
-    grouping_columns <- grouping_columns[nzchar(grouping_columns)]
-    if (!mixed_grouping) {
-      if (nrow(cell_table) > 0 && length(grouping_columns)) {
-        #start the wide result with one row per distinct grouping key before joining metrics
-        counts_wide <- cell_table %>%
-          dplyr::distinct(dplyr::across(dplyr::all_of(grouping_columns)))
-      } else if (length(grouping_columns)) {
-        empty_group_table <- as.data.frame(
-          stats::setNames(
-            rep(list(integer(0)), length(grouping_columns)),
-            grouping_columns
-          ),
-          stringsAsFactors = FALSE
-        )
-        counts_wide <- tibble::as_tibble(empty_group_table)
-      }
-
-      #shared rarefaction depth across diversity rules so Hill numbers are comparable
-      rarefaction_level <- .ComputeSharedRarefactionLevel(
-        spec_table = spec_table,
-        cell_table = cell_table,
-        grouping_columns = grouping_columns
-      )
-
-      #iterate through each spec rule, validate columns, compute metrics, and join onto the wide table
-      for (spec_row_idx in seq_len(nrow(spec_table))) {
-        spec_row <- spec_table[spec_row_idx, , drop = FALSE]
-        original_spec_row <- as.integer(spec_row$specRow[[1]])
-        row_failures <- .ValidateSpecRow(spec_row, cell_table)
-        failures <- dplyr::bind_rows(failures, row_failures)
-        if (nrow(row_failures) > 0) {
-          next
-        }
-
-        target_field <- as.character(spec_row$TargetField[[1]])
-        quantification_type <- tolower(trimws(as.character(spec_row$QuantificationType[[1]])))
-        output_columns <- if (identical(quantification_type, "score")) {
-          .BuildScoreQuantileColumnNames(target_field)
-        } else {
-          target_field
-        }
-        duplicate_targets <- intersect(output_columns, target_fields_seen)
-        if (length(duplicate_targets)) {
-          failures <- dplyr::bind_rows(
-            failures,
-            tibble::tibble(
-              specRow = original_spec_row,
-              outputFileId = NA_integer_,
-              field = "TargetField",
-              reason = paste0(
-                "duplicate TargetField output column(s): ",
-                paste(duplicate_targets, collapse = ", ")
-              )
-            )
-          )
-          next
-        }
-
-        metrics_table <- .ComputeMetricsForSpecRow(
-          spec_row = spec_row,
-          cell_table = cell_table,
-          grouping_columns = grouping_columns,
-          rarefaction_level = rarefaction_level
-        )
-
-        if (nrow(counts_wide) == 0 && nrow(metrics_table) > 0) {
-          counts_wide <- metrics_table
-        } else if (nrow(metrics_table) > 0) {
-          counts_wide <- dplyr::left_join(
-            counts_wide,
-            metrics_table,
-            by = grouping_columns
-          )
-        }
-
-        target_fields_seen <- c(target_fields_seen, output_columns)
-      }
-    }
+  if (is.null(resolved_species) && nrow(cell_table) && isTRUE(coerceToRIRA)) {
+    resolved_species <- tryCatch(
+      .DetectQuantifySpeciesFromCellTable(cell_table),
+      error = function(error_condition) NULL
+    )
   }
 
-  #write any validation and processing failures to the failure log file
+  native_loop <- .RunQuantifyMetricLoop(
+    spec_table = spec_table,
+    cell_table = cell_table,
+    failures = failures
+  )
+  counts_wide <- native_loop$countsWide
+  failures <- native_loop$failures
+
+  counts_wide_rira <- NULL
+  if (identical(resolved_species, "human") && isTRUE(coerceToRIRA)) {
+    coerced_loop <- .RunQuantifyMetricLoop(
+      spec_table = rhesus_spec_table,
+      cell_table = cell_table,
+      failures = failures
+    )
+    counts_wide_rira <- coerced_loop$countsWide
+    failures <- coerced_loop$failures
+  }
+
   .WriteFailureLog(failures, failure_log_file = failureLogFile)
   if (nrow(failures) > 0) {
     warning(
@@ -265,14 +223,254 @@ Quantify10xData <- function(
     )
   }
 
-  list(
+  if (!is.null(outputPrefix) && nzchar(outputPrefix)) {
+    .WriteQuantifyCountsTsv(
+      counts_wide,
+      paste0(outputPrefix, "_counts_wide.tsv")
+    )
+    if (!is.null(counts_wide_rira)) {
+      .WriteQuantifyCountsTsv(
+        counts_wide_rira,
+        paste0(outputPrefix, "_counts_wide_coercedToRIRA.tsv")
+      )
+    }
+  }
+
+  result <- list(
     countsWide = counts_wide,
     failures = failures,
     laneSummary = lane_summary
   )
+  if (!is.null(counts_wide_rira)) {
+    result$countsWideRIRA <- counts_wide_rira
+  }
+  result
 }
 
 ## Helper Functions ##
+
+#' @title LoadQuantifyRoleMap
+#' @description Load the bundled human CellTypist → RIRA role map used by
+#'   \code{Quantify10xData(coerceToRIRA = TRUE)}.
+#' @param mapFile Optional path to a role-map TSV. Defaults to the bundled
+#'   \code{quantify_human_to_rhesus_role_map.tsv}.
+#' @return A data.frame with columns \code{humanSourceField}, \code{humanLabel},
+#'   \code{rhesusTargetField}, \code{rhesusLabel}, and \code{lineageRole}.
+#' @export
+LoadQuantifyRoleMap <- function(mapFile = NULL) {
+  if (is.null(mapFile)) {
+    mapFile <- system.file(
+      "extdata",
+      "quantify_human_to_rhesus_role_map.tsv",
+      package = "Rdiscvr"
+    )
+  }
+  if (!file.exists(mapFile)) {
+    stop("role map file does not exist: ", mapFile)
+  }
+  utils::read.delim(
+    mapFile,
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+}
+
+.BundledRhesusQuantifySpecPath <- function() {
+  system.file("extdata", "quantify_rhesus_spec.tsv", package = "Rdiscvr")
+}
+
+.DetectQuantifySpeciesFromCellTable <- function(cell_table) {
+  if ("RIRA_Immune_v2.cellclass" %in% names(cell_table)) {
+    return("rhesus")
+  }
+  if ("celltypist.Immune_All_High.cellclass" %in% names(cell_table)) {
+    return("human")
+  }
+  stop("Cannot auto-detect quantify species from cell table metadata")
+}
+
+.DetectQuantifySpeciesFromSeurat <- function(seurat_obj) {
+  meta_cols <- names(seurat_obj@meta.data)
+  if ("RIRA_Immune_v2.cellclass" %in% meta_cols) {
+    return("rhesus")
+  }
+  if ("celltypist.Immune_All_High.cellclass" %in% meta_cols) {
+    return("human")
+  }
+  NULL
+}
+
+.ApplyHumanToRhesusRoleMap <- function(cell_table, role_map) {
+  high_field <- "celltypist.Immune_All_High.cellclass"
+  low_field <- "celltypist.Immune_All_Low.cellclass"
+
+  if (!high_field %in% names(cell_table) && !low_field %in% names(cell_table)) {
+    return(cell_table)
+  }
+
+  low_values <- if (low_field %in% names(cell_table)) {
+    as.character(cell_table[[low_field]])
+  } else {
+    rep(NA_character_, nrow(cell_table))
+  }
+  high_values <- if (high_field %in% names(cell_table)) {
+    as.character(cell_table[[high_field]])
+  } else {
+    rep(NA_character_, nrow(cell_table))
+  }
+
+  for (target_field in unique(role_map$rhesusTargetField)) {
+    low_rows <- role_map[
+      role_map$humanSourceField == "Immune_All_Low" &
+        role_map$rhesusTargetField == target_field,
+      ,
+      drop = FALSE
+    ]
+    high_rows <- role_map[
+      role_map$humanSourceField == "Immune_All_High" &
+        role_map$rhesusTargetField == target_field,
+      ,
+      drop = FALSE
+    ]
+    low_lookup <- stats::setNames(low_rows$rhesusLabel, low_rows$humanLabel)
+    high_lookup <- stats::setNames(high_rows$rhesusLabel, high_rows$humanLabel)
+
+    mapped <- unname(low_lookup[low_values])
+    use_high <- is.na(mapped) | !nzchar(mapped)
+    if (any(use_high)) {
+      mapped[use_high] <- unname(high_lookup[high_values[use_high]])
+    }
+    mapped[is.na(mapped) | !nzchar(mapped)] <- "Unknown"
+    cell_table[[target_field]] <- mapped
+  }
+
+  cell_table
+}
+
+.ApplyHumanToRhesusRoleMapToSeurat <- function(seurat_obj, role_map) {
+  cell_table <- tibble::as_tibble(seurat_obj@meta.data)
+  mapped <- .ApplyHumanToRhesusRoleMap(cell_table, role_map)
+  for (target_field in unique(role_map$rhesusTargetField)) {
+    seurat_obj[[target_field]] <- mapped[[target_field]]
+  }
+  seurat_obj
+}
+
+.RunQuantifyMetricLoop <- function(spec_table, cell_table, failures) {
+  counts_wide <- tibble::tibble()
+  target_fields_seen <- character(0)
+
+  if (nrow(spec_table) == 0) {
+    return(list(countsWide = counts_wide, failures = failures))
+  }
+
+  grouping_specs <- unique(spec_table$GroupingVariable)
+  mixed_grouping <- length(grouping_specs) > 1
+  if (mixed_grouping) {
+    failures <- dplyr::bind_rows(
+      failures,
+      tibble::tibble(
+        specRow = NA_integer_,
+        outputFileId = NA_integer_,
+        field = "GroupingVariable",
+        reason = paste0(
+          "mixed grouping across spec rows: ",
+          paste(grouping_specs, collapse = "; ")
+        )
+      )
+    )
+    return(list(countsWide = counts_wide, failures = failures))
+  }
+
+  grouping_columns <- trimws(strsplit(as.character(grouping_specs[[1]]), "|", fixed = TRUE)[[1]])
+  grouping_columns <- grouping_columns[nzchar(grouping_columns)]
+
+  if (nrow(cell_table) > 0 && length(grouping_columns)) {
+    counts_wide <- cell_table %>%
+      dplyr::distinct(dplyr::across(dplyr::all_of(grouping_columns)))
+  } else if (length(grouping_columns)) {
+    empty_group_table <- as.data.frame(
+      stats::setNames(
+        rep(list(integer(0)), length(grouping_columns)),
+        grouping_columns
+      ),
+      stringsAsFactors = FALSE
+    )
+    counts_wide <- tibble::as_tibble(empty_group_table)
+  }
+
+  rarefaction_level <- .ComputeSharedRarefactionLevel(
+    spec_table = spec_table,
+    cell_table = cell_table,
+    grouping_columns = grouping_columns
+  )
+
+  for (spec_row_idx in seq_len(nrow(spec_table))) {
+    spec_row <- spec_table[spec_row_idx, , drop = FALSE]
+    original_spec_row <- as.integer(spec_row$specRow[[1]])
+    row_failures <- .ValidateSpecRow(spec_row, cell_table)
+    failures <- dplyr::bind_rows(failures, row_failures)
+    if (nrow(row_failures) > 0) {
+      next
+    }
+
+    target_field <- as.character(spec_row$TargetField[[1]])
+    quantification_type <- tolower(trimws(as.character(spec_row$QuantificationType[[1]])))
+    output_columns <- if (identical(quantification_type, "score")) {
+      .BuildScoreQuantileColumnNames(target_field)
+    } else {
+      target_field
+    }
+    duplicate_targets <- intersect(output_columns, target_fields_seen)
+    if (length(duplicate_targets)) {
+      failures <- dplyr::bind_rows(
+        failures,
+        tibble::tibble(
+          specRow = original_spec_row,
+          outputFileId = NA_integer_,
+          field = "TargetField",
+          reason = paste0(
+            "duplicate TargetField output column(s): ",
+            paste(duplicate_targets, collapse = ", ")
+          )
+        )
+      )
+      next
+    }
+
+    metrics_table <- .ComputeMetricsForSpecRow(
+      spec_row = spec_row,
+      cell_table = cell_table,
+      grouping_columns = grouping_columns,
+      rarefaction_level = rarefaction_level
+    )
+
+    if (nrow(counts_wide) == 0 && nrow(metrics_table) > 0) {
+      counts_wide <- metrics_table
+    } else if (nrow(metrics_table) > 0) {
+      counts_wide <- dplyr::left_join(
+        counts_wide,
+        metrics_table,
+        by = grouping_columns
+      )
+    }
+
+    target_fields_seen <- c(target_fields_seen, output_columns)
+  }
+
+  list(countsWide = counts_wide, failures = failures)
+}
+
+.WriteQuantifyCountsTsv <- function(counts_wide, output_path) {
+  utils::write.table(
+    counts_wide,
+    file = output_path,
+    sep = "\t",
+    row.names = FALSE,
+    quote = FALSE
+  )
+  invisible(output_path)
+}
 
 # register Quantify pct-positive gene panels into RIRA's gene-set registry
 .RegisterQuantifyGeneSets <- function() {
@@ -354,21 +552,44 @@ Quantify10xData <- function(
   readRDS(out_file)
 }
 
-# download seurat, ensure scores/activation, classify TNK, extract lightweight cell table
-.PrepareLaneCellTable <- function(output_file_id, spec_table, classify_tnk) {
+# download seurat, ensure scores/activation, optional human→RIRA map, classify TNK, extract cell table
+.PrepareLaneCellTable <- function(
+  output_file_id,
+  spec_table,
+  classify_tnk,
+  apply_role_map = FALSE,
+  role_map = NULL,
+  rhesus_spec_table = NULL
+) {
   seurat_obj <- .DownloadSeuratPerLane(output_file_id)
+  detected_species <- .DetectQuantifySpeciesFromSeurat(seurat_obj)
   ensure_result <- .EnsureUCellAndActivationMetadata(seurat_obj, spec_table)
   seurat_obj <- ensure_result$seurat_obj
   failures <- ensure_result$failures
 
-  if (classify_tnk) {
+  lane_apply_map <- isTRUE(apply_role_map) && identical(detected_species, "human")
+  if (lane_apply_map && !is.null(role_map) && nrow(role_map)) {
+    seurat_obj <- .ApplyHumanToRhesusRoleMapToSeurat(seurat_obj, role_map)
+  }
+
+  lane_classify_tnk <- isTRUE(classify_tnk) && identical(detected_species, "rhesus")
+  if (lane_classify_tnk) {
     classify_result <- .ClassifyTNKWithTcrOverrides(seurat_obj)
     seurat_obj <- classify_result$seurat_obj
     failures <- dplyr::bind_rows(failures, classify_result$failures)
   }
 
-  cell_table <- .BuildCellTableFromSeurat(seurat_obj, output_file_id, spec_table)
-  list(cell_table = cell_table, failures = failures)
+  combined_spec <- spec_table
+  if (lane_apply_map && !is.null(rhesus_spec_table)) {
+    combined_spec <- dplyr::bind_rows(combined_spec, rhesus_spec_table)
+  }
+
+  cell_table <- .BuildCellTableFromSeurat(seurat_obj, output_file_id, combined_spec)
+  list(
+    cell_table = cell_table,
+    failures = failures,
+    detected_species = detected_species
+  )
 }
 
 .UCellColumnNeedsComputation <- function(seurat_obj, column_name) {

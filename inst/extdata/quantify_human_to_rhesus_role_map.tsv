@@ -1,0 +1,188 @@
+humanSourceField	humanLabel	rhesusTargetField	rhesusLabel	lineageRole
+Immune_All_High	B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_High	B-cell lineage	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_High	Cycling cells	RIRA_Immune_v2.cellclass	T_NK	T
+Immune_All_High	DC	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	DC precursor	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	Double-negative thymocytes	RIRA_Immune_v2.cellclass	T_NK	T
+Immune_All_High	Double-positive thymocytes	RIRA_Immune_v2.cellclass	T_NK	T
+Immune_All_High	ETP	RIRA_Immune_v2.cellclass	T_NK	T
+Immune_All_High	Early MK	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	Endothelial cells	RIRA_Immune_v2.cellclass	Stromal	Stromal
+Immune_All_High	Epithelial cells	RIRA_Immune_v2.cellclass	Epithelial	Epithelial
+Immune_All_High	Erythrocytes	RIRA_Immune_v2.cellclass	Erythrocyte	Erythrocyte
+Immune_All_High	Erythroid	RIRA_Immune_v2.cellclass	Erythrocyte	Erythrocyte
+Immune_All_High	Fibroblasts	RIRA_Immune_v2.cellclass	Stromal	Stromal
+Immune_All_High	Granulocytes	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	HSC/MPP	RIRA_Immune_v2.cellclass	Non-Immune	HSC
+Immune_All_High	ILC	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_High	ILC precursor	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_High	MNP	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	Macrophages	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	Mast cells	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	Megakaryocyte precursor	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	Megakaryocytes/platelets	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	Mono-mac	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	Monocyte precursor	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	Monocytes	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	Myelocytes	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	Plasma cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_High	Promyelocytes	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	T cells	RIRA_Immune_v2.cellclass	T_NK	T
+Immune_All_High	pDC	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_High	pDC precursor	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Age-associated B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Alveolar macrophages	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Alveolar macrophages	RIRA_Myeloid_v3.coarseclass	Alv. mac.	Myeloid_APC
+Immune_All_Low	B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	CD16+ NK cells	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_Low	CD16+ NK cells	RIRA_TNK_v2.cellclass	NK Cells	NK_ILC
+Immune_All_Low	CD16- NK cells	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_Low	CD16- NK cells	RIRA_TNK_v2.cellclass	NK Cells	NK_ILC
+Immune_All_Low	CD8a/a	RIRA_Immune_v2.cellclass	T_NK	CD8_like
+Immune_All_Low	CD8a/a	RIRA_TNK_v2.cellclass	CD8+ T Cells	CD8_like
+Immune_All_Low	CD8a/b(entry)	RIRA_Immune_v2.cellclass	T_NK	CD8_like
+Immune_All_Low	CD8a/b(entry)	RIRA_TNK_v2.cellclass	CD8+ T Cells	CD8_like
+Immune_All_Low	CMP	RIRA_Immune_v2.cellclass	Non-Immune	HSC
+Immune_All_Low	CRTAM+ gamma-delta T cells	RIRA_Immune_v2.cellclass	T_NK	GD
+Immune_All_Low	CRTAM+ gamma-delta T cells	RIRA_TNK_v2.cellclass	Gamma/Delta Cells	GD
+Immune_All_Low	Classical monocytes	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Classical monocytes	RIRA_Myeloid_v3.coarseclass	Monocytes	Myeloid_APC
+Immune_All_Low	Classical monocytes	RIRA_Myeloid_v3.cellclass	CD14+ Monocytes	Myeloid_APC
+Immune_All_Low	Cycling B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Cycling DCs	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Cycling DCs	RIRA_Myeloid_v3.coarseclass	DC	Myeloid_APC
+Immune_All_Low	Cycling NK cells	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_Low	Cycling NK cells	RIRA_TNK_v2.cellclass	NK Cells	NK_ILC
+Immune_All_Low	Cycling T cells	RIRA_Immune_v2.cellclass	T_NK	T
+Immune_All_Low	Cycling T cells	RIRA_TNK_v2.cellclass	Other	T
+Immune_All_Low	Cycling gamma-delta T cells	RIRA_Immune_v2.cellclass	T_NK	GD
+Immune_All_Low	Cycling gamma-delta T cells	RIRA_TNK_v2.cellclass	Gamma/Delta Cells	GD
+Immune_All_Low	Cycling monocytes	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Cycling monocytes	RIRA_Myeloid_v3.coarseclass	Monocytes	Myeloid_APC
+Immune_All_Low	DC	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	DC	RIRA_Myeloid_v3.coarseclass	DC	Myeloid_APC
+Immune_All_Low	DC precursor	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	DC1	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	DC1	RIRA_Myeloid_v3.coarseclass	DC	Myeloid_APC
+Immune_All_Low	DC2	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	DC2	RIRA_Myeloid_v3.coarseclass	DC	Myeloid_APC
+Immune_All_Low	DC3	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	DC3	RIRA_Myeloid_v3.coarseclass	DC	Myeloid_APC
+Immune_All_Low	Double-negative thymocytes	RIRA_Immune_v2.cellclass	T_NK	T
+Immune_All_Low	Double-positive thymocytes	RIRA_Immune_v2.cellclass	T_NK	T
+Immune_All_Low	ELP	RIRA_Immune_v2.cellclass	Non-Immune	HSC
+Immune_All_Low	ETP	RIRA_Immune_v2.cellclass	T_NK	T
+Immune_All_Low	Early MK	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Early erythroid	RIRA_Immune_v2.cellclass	Erythrocyte	Erythrocyte
+Immune_All_Low	Early lymphoid/T lymphoid	RIRA_Immune_v2.cellclass	Non-Immune	HSC
+Immune_All_Low	Endothelial cells	RIRA_Immune_v2.cellclass	Stromal	Stromal
+Immune_All_Low	Epithelial cells	RIRA_Immune_v2.cellclass	Epithelial	Epithelial
+Immune_All_Low	Erythrocytes	RIRA_Immune_v2.cellclass	Erythrocyte	Erythrocyte
+Immune_All_Low	Erythrophagocytic macrophages	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Erythrophagocytic macrophages	RIRA_Myeloid_v3.coarseclass	Macrophages	Myeloid_APC
+Immune_All_Low	Fibroblasts	RIRA_Immune_v2.cellclass	Stromal	Stromal
+Immune_All_Low	Follicular B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Follicular helper T cells	RIRA_Immune_v2.cellclass	T_NK	CD4_like
+Immune_All_Low	Follicular helper T cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	CD4_like
+Immune_All_Low	GMP	RIRA_Immune_v2.cellclass	Non-Immune	HSC
+Immune_All_Low	Germinal center B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Granulocytes	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	HSC/MPP	RIRA_Immune_v2.cellclass	Non-Immune	HSC
+Immune_All_Low	Hofbauer cells	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Hofbauer cells	RIRA_Myeloid_v3.coarseclass	Macrophages	Myeloid_APC
+Immune_All_Low	ILC	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_Low	ILC	RIRA_TNK_v2.cellclass	Other	NK_ILC
+Immune_All_Low	ILC precursor	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_Low	ILC precursor	RIRA_TNK_v2.cellclass	Other	NK_ILC
+Immune_All_Low	ILC1	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_Low	ILC1	RIRA_TNK_v2.cellclass	Other	NK_ILC
+Immune_All_Low	ILC2	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_Low	ILC2	RIRA_TNK_v2.cellclass	Other	NK_ILC
+Immune_All_Low	ILC3	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_Low	ILC3	RIRA_TNK_v2.cellclass	Other	NK_ILC
+Immune_All_Low	Intermediate macrophages	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Intermediate macrophages	RIRA_Myeloid_v3.coarseclass	Macrophages	Myeloid_APC
+Immune_All_Low	Intestinal macrophages	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Intestinal macrophages	RIRA_Myeloid_v3.coarseclass	Macrophages	Myeloid_APC
+Immune_All_Low	Kidney-resident macrophages	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Kidney-resident macrophages	RIRA_Myeloid_v3.coarseclass	Macrophages	Myeloid_APC
+Immune_All_Low	Kupffer cells	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Kupffer cells	RIRA_Myeloid_v3.coarseclass	Macrophages	Myeloid_APC
+Immune_All_Low	Large pre-B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Late erythroid	RIRA_Immune_v2.cellclass	Erythrocyte	Erythrocyte
+Immune_All_Low	MAIT cells	RIRA_Immune_v2.cellclass	T_NK	CD8_like
+Immune_All_Low	MAIT cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	CD8_like
+Immune_All_Low	MEMP	RIRA_Immune_v2.cellclass	Non-Immune	HSC
+Immune_All_Low	MNP	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Macrophages	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Macrophages	RIRA_Myeloid_v3.coarseclass	Macrophages	Myeloid_APC
+Immune_All_Low	Mast cells	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Megakaryocyte precursor	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Megakaryocyte-erythroid-mast cell progenitor	RIRA_Immune_v2.cellclass	Non-Immune	HSC
+Immune_All_Low	Megakaryocytes/platelets	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Memory B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Memory CD4+ cytotoxic T cells	RIRA_Immune_v2.cellclass	T_NK	CD4_like
+Immune_All_Low	Memory CD4+ cytotoxic T cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	CD4_like
+Immune_All_Low	Mid erythroid	RIRA_Immune_v2.cellclass	Erythrocyte	Erythrocyte
+Immune_All_Low	Migratory DCs	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Migratory DCs	RIRA_Myeloid_v3.coarseclass	DC	Myeloid_APC
+Immune_All_Low	Mono-mac	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Monocyte precursor	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Monocytes	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Monocytes	RIRA_Myeloid_v3.coarseclass	Monocytes	Myeloid_APC
+Immune_All_Low	Myelocytes	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Myelocytes	RIRA_Myeloid_v3.coarseclass	Myelocytes	Myeloid_APC
+Immune_All_Low	NK cells	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_Low	NK cells	RIRA_TNK_v2.cellclass	NK Cells	NK_ILC
+Immune_All_Low	NKT cells	RIRA_Immune_v2.cellclass	T_NK	CD8_like
+Immune_All_Low	NKT cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	CD8_like
+Immune_All_Low	Naive B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Neutrophil-myeloid progenitor	RIRA_Immune_v2.cellclass	Non-Immune	HSC
+Immune_All_Low	Neutrophils	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Neutrophils	RIRA_Myeloid_v3.coarseclass	Macrophages	Myeloid_APC
+Immune_All_Low	Non-classical monocytes	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Non-classical monocytes	RIRA_Myeloid_v3.coarseclass	Monocytes	Myeloid_APC
+Immune_All_Low	Non-classical monocytes	RIRA_Myeloid_v3.cellclass	CD16+ Monocytes	Myeloid_APC
+Immune_All_Low	Plasma cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Plasmablasts	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Pre-pro-B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Pro-B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Proliferative germinal center B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Promyelocytes	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Promyelocytes	RIRA_Myeloid_v3.coarseclass	Promyelocytes	Myeloid_APC
+Immune_All_Low	Regulatory T cells	RIRA_Immune_v2.cellclass	T_NK	CD4_like
+Immune_All_Low	Regulatory T cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	CD4_like
+Immune_All_Low	Small pre-B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	T(agonist)	RIRA_Immune_v2.cellclass	T_NK	CD4_like
+Immune_All_Low	T(agonist)	RIRA_TNK_v2.cellclass	CD4+ T Cells	CD4_like
+Immune_All_Low	Tcm/Naive cytotoxic T cells	RIRA_Immune_v2.cellclass	T_NK	CD8_like
+Immune_All_Low	Tcm/Naive cytotoxic T cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	CD8_like
+Immune_All_Low	Tcm/Naive helper T cells	RIRA_Immune_v2.cellclass	T_NK	CD4_like
+Immune_All_Low	Tcm/Naive helper T cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	CD4_like
+Immune_All_Low	Tem/Effector helper T cells	RIRA_Immune_v2.cellclass	T_NK	CD4_like
+Immune_All_Low	Tem/Effector helper T cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	CD4_like
+Immune_All_Low	Tem/Effector helper T cells PD1+	RIRA_Immune_v2.cellclass	T_NK	CD4_like
+Immune_All_Low	Tem/Effector helper T cells PD1+	RIRA_TNK_v2.cellclass	CD4+ T Cells	CD4_like
+Immune_All_Low	Tem/Temra cytotoxic T cells	RIRA_Immune_v2.cellclass	T_NK	CD8_like
+Immune_All_Low	Tem/Temra cytotoxic T cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	CD8_like
+Immune_All_Low	Tem/Trm cytotoxic T cells	RIRA_Immune_v2.cellclass	T_NK	CD8_like
+Immune_All_Low	Tem/Trm cytotoxic T cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	CD8_like
+Immune_All_Low	Transitional B cells	RIRA_Immune_v2.cellclass	Bcell	B
+Immune_All_Low	Transitional DC	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	Transitional DC	RIRA_Myeloid_v3.coarseclass	DC	Myeloid_APC
+Immune_All_Low	Transitional NK	RIRA_Immune_v2.cellclass	T_NK	NK_ILC
+Immune_All_Low	Transitional NK	RIRA_TNK_v2.cellclass	NK Cells	NK_ILC
+Immune_All_Low	Treg(diff)	RIRA_Immune_v2.cellclass	T_NK	CD4_like
+Immune_All_Low	Treg(diff)	RIRA_TNK_v2.cellclass	CD4+ T Cells	CD4_like
+Immune_All_Low	Trm cytotoxic T cells	RIRA_Immune_v2.cellclass	T_NK	CD8_like
+Immune_All_Low	Trm cytotoxic T cells	RIRA_TNK_v2.cellclass	CD8+ T Cells	CD8_like
+Immune_All_Low	Type 1 helper T cells	RIRA_Immune_v2.cellclass	T_NK	CD4_like
+Immune_All_Low	Type 1 helper T cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	CD4_like
+Immune_All_Low	Type 17 helper T cells	RIRA_Immune_v2.cellclass	T_NK	CD4_like
+Immune_All_Low	Type 17 helper T cells	RIRA_TNK_v2.cellclass	CD4+ T Cells	CD4_like
+Immune_All_Low	gamma-delta T cells	RIRA_Immune_v2.cellclass	T_NK	GD
+Immune_All_Low	gamma-delta T cells	RIRA_TNK_v2.cellclass	Gamma/Delta Cells	GD
+Immune_All_Low	pDC	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC
+Immune_All_Low	pDC	RIRA_Myeloid_v3.coarseclass	pDC	Myeloid_APC
+Immune_All_Low	pDC precursor	RIRA_Immune_v2.cellclass	Myeloid	Myeloid_APC

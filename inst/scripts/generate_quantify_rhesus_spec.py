@@ -24,11 +24,11 @@ import warnings
 from pathlib import Path
 
 GROUPING = "cDNA_ID"
-DELIM = "__"
+DELIMITER = "__"
 IMMUNE_FIELD = "RIRA_Immune_v2.cellclass"
-TNK_FIELD = "RIRA_TNK_v2.cellclass"
-MYE_FINE = "RIRA_Myeloid_v3.cellclass"
-MYE_COARSE = "RIRA_Myeloid_v3.coarseclass"
+T_AND_NK_FIELD = "RIRA_TNK_v2.cellclass"
+MYELOID_FINE_FIELD = "RIRA_Myeloid_v3.cellclass"
+MYELOID_COARSE_FIELD = "RIRA_Myeloid_v3.coarseclass"
 SCOPE_IMMUNE = IMMUNE_FIELD
 EDS_METADATA_FIELD = "Tcell_EffectorDifferentiation"
 EDS_CUTPOINT_LOW = "2"
@@ -40,7 +40,7 @@ ACTIVATION_MATCH_VALUE = "TRUE"
 
 # Post-pkl labels written by RIRA Classify_* functions (see CellTypist.R).
 IMMUNE_DERIVED = ["Non-Immune", "Unknown"]
-TNK_DERIVED = ["Other"]
+T_AND_NK_DERIVED = ["Other"]
 PIPELINE_META = ["Unassigned", "Ambiguous", "Unknown"]
 
 MONOCYTE_FINE = {"CD14+ Monocytes", "CD16+ Monocytes", "Inflammatory Monocytes"}
@@ -56,7 +56,7 @@ HARDCODED_IMMUNE = [
     "Non-Immune",
     "Unknown",
 ]
-HARDCODED_TNK = [
+HARDCODED_T_AND_NK = [
     "CD4+ T Cells",
     "CD8+ T Cells",
     "Gamma/Delta Cells",
@@ -66,7 +66,7 @@ HARDCODED_TNK = [
     "Ambiguous",
     "Unknown",
 ]
-HARDCODED_MYE_FINE = [
+HARDCODED_MYELOID_FINE = [
     "Alv. mac.",
     "CD14+ Monocytes",
     "CD16+ Monocytes",
@@ -82,7 +82,7 @@ HARDCODED_MYE_FINE = [
     "Ambiguous",
     "Unknown",
 ]
-HARDCODED_MYE_COARSE = [
+HARDCODED_MYELOID_COARSE = [
     "Alv. mac.",
     "Ambiguous",
     "DC",
@@ -96,7 +96,7 @@ HARDCODED_MYE_COARSE = [
     "Unknown",
 ]
 
-TNK_SCORE_MODULES = [
+T_AND_NK_SCORE_MODULES = [
     (CYTOTOXICITY_SCORE_SUFFIX, "Cytotoxicity_UCell"),
     (INTERFERON_RESPONSE_SCORE_SUFFIX, "Interferon_Response_UCell"),
     ("CytokineScore", "TandNK_Activation2_UCell"),
@@ -186,7 +186,7 @@ def sanitize(label: str) -> str:
 
 
 def join_target(*parts: str) -> str:
-    return DELIM.join(parts)
+    return DELIMITER.join(parts)
 
 
 def spec_row(
@@ -232,25 +232,25 @@ def pct_positive_classes_for_gene(gene: str) -> list[str]:
 
 def build_spec_rows(
     immune_classes: list[str],
-    tnk_classes: list[str],
+    t_and_nk_classes: list[str],
     myeloid_fine: list[str],
     myeloid_coarse: list[str],
 ) -> list[str]:
     rows = [SPEC_HEADER]
 
     # Block 1 — Immune (no scope): all sum rows for RIRA_Immune_v2.cellclass
-    for cls in immune_classes:
+    for cell_class in immune_classes:
         rows.append(
-            spec_row(join_target("Immune", sanitize(cls)), IMMUNE_FIELD, cls, "sum")
+            spec_row(join_target("Immune", sanitize(cell_class)), IMMUNE_FIELD, cell_class, "sum")
         )
 
     # Block 2 — TNK (scoped T_NK): sums
-    for cls in tnk_classes:
+    for cell_class in t_and_nk_classes:
         rows.append(
             spec_row(
-                join_target("TNK", sanitize(cls)),
-                TNK_FIELD,
-                cls,
+                join_target("TNK", sanitize(cell_class)),
+                T_AND_NK_FIELD,
+                cell_class,
                 "sum",
                 scope_field=SCOPE_IMMUNE,
                 scope_match="T_NK",
@@ -258,13 +258,13 @@ def build_spec_rows(
         )
 
     # Block 2a — TNK score modules (scoped T_NK)
-    for score_suffix, score_field in TNK_SCORE_MODULES:
-        for cls in tnk_classes:
+    for score_suffix, score_field in T_AND_NK_SCORE_MODULES:
+        for cell_class in t_and_nk_classes:
             rows.append(
                 spec_row(
-                    join_target("TNK", sanitize(cls), score_suffix),
-                    TNK_FIELD,
-                    cls,
+                    join_target("TNK", sanitize(cell_class), score_suffix),
+                    T_AND_NK_FIELD,
+                    cell_class,
                     "score",
                     score_field,
                     "quantiles",
@@ -274,13 +274,13 @@ def build_spec_rows(
             )
 
     # Block 2b — CD4/CD8 EDS phenotypes (scoped T_NK)
-    for cls in EDS_T_CELL_CLASSES:
+    for cell_class in EDS_T_CELL_CLASSES:
         for phenotype in EDS_PHENOTYPES:
             rows.append(
                 spec_row(
-                    join_target("TNK", sanitize(cls), phenotype),
-                    TNK_FIELD,
-                    cls,
+                    join_target("TNK", sanitize(cell_class), phenotype),
+                    T_AND_NK_FIELD,
+                    cell_class,
                     "sum",
                     scope_field=SCOPE_IMMUNE,
                     scope_match="T_NK",
@@ -292,12 +292,12 @@ def build_spec_rows(
             )
 
     # Block 2c — CD4/CD8 EDS score quantiles (scoped T_NK)
-    for cls in EDS_T_CELL_CLASSES:
+    for cell_class in EDS_T_CELL_CLASSES:
         rows.append(
             spec_row(
-                join_target("TNK", sanitize(cls), EDS_SCORE_SUFFIX),
-                TNK_FIELD,
-                cls,
+                join_target("TNK", sanitize(cell_class), EDS_SCORE_SUFFIX),
+                T_AND_NK_FIELD,
+                cell_class,
                 "score",
                 EDS_METADATA_FIELD,
                 "quantiles",
@@ -307,26 +307,26 @@ def build_spec_rows(
         )
 
     # Block 2d — CD4/CD8 activation sums (scoped by TNK class)
-    for cls in ACTIVATION_T_CELL_CLASSES:
+    for cell_class in ACTIVATION_T_CELL_CLASSES:
         rows.append(
             spec_row(
-                join_target("TNK", sanitize(cls), "Activated"),
+                join_target("TNK", sanitize(cell_class), "Activated"),
                 ACTIVATION_SOURCE_FIELD,
                 ACTIVATION_MATCH_VALUE,
                 "sum",
-                scope_field=TNK_FIELD,
-                scope_match=cls,
+                scope_field=T_AND_NK_FIELD,
+                scope_match=cell_class,
             )
         )
 
     # Block 2e — pct_positive genes by TNK class (scoped T_NK)
     for gene in PCT_POSITIVE_GENES:
-        for cls in pct_positive_classes_for_gene(gene):
+        for cell_class in pct_positive_classes_for_gene(gene):
             rows.append(
                 spec_row(
-                    join_target("TNK", sanitize(cls), "PctPositive", gene),
-                    TNK_FIELD,
-                    cls,
+                    join_target("TNK", sanitize(cell_class), "PctPositive", gene),
+                    T_AND_NK_FIELD,
+                    cell_class,
                     "pct_positive",
                     gene,
                     scope_field=SCOPE_IMMUNE,
@@ -335,56 +335,86 @@ def build_spec_rows(
             )
 
     # Block 2f — TCR diversity for CD4+ and CD8+ (scoped T_NK)
-    for cls in DIVERSITY_T_CELL_CLASSES:
+    for cell_class in DIVERSITY_T_CELL_CLASSES:
         rows.append(
             spec_row(
-                join_target("TNK", sanitize(cls), "Diversity"),
-                TNK_FIELD,
-                cls,
+                join_target("TNK", sanitize(cell_class), "Diversity"),
+                T_AND_NK_FIELD,
+                cell_class,
                 "diversity",
                 scope_field=SCOPE_IMMUNE,
                 scope_match="T_NK",
             )
         )
 
-    # Block 3 — Myeloid (scoped Myeloid): fine sums, coarse sums, then IFN on coarse
-    for cls in myeloid_fine:
+    # Block 1a — Immune parent scores (T_NK full module set; Myeloid/B IFN+MHCII)
+    immune_parent_modules = {
+        "T_NK": T_AND_NK_SCORE_MODULES,
+        "Myeloid": [
+            (INTERFERON_RESPONSE_SCORE_SUFFIX, "Interferon_Response_UCell"),
+            ("MHCIIScore", "MHCII_UCell"),
+        ],
+        "Bcell": [
+            (INTERFERON_RESPONSE_SCORE_SUFFIX, "Interferon_Response_UCell"),
+            ("MHCIIScore", "MHCII_UCell"),
+            ("ProliferationScore", "Proliferation_UCell"),
+        ],
+    }
+    for immune_class, modules in immune_parent_modules.items():
+        if immune_class not in immune_classes:
+            continue
+        for score_suffix, score_field in modules:
+            rows.append(
+                spec_row(
+                    join_target("Immune", sanitize(immune_class), score_suffix),
+                    IMMUNE_FIELD,
+                    immune_class,
+                    "score",
+                    score_field,
+                    "quantiles",
+                )
+            )
+
+    # Block 3 — Myeloid (scoped Myeloid): fine sums, coarse sums, then IFN+MHCII on coarse
+    for cell_class in myeloid_fine:
         rows.append(
             spec_row(
-                join_target("Myeloid", "fine", sanitize(cls)),
-                MYE_FINE,
-                cls,
+                join_target("Myeloid", "fine", sanitize(cell_class)),
+                MYELOID_FINE_FIELD,
+                cell_class,
                 "sum",
                 scope_field=SCOPE_IMMUNE,
                 scope_match="Myeloid",
             )
         )
-    for cls in myeloid_coarse:
+    for cell_class in myeloid_coarse:
         rows.append(
             spec_row(
-                join_target("Myeloid", "coarse", sanitize(cls)),
-                MYE_COARSE,
-                cls,
+                join_target("Myeloid", "coarse", sanitize(cell_class)),
+                MYELOID_COARSE_FIELD,
+                cell_class,
                 "sum",
                 scope_field=SCOPE_IMMUNE,
                 scope_match="Myeloid",
             )
         )
-    for cls in myeloid_coarse:
-        rows.append(
-            spec_row(
-                join_target(
-                    "Myeloid", "coarse", sanitize(cls), INTERFERON_RESPONSE_SCORE_SUFFIX
-                ),
-                MYE_COARSE,
-                cls,
-                "score",
-                "Interferon_Response_UCell",
-                "quantiles",
-                SCOPE_IMMUNE,
-                "Myeloid",
+    for cell_class in myeloid_coarse:
+        for score_suffix, score_field in [
+            (INTERFERON_RESPONSE_SCORE_SUFFIX, "Interferon_Response_UCell"),
+            ("MHCIIScore", "MHCII_UCell"),
+        ]:
+            rows.append(
+                spec_row(
+                    join_target("Myeloid", "coarse", sanitize(cell_class), score_suffix),
+                    MYELOID_COARSE_FIELD,
+                    cell_class,
+                    "score",
+                    score_field,
+                    "quantiles",
+                    SCOPE_IMMUNE,
+                    "Myeloid",
+                )
             )
-        )
 
     return rows
 
@@ -395,20 +425,20 @@ def resolve_class_lists(models_dir: Path, classes_only: bool) -> tuple[
     if classes_only:
         return (
             list(HARDCODED_IMMUNE),
-            list(HARDCODED_TNK),
-            list(HARDCODED_MYE_FINE),
-            list(HARDCODED_MYE_COARSE),
+            list(HARDCODED_T_AND_NK),
+            list(HARDCODED_MYELOID_FINE),
+            list(HARDCODED_MYELOID_COARSE),
         )
 
     immune_pkl = load_pkl_classes(models_dir / "RIRA_Immune_v2.pkl")
-    tnk_pkl = load_pkl_classes(models_dir / "RIRA_TNK_v2.pkl")
+    t_and_nk_pkl = load_pkl_classes(models_dir / "RIRA_TNK_v2.pkl")
     myeloid_pkl = load_pkl_classes(models_dir / "RIRA_FineScope_Myeloid_v3.pkl")
 
     immune_classes = immune_pkl + [c for c in IMMUNE_DERIVED if c not in immune_pkl]
-    tnk_classes = tnk_pkl + TNK_DERIVED + [c for c in PIPELINE_META if c not in tnk_pkl]
+    t_and_nk_classes = t_and_nk_pkl + T_AND_NK_DERIVED + [c for c in PIPELINE_META if c not in t_and_nk_pkl]
     myeloid_fine = myeloid_pkl + [c for c in PIPELINE_META if c not in myeloid_pkl]
     myeloid_coarse = derive_coarse(myeloid_pkl)
-    return immune_classes, tnk_classes, myeloid_fine, myeloid_coarse
+    return immune_classes, t_and_nk_classes, myeloid_fine, myeloid_coarse
 
 
 def main() -> None:
@@ -433,16 +463,16 @@ def main() -> None:
 
     warnings.filterwarnings("ignore", category=UserWarning)
 
-    immune_classes, tnk_classes, myeloid_fine, myeloid_coarse = resolve_class_lists(
+    immune_classes, t_and_nk_classes, myeloid_fine, myeloid_coarse = resolve_class_lists(
         args.models_dir, args.classes_only
     )
-    rows = build_spec_rows(immune_classes, tnk_classes, myeloid_fine, myeloid_coarse)
+    rows = build_spec_rows(immune_classes, t_and_nk_classes, myeloid_fine, myeloid_coarse)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text("\n".join(rows) + "\n", encoding="utf-8")
 
     print(f"Immune classes ({len(immune_classes)}): {immune_classes}")
-    print(f"TNK classes ({len(tnk_classes)}): {tnk_classes}")
+    print(f"T/NK classes ({len(t_and_nk_classes)}): {t_and_nk_classes}")
     print(f"Myeloid fine ({len(myeloid_fine)}): {myeloid_fine}")
     print(f"Myeloid coarse ({len(myeloid_coarse)}): {myeloid_coarse}")
     print(f"Total spec rows (excl. header): {len(rows) - 1}")

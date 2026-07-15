@@ -25,18 +25,14 @@ import warnings
 from pathlib import Path
 
 GROUPING = "cDNA_ID"
-DELIM = "__"
+DELIMITER = "__"
 HIGH_FIELD = "celltypist.Immune_All_High.cellclass"
 LOW_FIELD = "celltypist.Immune_All_Low.cellclass"
 HIGH_PKL = "Immune_All_High.pkl"
 LOW_PKL = "Immune_All_Low.pkl"
 
-#these are classes that aren't predicted by the CellTypist model
-#these classes are called post-hoc by processing the cell type probabilities. 
 PIPELINE_META = ["Unassigned", "Ambiguous", "Unknown"]
 
-# Frozen snapshot of Model.classes_ from CellTypist Pan Immune Atlas v2
-# (https://celltypist.cog.sanger.ac.uk/models/Pan_Immune_CellTypist/v2/).
 HARDCODED_HIGH = [
     "B cells",
     "B-cell lineage",
@@ -173,8 +169,6 @@ HARDCODED_LOW = [
     "pDC precursor",
 ]
 
-# Low→High parents from celltypist_wiki Basic_celltype_information.xlsx (v2).
-# https://github.com/Teichlab/celltypist_wiki/blob/main/atlases/Pan_Immune_CellTypist/v2/encyclopedia/encyclopedia_table.xlsx
 LOW_HIGH_SCOPE = {
     "Age-associated B cells": "B cells",
     "Alveolar macrophages": "Macrophages",
@@ -276,23 +270,141 @@ LOW_HIGH_SCOPE = {
     "pDC precursor": "pDC precursor",
 }
 
-LOW_SCORE_MODULES = [
+# Keep in sync with .RegisterQuantifyGeneSets() in R/Quantify.R
+PCT_POSITIVE_GENES = [
+    "PDCD1",
+    "KLRK1",
+    "KLRB1",
+    "HAVCR2",
+    "TIGIT",
+    "PRF1",
+    "GZMB",
+    "KLRC1",
+    "FCGR3",
+    "FCGR3A",
+    "FOXP3",
+    "IL2RA",
+]
+
+PCT_POSITIVE_CD4_ONLY = {"FOXP3", "IL2RA"}
+PCT_POSITIVE_NK_ONLY = {"FCGR3", "FCGR3A"}
+
+T_SCORE_MODULES = [
     ("CytotoxicityScore", "Cytotoxicity_UCell"),
     ("InterferonResponseScore", "Interferon_Response_UCell"),
+    ("CytokineScore", "TandNK_Activation2_UCell"),
+    ("MHCIIScore", "MHCII_UCell"),
+    ("ProliferationScore", "Proliferation_UCell"),
+    ("PerforinScore", "Perforin_UCell"),
 ]
 
-LOW_PCT_POSITIVE_GENES = ["PDCD1", "KLRK1", "GZMB"]  # subset of Quantify.PctPositive in R/Quantify.R
+NK_ILC_SCORE_MODULES = [
+    ("CytotoxicityScore", "Cytotoxicity_UCell"),
+    ("InterferonResponseScore", "Interferon_Response_UCell"),
+    ("MHCIIScore", "MHCII_UCell"),
+    ("ProliferationScore", "Proliferation_UCell"),
+    ("PerforinScore", "Perforin_UCell"),
+]
 
-# TCR diversity targets (retained in the "low" class).
-DIVERSITY_LOW_CLASSES = [
+ANTIGEN_PRESENTING_SCORE_MODULES = [
+    ("InterferonResponseScore", "Interferon_Response_UCell"),
+    ("MHCIIScore", "MHCII_UCell"),
+    ("ProliferationScore", "Proliferation_UCell"),
+]
+
+HIGH_ANTIGEN_PRESENTING_PARENTS = {
+    "B cells",
+    "B-cell lineage",
+    "Plasma cells",
+    "Macrophages",
+    "Monocytes",
+    "DC",
+    "MNP",
+    "Mono-mac",
+    "Myelocytes",
+    "Promyelocytes",
+    "pDC",
+    "Mast cells",
+    "Granulocytes",
+}
+
+LOW_ANTIGEN_PRESENTING_PARENTS = {
+    "B cells",
+    "B-cell lineage",
+    "Plasma cells",
+    "Macrophages",
+    "Monocytes",
+    "DC",
+    "MNP",
+    "Mono-mac",
+    "Myelocytes",
+    "Promyelocytes",
+    "pDC",
+    "Mast cells",
+    "Granulocytes",
+}
+
+CD4_LIKE = {
     "Tcm/Naive helper T cells",
+    "Tem/Effector helper T cells",
+    "Tem/Effector helper T cells PD1+",
+    "Memory CD4+ cytotoxic T cells",
+    "Regulatory T cells",
+    "Follicular helper T cells",
+    "Type 1 helper T cells",
+    "Type 17 helper T cells",
+    "Treg(diff)",
+    "T(agonist)",
+}
+
+CD8_LIKE = {
+    "Tcm/Naive cytotoxic T cells",
     "Tem/Temra cytotoxic T cells",
-]
+    "Tem/Trm cytotoxic T cells",
+    "Trm cytotoxic T cells",
+    "CD8a/a",
+    "CD8a/b(entry)",
+    "MAIT cells",
+}
+
+EDS_PHENOTYPES = ["Naive", "MemoryLike", "Effector"]
+EDS_METADATA_FIELD = "Tcell_EffectorDifferentiation"
+EDS_CUTPOINT_LOW = "2"
+EDS_CUTPOINT_HIGH = "6"
+EDS_SCORE_SUFFIX = "EDSScore"
 
 ACTIVATION_SOURCE_FIELD = "Is_TCR_Stimulated"
 ACTIVATION_MATCH_VALUE = "TRUE"
 
-#schema 
+PCT_POSITIVE_EFFECTOR_CLASSES = [
+    "Tcm/Naive cytotoxic T cells",
+    "Tem/Temra cytotoxic T cells",
+    "Tem/Trm cytotoxic T cells",
+    "Trm cytotoxic T cells",
+    "CD8a/a",
+    "CD8a/b(entry)",
+    "MAIT cells",
+    "Tcm/Naive helper T cells",
+    "Tem/Effector helper T cells",
+    "Tem/Effector helper T cells PD1+",
+    "Memory CD4+ cytotoxic T cells",
+    "Regulatory T cells",
+    "Follicular helper T cells",
+    "Type 1 helper T cells",
+    "Type 17 helper T cells",
+    "Treg(diff)",
+    "T(agonist)",
+    "gamma-delta T cells",
+    "CRTAM+ gamma-delta T cells",
+    "Cycling gamma-delta T cells",
+    "NK cells",
+    "CD16+ NK cells",
+    "CD16- NK cells",
+    "Cycling NK cells",
+    "Transitional NK",
+    "NKT cells",
+]
+
 SPEC_HEADER = "\t".join(
     [
         "GroupingVariable",
@@ -320,7 +432,7 @@ def sanitize(label: str) -> str:
 
 
 def join_target(*parts: str) -> str:
-    return DELIM.join(parts)
+    return DELIMITER.join(parts)
 
 
 def load_pkl_classes(pkl_path: Path) -> list[str]:
@@ -337,6 +449,35 @@ def lows_with_parent(low_classes: list[str], parent: str) -> list[str]:
     return [c for c in low_classes if LOW_HIGH_SCOPE.get(c) == parent]
 
 
+def pct_positive_classes_for_gene(gene: str) -> list[str]:
+    if gene in PCT_POSITIVE_CD4_ONLY:
+        return [c for c in CD4_LIKE if c in PCT_POSITIVE_EFFECTOR_CLASSES]
+    if gene in PCT_POSITIVE_NK_ONLY:
+        return [
+            c
+            for c in PCT_POSITIVE_EFFECTOR_CLASSES
+            if c
+            in {
+                "NK cells",
+                "CD16+ NK cells",
+                "CD16- NK cells",
+                "Cycling NK cells",
+                "Transitional NK",
+            }
+        ]
+    return [c for c in PCT_POSITIVE_EFFECTOR_CLASSES if c in CD4_LIKE | CD8_LIKE | {
+        "gamma-delta T cells",
+        "CRTAM+ gamma-delta T cells",
+        "Cycling gamma-delta T cells",
+        "NK cells",
+        "CD16+ NK cells",
+        "CD16- NK cells",
+        "Cycling NK cells",
+        "Transitional NK",
+        "NKT cells",
+    }]
+
+
 def spec_row(
     target: str,
     source: str,
@@ -346,6 +487,10 @@ def spec_row(
     qscore: str = "",
     scope_field: str = "",
     scope_match: str = "",
+    effector_differentiation_score_field: str = "",
+    effector_differentiation_cutpoint_low: str = "",
+    effector_differentiation_cutpoint_high: str = "",
+    subset_phenotype_output_field_name: str = "",
 ) -> str:
     return "\t".join(
         [
@@ -358,112 +503,197 @@ def spec_row(
             qscore,
             scope_field,
             scope_match,
-            "",
-            "",
-            "",
-            "",
+            effector_differentiation_score_field,
+            effector_differentiation_cutpoint_low,
+            effector_differentiation_cutpoint_high,
+            subset_phenotype_output_field_name,
         ]
     )
+
+
+def append_score_rows(
+    rows: list[str],
+    prefix: str,
+    source: str,
+    match: str,
+    modules: list[tuple[str, str]],
+    scope_field: str = "",
+    scope_match: str = "",
+) -> None:
+    for score_suffix, score_field in modules:
+        rows.append(
+            spec_row(
+                join_target(prefix, sanitize(match), score_suffix),
+                source,
+                match,
+                "score",
+                score_field,
+                "quantiles",
+                scope_field=scope_field,
+                scope_match=scope_match,
+            )
+        )
 
 
 def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str]:
     rows = [SPEC_HEADER]
     t_cell_labels = lows_with_parent(low_classes, "T cells")
     ilc_labels = lows_with_parent(low_classes, "ILC")
-    diversity_labels = [c for c in DIVERSITY_LOW_CLASSES if c in low_classes]
+    cd4_labels = [c for c in t_cell_labels if c in CD4_LIKE]
+    cd8_labels = [c for c in t_cell_labels if c in CD8_LIKE]
+    diversity_labels = cd4_labels + cd8_labels
 
     # Block 1 — Immune High sums
-    for cls in high_classes:
+    for cell_class in high_classes:
         rows.append(
-            spec_row(join_target("ImmuneHigh", sanitize(cls)), HIGH_FIELD, cls, "sum")
+            spec_row(join_target("ImmuneHigh", sanitize(cell_class)), HIGH_FIELD, cell_class, "sum")
         )
 
-    # Block 2 — Immune Low sums (scoped to High parent when mapped, see LOW_HIGH_SCOPE above)
-    # TODO: we may want to be less strict here, e.g. "Low" in macaques is all T/NK cells. 
-    for cls in low_classes:
-        scope_match = LOW_HIGH_SCOPE.get(cls, "")
+    # Block 2 — Immune Low sums
+    for cell_class in low_classes:
+        scope_match = LOW_HIGH_SCOPE.get(cell_class, "")
         scope_field = HIGH_FIELD if scope_match else ""
         rows.append(
             spec_row(
-                join_target("ImmuneLow", sanitize(cls)),
+                join_target("ImmuneLow", sanitize(cell_class)),
                 LOW_FIELD,
-                cls,
+                cell_class,
                 "sum",
                 scope_field=scope_field,
                 scope_match=scope_match,
             )
         )
 
-    # Block 3 — T-cell score modules (all Low labels under High "T cells")
-    for cls in t_cell_labels:
-        for score_suffix, score_field in LOW_SCORE_MODULES:
+    # Block 3 — High parent scores (T, ILC, APC parents)
+    for cell_class in high_classes:
+        if cell_class == "T cells":
+            append_score_rows(rows, "ImmuneHigh", HIGH_FIELD, cell_class, T_SCORE_MODULES)
+        elif cell_class == "ILC":
+            append_score_rows(rows, "ImmuneHigh", HIGH_FIELD, cell_class, NK_ILC_SCORE_MODULES)
+        elif cell_class in HIGH_ANTIGEN_PRESENTING_PARENTS:
+            append_score_rows(rows, "ImmuneHigh", HIGH_FIELD, cell_class, ANTIGEN_PRESENTING_SCORE_MODULES)
+
+    # Block 4 — Low T-cell score modules
+    for cell_class in t_cell_labels:
+        append_score_rows(
+            rows,
+            "ImmuneLow",
+            LOW_FIELD,
+            cell_class,
+            T_SCORE_MODULES,
+            scope_field=HIGH_FIELD,
+            scope_match="T cells",
+        )
+
+    # Block 5 — Low ILC/NK score modules
+    for cell_class in ilc_labels:
+        append_score_rows(
+            rows,
+            "ImmuneLow",
+            LOW_FIELD,
+            cell_class,
+            NK_ILC_SCORE_MODULES,
+            scope_field=HIGH_FIELD,
+            scope_match="ILC",
+        )
+
+    # Block 6 — Low APC score modules
+    for cell_class in low_classes:
+        parent = LOW_HIGH_SCOPE.get(cell_class, "")
+        if parent in LOW_ANTIGEN_PRESENTING_PARENTS:
+            append_score_rows(
+                rows,
+                "ImmuneLow",
+                LOW_FIELD,
+                cell_class,
+                ANTIGEN_PRESENTING_SCORE_MODULES,
+                scope_field=HIGH_FIELD,
+                scope_match=parent,
+            )
+
+    # Block 7 — EDS phenotypes + score on CD4/CD8-like Low labels
+    for cell_class in cd4_labels + cd8_labels:
+        for phenotype in EDS_PHENOTYPES:
             rows.append(
                 spec_row(
-                    join_target("ImmuneLow", sanitize(cls), score_suffix),
+                    join_target("ImmuneLow", sanitize(cell_class), phenotype),
                     LOW_FIELD,
-                    cls,
-                    "score",
-                    score_field,
-                    "quantiles",
+                    cell_class,
+                    "sum",
                     scope_field=HIGH_FIELD,
                     scope_match="T cells",
+                    effector_differentiation_score_field=EDS_METADATA_FIELD,
+                    effector_differentiation_cutpoint_low=EDS_CUTPOINT_LOW,
+                    effector_differentiation_cutpoint_high=EDS_CUTPOINT_HIGH,
+                    subset_phenotype_output_field_name=phenotype,
                 )
             )
-
-    # Block 4 — ILC/NK score modules (all Low labels under High "ILC")
-    for cls in ilc_labels:
-        for score_suffix, score_field in LOW_SCORE_MODULES:
-            rows.append(
-                spec_row(
-                    join_target("ImmuneLow", sanitize(cls), score_suffix),
-                    LOW_FIELD,
-                    cls,
-                    "score",
-                    score_field,
-                    "quantiles",
-                    scope_field=HIGH_FIELD,
-                    scope_match="ILC",
-                )
-            )
-
-    # Block 5 — pct_positive on T-cell Low labels
-    for cls in t_cell_labels:
-        for gene in LOW_PCT_POSITIVE_GENES:
-            rows.append(
-                spec_row(
-                    join_target("ImmuneLow", sanitize(cls), "PctPositive", gene),
-                    LOW_FIELD,
-                    cls,
-                    "pct_positive",
-                    gene,
-                    scope_field=HIGH_FIELD,
-                    scope_match="T cells",
-                )
-            )
-
-    # Block 6 — TCR diversity on selected Low T-cell labels
-    for cls in diversity_labels:
         rows.append(
             spec_row(
-                join_target("ImmuneLow", sanitize(cls), "Diversity"),
+                join_target("ImmuneLow", sanitize(cell_class), EDS_SCORE_SUFFIX),
                 LOW_FIELD,
-                cls,
+                cell_class,
+                "score",
+                EDS_METADATA_FIELD,
+                "quantiles",
+                scope_field=HIGH_FIELD,
+                scope_match="T cells",
+            )
+        )
+
+    # Block 8 — pct_positive genes with gene×role filters
+    for gene in PCT_POSITIVE_GENES:
+        for cell_class in pct_positive_classes_for_gene(gene):
+            if cell_class not in low_classes:
+                continue
+            parent = LOW_HIGH_SCOPE.get(cell_class, "")
+            scope_match = "T cells" if parent == "T cells" else "ILC" if parent == "ILC" else ""
+            scope_field = HIGH_FIELD if scope_match else ""
+            rows.append(
+                spec_row(
+                    join_target("ImmuneLow", sanitize(cell_class), "PctPositive", gene),
+                    LOW_FIELD,
+                    cell_class,
+                    "pct_positive",
+                    gene,
+                    scope_field=scope_field,
+                    scope_match=scope_match,
+                )
+            )
+
+    # Block 9 — TCR diversity on all CD4/CD8-like Low labels
+    for cell_class in diversity_labels:
+        rows.append(
+            spec_row(
+                join_target("ImmuneLow", sanitize(cell_class), "Diversity"),
+                LOW_FIELD,
+                cell_class,
                 "diversity",
                 scope_field=HIGH_FIELD,
                 scope_match="T cells",
             )
         )
 
-    # Block 7 — activation sums for all Low labels under High "T cells"
-    for cls in t_cell_labels:
+    # Block 10 — activation sums for Low T labels + High T parent
+    rows.append(
+        spec_row(
+            join_target("ImmuneHigh", sanitize("T cells"), "Activated"),
+            ACTIVATION_SOURCE_FIELD,
+            ACTIVATION_MATCH_VALUE,
+            "sum",
+            scope_field=HIGH_FIELD,
+            scope_match="T cells",
+        )
+    )
+    for cell_class in t_cell_labels:
         rows.append(
             spec_row(
-                join_target("ImmuneLow", sanitize(cls), "Activated"),
+                join_target("ImmuneLow", sanitize(cell_class), "Activated"),
                 ACTIVATION_SOURCE_FIELD,
                 ACTIVATION_MATCH_VALUE,
                 "sum",
                 scope_field=LOW_FIELD,
-                scope_match=cls,
+                scope_match=cell_class,
             )
         )
 

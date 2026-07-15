@@ -1,0 +1,263 @@
+---
+title: "Quantify10xData"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quantify10xData}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+`Quantify10xData()` turns per-cell metadata into grouped summary metrics. You
+give it one or more LabKey sequence-analysis output file IDs, and it downloads
+the per-cell metadata for each of those files and then computes whatever
+metrics you have described in a tab-separated specification. The package ships
+with ready-made specification documents (so called specs) for two common situations: human cells labeled with
+CellTypist Immune (at both the High and Low levels of granularity) and rhesus
+cells labeled with the RIRA Immune, TNK, and Myeloid models.
+
+This vignette walks through the process offline. Instead of talking to
+LabKey, we build a small synthetic table of human CellTypist cells and feed it
+to the same internal helpers the public function uses under the hood,
+`.ParseQuantifySpec()` and `.RunQuantifyMetricLoop()`.
+
+One detail is worth flagging up front. When you run human data, the function
+can also emit a second, RIRA-shaped wide table. This is controlled by
+`coerceToRIRA`, which is `TRUE` by default. The idea is that human cells are
+first mapped onto RIRA's Immune/TNK/Myeloid bins, and the bundled rhesus spec
+is then scored against those mapped columns. We come back to this at the end.
+
+## Public API
+
+In a real LabKey session you would simply call the public function with your
+output file IDs and a spec (either a path to a `.tsv` or a `data.frame`):
+
+```{r api-example, eval = FALSE}
+library(Rdiscvr)
+
+result <- Quantify10xData(
+  outputFileIds = c(674096L),
+  spec = system.file(
+    "extdata", "quantify_human_immune_spec.tsv",
+    package = "Rdiscvr"
+  ),
+  coerceToRIRA = TRUE,
+  outputPrefix = "quantify_out"
+)
+
+# result$countsWide       - native human High/Low metrics
+# result$countsWideRIRA   - RIRA-shaped table (human + coerceToRIRA)
+# result$failures         - deferred validation / processing failures
+# result$laneSummary      - per-lane ingest counts
+```
+
+Everything from here on uses a synthetic cell table so you can explore the
+specs, the different metric types, and the coerce behavior without ever
+touching LabKey.
+
+## Synthetic human metadata
+
+We start by simulating data, similar to populated metadata from PRIME-Seq and reuse it for every section
+below. It holds roughly 24 cells spread across two `cDNA_ID`s, with two
+combinations of High/Low CellTypist labels:
+
+```{r fixture}
+library(Rdiscvr)
+library(tibble)
+
+set.seed(42)
+n_cells <- 24L
+amino_acids <- c(
+  "A", "C", "D", "E", "F", "G", "H", "I", "K", "L",
+  "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y"
+)
+
+RandomCdr3 <- function(n) {
+  cdr3 <- vapply(
+    seq_len(n),
+    function(i) paste0(sample(amino_acids, 12L, replace = TRUE), collapse = ""),
+    character(1)
+  )
+  cdr3[sample.int(n, size = 4L)] <- NA_character_
+  cdr3
+}
+
+cell_table <- tibble(
+  sourceOutputFileId = rep(c(101L, 102L), each = 12L),
+  cDNA_ID = rep(c(1001L, 1002L), each = 12L),
+  `celltypist.Immune_All_High.cellclass` = rep("T cells", n_cells),
+  `celltypist.Immune_All_Low.cellclass` = c(
+    rep("Tcm/Naive helper T cells", 8),
+    rep("Tem/Temra cytotoxic T cells", 4),
+    rep("Tcm/Naive helper T cells", 6),
+    rep("Tem/Temra cytotoxic T cells", 6)
+  ),
+  Cytotoxicity_UCell = runif(n_cells),
+  Interferon_Response_UCell = runif(n_cells),
+  TandNK_Activation2_UCell = runif(n_cells),
+  MHCII_UCell = runif(n_cells),
+  Proliferation_UCell = runif(n_cells),
+  Perforin_UCell = runif(n_cells),
+  Tcell_EffectorDifferentiation = sample(1:10, n_cells, replace = TRUE),
+  Is_TCR_Stimulated = sample(c(TRUE, FALSE), n_cells, replace = TRUE),
+  TRA = RandomCdr3(n_cells),
+  TRB = RandomCdr3(n_cells),
+  PDCD1 = sample(0:1, n_cells, replace = TRUE),
+  GZMB = sample(0:1, n_cells, replace = TRUE),
+  KLRK1 = sample(0:1, n_cells, replace = TRUE),
+  HAVCR2 = sample(0:1, n_cells, replace = TRUE),
+  TIGIT = sample(0:1, n_cells, replace = TRUE),
+  PRF1 = sample(0:1, n_cells, replace = TRUE),
+  FOXP3 = sample(0:1, n_cells, replace = TRUE),
+  IL2RA = sample(0:1, n_cells, replace = TRUE)
+)
+
+cell_table
+```
+
+A few notes on the columns so the numbers below make sense. The UCell columns
+are sampled uniformly on \([0, 1]\), the gene columns are simple 0/1 detection
+flags, and `TRA` / `TRB` are random 12-mer amino-acid CDR3 sequences with a
+handful of `NA`s mixed in to stand in for cells with no recovered chain.
+
+## Specifications
+
+The bundled human and rhesus specs live under `inst/extdata/`. A spec is just a
+table, and each row describes one metric: how to group the cells, how to filter
+them, and what kind of `QuantificationType` to compute. There are four types:
+
+- **`sum`** counts the cells that match.
+- **`score`** reports quantiles of a numeric `QuantificationSourceField`.
+- **`pct_positive`** gives the percent of matched cells with a gene detected.
+- **`diversity`** computes a TCR clone Hill number (q = 2) via rarefaction.
+
+The columns that do most of the work are `GroupingVariable`, `TargetField`,
+`SourceField`, `MatchValue`, and `QuantificationType`. Rows for `score` and
+`pct_positive` additionally set `QuantificationSourceField` (and, for scores,
+`QuantificationScoreType = quantiles`). Finally, the optional `ScopeField` and
+`ScopeMatchValue` let you narrow the cell population before the primary filter
+is applied.
+
+As an example, here are a couple of example rows of each type, pulled from the human spec:
+
+```{r spec-examples}
+human_spec_path <- system.file(
+  "extdata", "quantify_human_immune_spec.tsv",
+  package = "Rdiscvr"
+)
+rhesus_spec_path <- system.file(
+  "extdata", "quantify_rhesus_spec.tsv",
+  package = "Rdiscvr"
+)
+
+human_spec <- Rdiscvr:::.ParseQuantifySpec(human_spec_path)$spec
+
+spec_columns <- c(
+  "GroupingVariable", "TargetField", "SourceField", "MatchValue",
+  "QuantificationType", "QuantificationSourceField",
+  "QuantificationScoreType", "ScopeField", "ScopeMatchValue"
+)
+
+type_order <- c("sum", "score", "pct_positive", "diversity")
+spec_examples <- do.call(
+  rbind,
+  lapply(type_order, function(qtype) {
+    rows <- human_spec[human_spec$QuantificationType == qtype, spec_columns, drop = FALSE]
+    rows[seq_len(min(2L, nrow(rows))), , drop = FALSE]
+  })
+)
+rownames(spec_examples) <- NULL
+spec_examples
+```
+
+## Output
+
+Now we run the native human metric loop over the fixture. The full result is
+very wide (hundreds of TargetFields), so rather than print everything we pull
+out a curated slice: the grouping key plus one column from each of the four
+QuantificationTypes.
+
+```{r output}
+native <- Rdiscvr:::.RunQuantifyMetricLoop(
+  spec_table = human_spec,
+  cell_table = cell_table,
+  failures = Rdiscvr:::.EmptyFailuresTibble()
+)
+
+slice_columns <- c(
+  "cDNA_ID",
+  "ImmuneHigh__T_cells",
+  "ImmuneLow__Tcm_Naive_helper_T_cells",
+  "ImmuneHigh__T_cells__CytotoxicityScore__median",
+  "ImmuneLow__Tem_Temra_cytotoxic_T_cells__PctPositive__PDCD1",
+  "ImmuneLow__Tem_Temra_cytotoxic_T_cells__Diversity"
+)
+
+native$countsWide[, slice_columns, drop = FALSE]
+```
+The only major between this vignette and a proper invocation is that `Quantify10xData()` first downloads the Seurat Object from
+LabKey, rather than reading it from a simulated tibble.
+
+## coerceToRIRA
+
+Aligning columns across species does works by mapping onto RIRA's Immune, TNK, and
+Myeloid labels using a bundled role map, and the rhesus spec is then scored on
+those mapped columns. Let's look at the role map itself:
+
+```{r coerce-artifacts}
+role_map <- LoadQuantifyRoleMap()
+head(role_map)
+```
+
+So the native human TargetFields carry `ImmuneHigh__` / `ImmuneLow__` prefixes,
+while the coerced output reuses the rhesus names such as `Immune__T_NK` and
+`TNK__CD4plus_T_Cells`.
+
+A couple of subtleties are worth calling out here. In the role map,
+`RIRA_Immune_v2.cellclass == T_NK` refers to RIRA's mixed lymphoid compartment
+(T cells, NK cells, and helper ILCs together), not "T cells only." The finer
+TNK labels are what actually drive the coerced TNK metrics, so, for example,
+helper ILCs land in `Other` and NK cells in `NK Cells`. And the `lineageRole`
+column is there purely as documentation; it is not applied at coerce time.
+
+We can watch the mapping happen on the fixture:
+
+```{r coerce-map}
+mapped <- Rdiscvr:::.ApplyHumanToRhesusRoleMap(cell_table, role_map)
+table(mapped$`RIRA_TNK_v2.cellclass`)
+```
+
+And then run the rhesus spec on those mapped cells, comparing the first few
+column names against the native run:
+
+```{r coerce-loops}
+coerced <- Rdiscvr:::.RunQuantifyMetricLoop(
+  spec_table = Rdiscvr:::.ParseQuantifySpec(rhesus_spec_path)$spec,
+  cell_table = mapped,
+  failures = Rdiscvr:::.EmptyFailuresTibble()
+)
+
+names(native$countsWide)[1:5]
+names(coerced$countsWide)[1:5]
+```
+
+The contrast is the primary point: the native output carries High/Low columns,
+whereas the coerced output lines up with the column names that a rhesus dataset
+would produce (the `Immune__`, `TNK__`, and `Myeloid__` prefixes).
+
+Finally, when you pass an `outputPrefix` to `Quantify10xData()`, it writes the
+tables to disk:
+
+- `{prefix}_counts_wide.tsv` holds the native human (or rhesus) table.
+- `{prefix}_counts_wide_coercedToRIRA.tsv` holds the human RIRA-shaped table.
+
+Rhesus runs ignore `coerceToRIRA` entirely and, when given an `outputPrefix`,
+write only the native file.
