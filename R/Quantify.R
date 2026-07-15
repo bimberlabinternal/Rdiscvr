@@ -2,6 +2,12 @@
 #' @include SingleCell.R
 #' @include Studies.R
 
+utils::globalVariables(
+  names = c(":="),
+  package = "Rdiscvr",
+  add = TRUE
+)
+
 #' @title Quantify10xData
 #' @description Download full Seurat objects for LabKey output file IDs and quantify
 #' grouped metrics from a TSV or data.frame spec.

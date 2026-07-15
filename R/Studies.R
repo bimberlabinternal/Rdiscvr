@@ -1,3 +1,8 @@
+utils::globalVariables(
+  names = c('id'),
+  package = 'Rdiscvr',
+  add = TRUE
+)
 
 #' @title ApplyPC475Metadata
 #' @description Applies standard metadata related to PC475 / BMGF HIV Reservoirs project

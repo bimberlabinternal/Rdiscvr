@@ -9,7 +9,10 @@ Quantify10xData(
   spec,
   failureLogFile = paste0("quantification_failures_", format(Sys.time(),
     "\%Y\%m\%d_\%H\%M\%S"), ".txt"),
-  classifyTNK = TRUE
+  classifyTNK = TRUE,
+  species = NULL,
+  coerceToRIRA = TRUE,
+  outputPrefix = NULL
 )
 }
 \arguments{
@@ -25,22 +28,35 @@ A human Immune_All_High/Low CellTypist spec is at
 Defaults to \code{quantification_failures_<timestamp>.txt}. Also returned in
 the \code{failures} tibble.}
 
-\item{classifyTNK}{If \code{TRUE} (default), per lane run TCR-aware TNK
+\item{classifyTNK}{If \code{TRUE} (default), per dataset run TCR-aware TNK
 classification when RIRA immune and TNK metadata columns are present, then
 apply gamma-delta and NK overrides on \code{RIRA_TNK_v2.cellclass} within the
 \code{T_NK} compartment. Soft-skips when RIRA fields are absent. Set
 \code{FALSE} to quantify from downloaded RIRA labels only.}
+
+\item{species}{\code{"rhesus"} or \code{"human"}. When \code{NULL} (default),
+inferred from dataset metadata (\code{RIRA_Immune_v2.cellclass} vs
+\code{celltypist.Immune_All_High.cellclass}).}
+
+\item{coerceToRIRA}{For human datasets, when \code{TRUE} (default), map CellTypist
+High/Low labels to RIRA fields via
+\code{quantify_human_to_rhesus_role_map.tsv} and also compute
+\code{countsWideRIRA} using the bundled rhesus spec. Ignored for rhesus.}
+
+\item{outputPrefix}{Optional path prefix for writing wide count tables. When
+set, writes \code{<prefix>_counts_wide.tsv} and, for human with
+\code{coerceToRIRA = TRUE}, \code{<prefix>_counts_wide_coercedToRIRA.tsv}.}
 }
 \value{
 A named list with:
 \describe{
-  \item{\code{countsWide}}{One row per distinct grouping key. Sum,
-    \code{pct_positive}, and \code{diversity} rules add one column per
-    \code{TargetField}. Score rules add \code{TargetField__p05},
-    \code{__median}, and \code{__p95}.}
+  \item{\code{countsWide}}{Native species spec output (RIRA for rhesus;
+    CellTypist High/Low for human).}
+  \item{\code{countsWideRIRA}}{Human-only RIRA-shaped table when
+    \code{coerceToRIRA = TRUE}; otherwise omitted.}
   \item{\code{failures}}{Tibble of deferred validation and processing failures
     (\code{specRow}, \code{outputFileId}, \code{field}, \code{reason}).}
-  \item{\code{laneSummary}}{Per-\code{sourceOutputFileId} ingest counts
+  \item{\code{datasetSummary}}{Per-\code{sourceOutputFileId} ingest counts
     (\code{nCellsIngested}).}
 }
 }
@@ -66,7 +82,7 @@ matching before the \code{SourceField} filter. Optional effector-
 differentiation subset columns further restrict matched cells by a numeric
 score bin.
 
-Per lane, missing standard UCell score columns (names ending in \code{_UCell})
+Per dataset, missing standard UCell score columns (names ending in \code{_UCell})
 are computed with \code{RIRA::CalculateUCellScores}; \code{Proliferation_UCell}
 is added separately when needed. \code{Is_TCR_Stimulated} is predicted with
 \code{RIRA::PredictTcellActivation} when absent.
@@ -75,6 +91,8 @@ All spec rows must share the same \code{GroupingVariable}. Processing
 continues after failures; see \code{failures} and \code{failureLogFile}.
 
 Bundled-spec \code{TargetField} names use \code{__} between prefix segments.
-Regenerate the rhesus RIRA spec with \code{inst/scripts/generate_quantify_rhesus_spec.py}
-and the human immune spec with \code{inst/scripts/generate_quantify_human_spec.py}.
+Regenerate the rhesus RIRA spec with \code{inst/scripts/generate_quantify_rhesus_spec.py},
+the human immune spec with \code{inst/scripts/generate_quantify_human_spec.py},
+and the human-to-RIRA role map with
+\code{inst/scripts/generate_quantify_human_to_rhesus_role_map.py}.
 }
