@@ -1401,11 +1401,12 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
     score_values <- suppressWarnings(as.numeric(filtered_cells[[score_field]]))
     filtered_cells[[score_field]] <- score_values
 
+    score_sym <- rlang::sym(score_field)
     quantile_metrics <- filtered_cells %>%
       dplyr::group_by(dplyr::across(dplyr::all_of(grouping_columns))) %>%
       dplyr::summarize(
         !!p05_col := {
-          score_vector <- .data[[score_field]]
+          score_vector <- !!score_sym
           score_vector <- score_vector[!is.na(score_vector)]
           if (!length(score_vector)) {
             NA_real_
@@ -1414,7 +1415,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
           }
         },
         !!median_col := {
-          score_vector <- .data[[score_field]]
+          score_vector <- !!score_sym
           score_vector <- score_vector[!is.na(score_vector)]
           if (!length(score_vector)) {
             NA_real_
@@ -1423,7 +1424,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
           }
         },
         !!p95_col := {
-          score_vector <- .data[[score_field]]
+          score_vector <- !!score_sym
           score_vector <- score_vector[!is.na(score_vector)]
           if (!length(score_vector)) {
             NA_real_
