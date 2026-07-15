@@ -15,13 +15,13 @@
 #' @param failureLogFile Path for a text log of validation and processing failures.
 #'   Defaults to \code{quantification_failures_<timestamp>.txt}. Also returned in
 #'   the \code{failures} tibble.
-#' @param classifyTNK If \code{TRUE} (default), per lane run TCR-aware TNK
+#' @param classifyTNK If \code{TRUE} (default), per dataset run TCR-aware TNK
 #'   classification when RIRA immune and TNK metadata columns are present, then
 #'   apply gamma-delta and NK overrides on \code{RIRA_TNK_v2.cellclass} within the
 #'   \code{T_NK} compartment. Soft-skips when RIRA fields are absent. Set
 #'   \code{FALSE} to quantify from downloaded RIRA labels only.
 #' @param species \code{"rhesus"} or \code{"human"}. When \code{NULL} (default),
-#'   inferred from lane metadata (\code{RIRA_Immune_v2.cellclass} vs
+#'   inferred from dataset metadata (\code{RIRA_Immune_v2.cellclass} vs
 #'   \code{celltypist.Immune_All_High.cellclass}).
 #' @param coerceToRIRA For human datasets, when \code{TRUE} (default), map CellTypist
 #'   High/Low labels to RIRA fields via
@@ -38,7 +38,7 @@
 #'     \code{coerceToRIRA = TRUE}; otherwise omitted.}
 #'   \item{\code{failures}}{Tibble of deferred validation and processing failures
 #'     (\code{specRow}, \code{outputFileId}, \code{field}, \code{reason}).}
-#'   \item{\code{laneSummary}}{Per-\code{sourceOutputFileId} ingest counts
+#'   \item{\code{datasetSummary}}{Per-\code{sourceOutputFileId} ingest counts
 #'     (\code{nCellsIngested}).}
 #' }
 #' @details
@@ -59,7 +59,7 @@
 #' differentiation subset columns further restrict matched cells by a numeric
 #' score bin.
 #'
-#' Per lane, missing standard UCell score columns (names ending in \code{_UCell})
+#' Per dataset, missing standard UCell score columns (names ending in \code{_UCell})
 #' are computed with \code{RIRA::CalculateUCellScores}; \code{Proliferation_UCell}
 #' is added separately when needed. \code{Is_TCR_Stimulated} is predicted with
 #' \code{RIRA::PredictTcellActivation} when absent.
@@ -70,7 +70,7 @@
 #' Bundled-spec \code{TargetField} names use \code{__} between prefix segments.
 #' Regenerate the rhesus RIRA spec with \code{inst/scripts/generate_quantify_rhesus_spec.py},
 #' the human immune spec with \code{inst/scripts/generate_quantify_human_spec.py},
-#' and the human→RIRA role map with
+#' and the human-to-RIRA role map with
 #' \code{inst/scripts/generate_quantify_human_to_rhesus_role_map.py}.
 #' @export
 #' @importFrom dplyr %>% group_by summarize mutate filter distinct left_join bind_rows count pull across
@@ -104,6 +104,7 @@ Quantify10xData <- function(
   }
 
   failures <- .EmptyFailuresTibble()
+  #parse and sanitize the spec; blank/malformed rows become failures rather than hard stops
   parsed_spec <- .ParseQuantifySpec(spec)
   failures <- dplyr::bind_rows(failures, parsed_spec$failures)
   spec_table <- parsed_spec$spec
@@ -122,18 +123,22 @@ Quantify10xData <- function(
     NULL
   }
   rhesus_spec_table <- if (apply_role_map) {
-    .ParseQuantifySpec(.BundledRhesusQuantifySpecPath())$spec
+    .ParseQuantifySpec(
+      system.file("extdata", "quantify_rhesus_spec.tsv", package = "Rdiscvr")
+    )$spec
   } else {
     NULL
   }
 
-  lane_tables <- list()
-  lane_summary_pieces <- list()
+  dataset_tables <- list()
+  dataset_summary_pieces <- list()
 
+  #per dataset: download, ensure scores/activation, optional role map / TNK, extract cell table;
+  #download errors become failures so remaining IDs still run
   for (output_file_id in output_file_ids) {
-    lane_result <- tryCatch(
+    dataset_result <- tryCatch(
       {
-        prepare_result <- .PrepareLaneCellTable(
+        prepare_result <- .PrepareDatasetCellTable(
           output_file_id = output_file_id,
           spec_table = spec_table,
           classify_tnk = classifyTNK,
@@ -142,8 +147,8 @@ Quantify10xData <- function(
           rhesus_spec_table = rhesus_spec_table
         )
         list(
-          lane_table = prepare_result$cell_table,
-          lane_summary = tibble::tibble(
+          dataset_table = prepare_result$cell_table,
+          dataset_summary = tibble::tibble(
             sourceOutputFileId = output_file_id,
             nCellsIngested = nrow(prepare_result$cell_table)
           ),
@@ -153,8 +158,8 @@ Quantify10xData <- function(
       },
       error = function(error_condition) {
         list(
-          lane_table = NULL,
-          lane_summary = tibble::tibble(
+          dataset_table = NULL,
+          dataset_summary = tibble::tibble(
             sourceOutputFileId = output_file_id,
             nCellsIngested = 0L
           ),
@@ -169,20 +174,22 @@ Quantify10xData <- function(
       }
     )
 
-    failures <- dplyr::bind_rows(failures, lane_result$failures)
-    lane_summary_pieces[[length(lane_summary_pieces) + 1]] <- lane_result$lane_summary
-    if (!is.null(lane_result$detected_species) && is.null(resolved_species)) {
-      resolved_species <- lane_result$detected_species
+    failures <- dplyr::bind_rows(failures, dataset_result$failures)
+    dataset_summary_pieces[[length(dataset_summary_pieces) + 1]] <- dataset_result$dataset_summary
+    if (!is.null(dataset_result$detected_species) && is.null(resolved_species)) {
+      resolved_species <- dataset_result$detected_species
     }
-    if (!is.null(lane_result$lane_table)) {
-      lane_tables[[length(lane_tables) + 1]] <- lane_result$lane_table
+    if (!is.null(dataset_result$dataset_table)) {
+      dataset_tables[[length(dataset_tables) + 1]] <- dataset_result$dataset_table
     }
   }
 
-  lane_summary <- dplyr::bind_rows(lane_summary_pieces)
+  #one row per output file with nCellsIngested
+  dataset_summary <- dplyr::bind_rows(dataset_summary_pieces)
 
-  if (length(lane_tables)) {
-    cell_table <- tibble::as_tibble(do.call(rbind, lane_tables))
+  #rbind per-dataset tables into one cell-level table for the metric loop
+  if (length(dataset_tables)) {
+    cell_table <- tibble::as_tibble(do.call(rbind, dataset_tables))
     rownames(cell_table) <- NULL
   } else {
     cell_table <- tibble::tibble()
@@ -190,11 +197,11 @@ Quantify10xData <- function(
 
   if (is.null(resolved_species) && nrow(cell_table) && isTRUE(coerceToRIRA)) {
     resolved_species <- tryCatch(
-      .DetectQuantifySpeciesFromCellTable(cell_table),
+      .DetectQuantifySpecies(names(cell_table), required = TRUE),
       error = function(error_condition) NULL
     )
   }
-
+  #native-species metrics from the rira/immune-celltypist caller spec
   native_loop <- .RunQuantifyMetricLoop(
     spec_table = spec_table,
     cell_table = cell_table,
@@ -204,6 +211,7 @@ Quantify10xData <- function(
   failures <- native_loop$failures
 
   counts_wide_rira <- NULL
+  #if the species is human and we are coercing to RIRA, run the quantification loop according to the rhesus spec
   if (identical(resolved_species, "human") && isTRUE(coerceToRIRA)) {
     coerced_loop <- .RunQuantifyMetricLoop(
       spec_table = rhesus_spec_table,
@@ -214,6 +222,7 @@ Quantify10xData <- function(
     failures <- coerced_loop$failures
   }
 
+  #write any validation and processing failures to the failure log file
   .WriteFailureLog(failures, failure_log_file = failureLogFile)
   if (nrow(failures) > 0) {
     warning(
@@ -239,7 +248,7 @@ Quantify10xData <- function(
   result <- list(
     countsWide = counts_wide,
     failures = failures,
-    laneSummary = lane_summary
+    datasetSummary = dataset_summary
   )
   if (!is.null(counts_wide_rira)) {
     result$countsWideRIRA <- counts_wide_rira
@@ -250,7 +259,7 @@ Quantify10xData <- function(
 ## Helper Functions ##
 
 #' @title LoadQuantifyRoleMap
-#' @description Load the bundled human CellTypist → RIRA role map used by
+#' @description Load the bundled human CellTypist to RIRA role map used by
 #'   \code{Quantify10xData(coerceToRIRA = TRUE)}.
 #' @param mapFile Optional path to a role-map TSV. Defaults to the bundled
 #'   \code{quantify_human_to_rhesus_role_map.tsv}.
@@ -275,31 +284,23 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   )
 }
 
-.BundledRhesusQuantifySpecPath <- function() {
-  system.file("extdata", "quantify_rhesus_spec.tsv", package = "Rdiscvr")
-}
-
-.DetectQuantifySpeciesFromCellTable <- function(cell_table) {
-  if ("RIRA_Immune_v2.cellclass" %in% names(cell_table)) {
-    return("rhesus")
-  }
-  if ("celltypist.Immune_All_High.cellclass" %in% names(cell_table)) {
-    return("human")
-  }
-  stop("Cannot auto-detect quantify species from cell table metadata")
-}
-
-.DetectQuantifySpeciesFromSeurat <- function(seurat_obj) {
-  meta_cols <- names(seurat_obj@meta.data)
+#returns "rhesus", "human", or NULL from lineage column names;
+#errors if required=TRUE and neither RIRA nor CellTypist's Immune_High is present
+.DetectQuantifySpecies <- function(meta_cols, required = FALSE) {
   if ("RIRA_Immune_v2.cellclass" %in% meta_cols) {
     return("rhesus")
   }
   if ("celltypist.Immune_All_High.cellclass" %in% meta_cols) {
     return("human")
   }
+  if (required) {
+    stop("Cannot auto-detect quantify species from cell table metadata")
+  }
   NULL
 }
 
+#role_map columns: humanSourceField/humanLabel/rhesusTargetField/rhesusLabel
+#maps CellTypist High/Low onto RIRA fields; Low first, then High, else Unknown
 .ApplyHumanToRhesusRoleMap <- function(cell_table, role_map) {
   high_field <- "celltypist.Immune_All_High.cellclass"
   low_field <- "celltypist.Immune_All_Low.cellclass"
@@ -347,6 +348,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   cell_table
 }
 
+#writes mapped RIRA role columns onto Seurat metadata (via human-to-RIRA role map when coerceToRIRA)
 .ApplyHumanToRhesusRoleMapToSeurat <- function(seurat_obj, role_map) {
   cell_table <- tibble::as_tibble(seurat_obj@meta.data)
   mapped <- .ApplyHumanToRhesusRoleMap(cell_table, role_map)
@@ -356,6 +358,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   seurat_obj
 }
 
+#validate each spec rule, compute its metric, and left-join onto a wide table keyed by GroupingVariable
 .RunQuantifyMetricLoop <- function(spec_table, cell_table, failures) {
   counts_wide <- tibble::tibble()
   target_fields_seen <- character(0)
@@ -382,11 +385,13 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
     return(list(countsWide = counts_wide, failures = failures))
   }
 
+  #GroupingVariable is pipe-separated (|) metadata columns shared by every rule
   grouping_columns <- trimws(strsplit(as.character(grouping_specs[[1]]), "|", fixed = TRUE)[[1]])
   grouping_columns <- grouping_columns[nzchar(grouping_columns)]
 
+  #scaffold one row per distinct grouping key before joining metrics
   if (!length(grouping_columns)) {
-    # No grouping columns: keep the empty scaffold from initialization.
+    #no grouping columns: keep the empty scaffold from initialization
     counts_wide <- tibble::tibble()
   } else if (nrow(cell_table) > 0) {
     counts_wide <- cell_table %>%
@@ -402,12 +407,14 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
     counts_wide <- tibble::as_tibble(empty_group_table)
   }
 
+  #shared rarefaction depth across diversity rules so q=2 Hill numbers are comparable across TargetFields
   rarefaction_level <- .ComputeSharedRarefactionLevel(
     spec_table = spec_table,
     cell_table = cell_table,
     grouping_columns = grouping_columns
   )
 
+  #iterate the rules: validate, compute, join; skip the rule (not the run) on validation failure
   for (spec_row_idx in seq_len(nrow(spec_table))) {
     spec_row <- spec_table[spec_row_idx, , drop = FALSE]
     original_spec_row <- as.integer(spec_row$specRow[[1]])
@@ -420,7 +427,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
     target_field <- as.character(spec_row$TargetField[[1]])
     quantification_type <- tolower(trimws(as.character(spec_row$QuantificationType[[1]])))
     output_columns <- if (identical(quantification_type, "score")) {
-      .BuildScoreQuantileColumnNames(target_field)
+      paste0(target_field, .QuantifyNameDelim, c("p05", "median", "p95"))
     } else {
       target_field
     }
@@ -464,6 +471,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   list(countsWide = counts_wide, failures = failures)
 }
 
+#write counts_wide as TSV with quote=FALSE so TargetField names with __ stay clean for joins
 .WriteQuantifyCountsTsv <- function(counts_wide, output_path) {
   utils::write.table(
     counts_wide,
@@ -475,13 +483,10 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   invisible(output_path)
 }
 
-# register Quantify pct-positive gene panels into RIRA's gene-set registry
+#register Quantify pct-positive gene panels into RIRA's gene-set registry
 .RegisterQuantifyGeneSets <- function() {
-  if (!requireNamespace("RIRA", quietly = TRUE)) {
-    return(invisible(FALSE))
-  }
-
   register_if_absent <- function(name, genes) {
+    #already-registered names raise an error; ignore these so sourcing this file stays idempotent
     tryCatch(
       RIRA:::.RegisterGeneSet(name, genes),
       error = function(error_condition) invisible(NULL)
@@ -529,11 +534,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
 
 .QuantifyNameDelim <- "__"
 
-.BuildScoreQuantileColumnNames <- function(target_field) {
-  paste0(target_field, .QuantifyNameDelim, c("p05", "median", "p95"))
-}
-
-#returns an empty tibble with columns for spec row, output file, field name, and reason
+#empty failures tibble scaffold: specRow, outputFileId, field, reason
 .EmptyFailuresTibble <- function() {
   tibble::tibble(
     specRow = integer(0),
@@ -543,8 +544,8 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   )
 }
 
-#assumes output_file_id refers to a valid LabKey output file row
-.DownloadSeuratPerLane <- function(output_file_id) {
+#download one LabKey output file RDS into a Seurat object (into a tempfile)
+.DownloadSeuratPerDataset <- function(output_file_id) {
   out_file <- tempfile(fileext = ".rds")
   on.exit(unlink(out_file), add = TRUE)
   DownloadOutputFile(
@@ -555,8 +556,8 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   readRDS(out_file)
 }
 
-# download seurat, ensure scores/activation, optional human→RIRA map, classify TNK, extract cell table
-.PrepareLaneCellTable <- function(
+#download seurat, ensure scores/activation, optional human-to-RIRA map, classify TNK, extract cell table
+.PrepareDatasetCellTable <- function(
   output_file_id,
   spec_table,
   classify_tnk,
@@ -564,26 +565,26 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   role_map = NULL,
   rhesus_spec_table = NULL
 ) {
-  seurat_obj <- .DownloadSeuratPerLane(output_file_id)
-  detected_species <- .DetectQuantifySpeciesFromSeurat(seurat_obj)
+  seurat_obj <- .DownloadSeuratPerDataset(output_file_id)
+  detected_species <- .DetectQuantifySpecies(names(seurat_obj@meta.data))
   ensure_result <- .EnsureUCellAndActivationMetadata(seurat_obj, spec_table)
   seurat_obj <- ensure_result$seurat_obj
   failures <- ensure_result$failures
 
-  lane_apply_map <- isTRUE(apply_role_map) && identical(detected_species, "human")
-  if (lane_apply_map && !is.null(role_map) && nrow(role_map)) {
+  dataset_apply_map <- isTRUE(apply_role_map) && identical(detected_species, "human")
+  if (dataset_apply_map && !is.null(role_map) && nrow(role_map)) {
     seurat_obj <- .ApplyHumanToRhesusRoleMapToSeurat(seurat_obj, role_map)
   }
 
-  lane_classify_tnk <- isTRUE(classify_tnk) && identical(detected_species, "rhesus")
-  if (lane_classify_tnk) {
+  dataset_classify_tnk <- isTRUE(classify_tnk) && identical(detected_species, "rhesus")
+  if (dataset_classify_tnk) {
     classify_result <- .ClassifyTNKWithTcrOverrides(seurat_obj)
     seurat_obj <- classify_result$seurat_obj
     failures <- dplyr::bind_rows(failures, classify_result$failures)
   }
 
   combined_spec <- spec_table
-  if (lane_apply_map && !is.null(rhesus_spec_table)) {
+  if (dataset_apply_map && !is.null(rhesus_spec_table)) {
     combined_spec <- dplyr::bind_rows(combined_spec, rhesus_spec_table)
   }
 
@@ -595,6 +596,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   )
 }
 
+#TRUE when the UCell column is missing or contains any NA (triggers recomputation)
 .UCellColumnNeedsComputation <- function(seurat_obj, column_name) {
   if (!column_name %in% names(seurat_obj@meta.data)) {
     return(TRUE)
@@ -602,7 +604,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   any(is.na(seurat_obj@meta.data[[column_name]]))
 }
 
-# ensure UCell scores and TCR activation metadata exist on the Seurat object
+#ensure UCell scores and Is_TCR_Stimulated exist before quantification reads them
 .EnsureUCellAndActivationMetadata <- function(seurat_obj, spec_table) {
   failures <- .EmptyFailuresTibble()
   append_failure <- function(field_name, reason_text) {
@@ -632,90 +634,70 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   ]
 
   if (length(needs_standard_ucells)) {
-    if (!requireNamespace("RIRA", quietly = TRUE)) {
-      append_failure(
-        "RIRA",
-        "RIRA package unavailable; skipping standard UCell score computation"
-      )
-    } else {
-      seurat_obj <- tryCatch(
-        RIRA::CalculateUCellScores(seurat_obj, plotCor = FALSE),
-        error = function(error_condition) {
-          append_failure(
-            "RIRA::CalculateUCellScores",
-            conditionMessage(error_condition)
-          )
-          seurat_obj
-        }
-      )
-    }
+    seurat_obj <- tryCatch(
+      RIRA::CalculateUCellScores(seurat_obj, plotCor = FALSE),
+      error = function(error_condition) {
+        append_failure(
+          "RIRA::CalculateUCellScores",
+          conditionMessage(error_condition)
+        )
+        seurat_obj
+      }
+    )
   }
 
-  #Proliferation_UCell is not in CalculateUCellScores; compute separately when needed
+  #Proliferation_UCell is not in CalculateUCellScores yet; compute adhoc when needed.
+  #TODO: drop this once RIRA registers Proliferation in CalculateUCellScores
   if ("Proliferation_UCell" %in% ucell_fields &&
       .UCellColumnNeedsComputation(seurat_obj, "Proliferation_UCell")) {
-    if (!requireNamespace("UCell", quietly = TRUE)) {
-      append_failure(
-        "UCell",
-        "UCell package unavailable; skipping Proliferation_UCell computation"
-      )
-    } else {
-      proliferation_genes <- tryCatch(
-        RIRA::GetGeneSet("Proliferation"),
-        error = function(error_condition) {
-          append_failure(
-            "RIRA::GetGeneSet",
-            paste0(
-              "GetGeneSet(Proliferation) failed: ",
-              conditionMessage(error_condition),
-              "; using MKI67/TOP2A fallback"
-            )
+    proliferation_genes <- tryCatch(
+      RIRA::GetGeneSet("Proliferation"),
+      error = function(error_condition) {
+        append_failure(
+          "RIRA::GetGeneSet",
+          paste0(
+            "GetGeneSet(Proliferation) failed: ",
+            conditionMessage(error_condition),
+            "; using MKI67/TOP2A fallback"
           )
-          c("MKI67", "TOP2A")
-        }
-      )
-      seurat_obj <- tryCatch(
-        UCell::AddModuleScore_UCell(
-          seurat_obj,
-          features = list(Proliferation = proliferation_genes),
-          missing_genes = "skip"
-        ),
-        error = function(error_condition) {
-          append_failure(
-            "UCell::AddModuleScore_UCell",
-            conditionMessage(error_condition)
-          )
-          seurat_obj
-        }
-      )
-    }
+        )
+        c("MKI67", "TOP2A")
+      }
+    )
+    seurat_obj <- tryCatch(
+      UCell::AddModuleScore_UCell(
+        seurat_obj,
+        features = list(Proliferation = proliferation_genes),
+        missing_genes = "skip"
+      ),
+      error = function(error_condition) {
+        append_failure(
+          "UCell::AddModuleScore_UCell",
+          conditionMessage(error_condition)
+        )
+        seurat_obj
+      }
+    )
   }
 
-  #predict TCR stimulation status when the metadata column is absent
+  #predict TCR stimulation when Is_TCR_Stimulated is absent
   if (!"Is_TCR_Stimulated" %in% names(seurat_obj@meta.data)) {
-    if (!requireNamespace("RIRA", quietly = TRUE)) {
-      append_failure(
-        "RIRA",
-        "RIRA package unavailable; skipping Is_TCR_Stimulated prediction"
-      )
-    } else {
-      seurat_obj <- tryCatch(
-        RIRA::PredictTcellActivation(seurat_obj),
-        error = function(error_condition) {
-          append_failure(
-            "RIRA::PredictTcellActivation",
-            conditionMessage(error_condition)
-          )
-          seurat_obj
-        }
-      )
-    }
+    seurat_obj <- tryCatch(
+      RIRA::PredictTcellActivation(seurat_obj),
+      error = function(error_condition) {
+        append_failure(
+          "RIRA::PredictTcellActivation",
+          conditionMessage(error_condition)
+        )
+        seurat_obj
+      }
+    )
   }
 
   list(seurat_obj = seurat_obj, failures = failures)
 }
 
-# run ClassifyTNKByExpression when possible, then apply TCR TNK overrides
+#run ClassifyTNKByExpression when TCR evidence exists, then apply GD/NK overrides
 .ClassifyTNKWithTcrOverrides <- function(seurat_obj) {
   failures <- .EmptyFailuresTibble()
   immune_field <- "RIRA_Immune_v2.cellclass"
@@ -733,6 +715,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   has_trb <- "TRB" %in% meta_cols && any(!is.na(seurat_obj$TRB))
 
   if (has_cdr3 || has_tra || has_trb) {
+    #ClassifyTNKByExpression is best-effort: on failure keep downloaded TNK labels and still apply GD/NK overrides below
     seurat_obj <- tryCatch(
       ClassifyTNKByExpression(seurat_obj),
       error = function(error_condition) seurat_obj
@@ -749,7 +732,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   )
 }
 
-# extract metadata and materialize pct_positive gene columns from counts
+#extract metadata and materialize pct_positive gene detection columns from counts
 .BuildCellTableFromSeurat <- function(seurat_obj, output_file_id, spec_table) {
   cell_table <- tibble::as_tibble(seurat_obj@meta.data)
   cell_table$sourceOutputFileId <- output_file_id
@@ -775,8 +758,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   cell_table
 }
 
-#assumes spec is a file path or data.frame containing the required columns
-#returns the cleaned spec table and any failures from blank or malformed rows
+#parse spec path or data.frame; return cleaned table plus failures for blank/malformed rows
 .ParseQuantifySpec <- function(spec) {
   required_columns <- c(
     "GroupingVariable",
@@ -863,8 +845,8 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   )
 }
 
-#assumes cell_table is seurat object metadata with RIRA immune and T/NK class columns
 #overrides only gamma-delta and NK in RIRA_TNK_v2.cellclass within T_NK scope
+#expects RIRA immune and T/NK class columns when those overrides can run
 .ApplyTcrTNKOverridesToCellTable <- function(cell_table) {
   failures <- .EmptyFailuresTibble()
   immune_field <- "RIRA_Immune_v2.cellclass"
@@ -957,7 +939,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   list(cell_table = cell_table, failures = failures)
 }
 
-# scope, source/match, and EDS filters shared by quantify row handlers
+#apply scope, SourceField/MatchValue, and EDS bin filters for one spec rule
 .FilterCellsBySpecRow <- function(cell_table, spec_row) {
   if (nrow(cell_table) == 0) {
     return(cell_table)
@@ -978,8 +960,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   .FilterCellsByEffectorDifferentiationBin(filtered_cells, spec_row)
 }
 
-#assumes cell_table column names match ingested metadata when cells were materialized
-#returns validation failures for this rule without stopping the rest of the run
+#validate one spec rule against cell_table; return failures without stopping the rest of the run
 .ValidateSpecRow <- function(spec_row, cell_table) {
   failures <- .EmptyFailuresTibble()
   append_failure <- function(field_name, reason_text) {
@@ -1219,7 +1200,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   cells[keep, , drop = FALSE]
 }
 
-# minimum TCR+ cell count per group across diversity spec rows for shared rarefaction
+#minimum TCR+ cell count per group across diversity spec rows for shared rarefaction
 .ComputeSharedRarefactionLevel <- function(spec_table, cell_table, grouping_columns) {
   diversity_rows <- spec_table[
     tolower(trimws(spec_table$QuantificationType)) == "diversity",
@@ -1256,7 +1237,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   }
 }
 
-# computes Hill number q=2 at shared rarefaction level per grouping key
+#Hill number q=2 at shared rarefaction level per grouping key
 .ComputeRarefiedHillDiversity <- function(
   filtered_cells,
   all_groups,
@@ -1267,10 +1248,6 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   all_groups[[target_field]] <- NA_real_
 
   if (is.na(rarefaction_level) || rarefaction_level < 1L || nrow(filtered_cells) == 0) {
-    return(all_groups)
-  }
-
-  if (!requireNamespace("iNEXT", quietly = TRUE)) {
     return(all_groups)
   }
 
@@ -1334,8 +1311,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   all_groups
 }
 
-#assumes the rule passed validation and grouping columns are present in cell_table
-#returns one row per group with the target metric column(s) for this rule
+#compute one spec rule's metrics; assumes the rule already passed validation
 .ComputeMetricsForSpecRow <- function(
   spec_row,
   cell_table,
@@ -1371,7 +1347,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
     return(all_groups)
   }
 
-  #pct_positive: percent of matched cells with the gene detected
+  #pct_positive: percent of matched cells with the gene detected (counts > 0)
   if (identical(quantification_type, "pct_positive")) {
     gene_field <- as.character(spec_row$QuantificationSourceField[[1]])
 
@@ -1410,7 +1386,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   } else {
     #score: p05/median/p95 of QuantificationSourceField among matched cells
     score_field <- as.character(spec_row$QuantificationSourceField[[1]])
-    quantile_columns <- .BuildScoreQuantileColumnNames(target_field)
+    quantile_columns <- paste0(target_field, .QuantifyNameDelim, c("p05", "median", "p95"))
     p05_col <- quantile_columns[[1]]
     median_col <- quantile_columns[[2]]
     p95_col <- quantile_columns[[3]]
@@ -1462,7 +1438,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   }
 }
 
-#assumes failure_log_file is a path where we can write a text log
+#write failures as one line per row (empty file when none)
 .WriteFailureLog <- function(failures, failure_log_file) {
   if (!nrow(failures)) {
     writeLines(character(0), con = failure_log_file)

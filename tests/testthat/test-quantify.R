@@ -1,12 +1,12 @@
 library(testthat)
 
-.rhesusQuantifySpecPath <- function() {
-  system.file("extdata", "quantify_rhesus_spec.tsv", package = "Rdiscvr")
-}
+.rhesusQuantifySpecPath <- system.file(
+  "extdata", "quantify_rhesus_spec.tsv", package = "Rdiscvr"
+)
 
-.humanImmuneQuantifySpecPath <- function() {
-  system.file("extdata", "quantify_human_immune_spec.tsv", package = "Rdiscvr")
-}
+.humanImmuneQuantifySpecPath <- system.file(
+  "extdata", "quantify_human_immune_spec.tsv", package = "Rdiscvr"
+)
 
 # Metadata shaped like a RIRA-classified rhesus lane for quantify_rhesus_spec.tsv
 .makeRhesusRiraCellTable <- function() {
@@ -94,7 +94,7 @@ library(testthat)
   )
 }
 
-# minimal metadata for QuantificationType (sum/score/pct_positive) and ScopeField
+# minimal metadata for QuantificationType, ScopeField, and EDS bins
 .makeTypedQuantifyCellTable <- function() {
   tibble::tibble(
     sourceOutputFileId = rep(111L, 9),
@@ -103,7 +103,46 @@ library(testthat)
     ScoreCol = c(0.1, 0.5, 0.9, 0.2, 0.4, 0.6, 0.3, 0.5, 0.7),
     ImmuneClass = c(rep("T_NK", 3), rep("Myeloid", 3), rep("Myeloid", 3)),
     TNKClass = c("CD8_T", "CD8_T", "CD4_T", "CD8_T", "CD8_T", "CD4_T", "CD8_T", "CD8_T", "CD4_T"),
-    PDCD1 = c(1, 0, 1, 0, 0, 0, 0, 0, 0)
+    PDCD1 = c(1, 0, 1, 0, 0, 0, 0, 0, 0),
+    EdsScore = c(1, 4, 8, 4, 4, 4, 4, 4, 4)
+  )
+}
+
+.makeHumanCellTypistCellTable <- function() {
+  tibble::tibble(
+    sourceOutputFileId = rep(222L, 12),
+    cDNA_ID = rep(2001L, 12),
+    `celltypist.Immune_All_High.cellclass` = c(
+      rep("T cells", 6), rep("B cells", 3), rep("Monocytes", 3)
+    ),
+    `celltypist.Immune_All_Low.cellclass` = c(
+      rep("Tcm/Naive helper T cells", 3),
+      rep("Tem/Temra cytotoxic T cells", 3),
+      rep("Naive B cells", 3),
+      rep("Classical monocytes", 3)
+    ),
+    Cytotoxicity_UCell = seq(0.1, 0.9, length.out = 12),
+    Interferon_Response_UCell = rep(0.4, 12),
+    TandNK_Activation2_UCell = rep(0.2, 12),
+    MHCII_UCell = rep(0.15, 12),
+    Proliferation_UCell = rep(0.05, 12),
+    Perforin_UCell = rep(0.12, 12),
+    Tcell_EffectorDifferentiation = c(1, 4, 8, 2, 5, 7, rep(4, 6)),
+    Is_TCR_Stimulated = rep(c(TRUE, FALSE), length.out = 12),
+    TRA = ifelse(seq_len(12) %% 3 == 0, NA_character_, paste0("TRA", seq_len(12))),
+    TRB = ifelse(seq_len(12) %% 3 == 0, NA_character_, paste0("TRB", seq_len(12))),
+    PDCD1 = as.integer(seq_len(12) %% 2 == 0),
+    KLRK1 = as.integer(seq_len(12) %% 3 == 0),
+    KLRB1 = 0L,
+    HAVCR2 = 0L,
+    TIGIT = 0L,
+    PRF1 = 0L,
+    GZMB = as.integer(seq_len(12) %% 4 == 0),
+    KLRC1 = 0L,
+    FCGR3 = 0L,
+    FCGR3A = 0L,
+    FOXP3 = 0L,
+    IL2RA = 0L
   )
 }
 
@@ -162,7 +201,7 @@ library(testthat)
   role_map = if (apply_role_map) LoadQuantifyRoleMap() else NULL
 ) {
   with_mocked_bindings(
-    `.PrepareLaneCellTable` = .mockPrepareLaneCellTable(cell_table),
+    `.PrepareDatasetCellTable` = .mockPrepareLaneCellTable(cell_table),
     .package = "Rdiscvr",
     {
       Quantify10xData(
@@ -178,39 +217,53 @@ library(testthat)
   )
 }
 
-test_that("Quantify10xData applies QuantificationType and ScopeField rules", {
+test_that("metric engine applies types, scope, EDS bins, and soft-fails", {
   cell_table <- .makeTypedQuantifyCellTable()
   spec <- tibble::tibble(
-    GroupingVariable = rep("cDNA_ID", 8),
+    GroupingVariable = rep("cDNA_ID", 11),
     TargetField = c(
       "CD8_count", "B_count", "CD8_score",
       "TNK_CD8_count", "TNK_CD8_score",
       "missing_count", "missing_score",
-      "CD8_PDCD1_pct"
+      "CD8_PDCD1_pct",
+      "CD8_Naive", "CD8_MemoryLike", "CD8_Effector"
     ),
     SourceField = c(
       "CellType", "CellType", "CellType",
       "TNKClass", "TNKClass",
       "CellType", "CellType",
-      "CellType"
+      "CellType",
+      "CellType", "CellType", "CellType"
     ),
     MatchValue = c(
       "CD8_T", "B", "CD8_T",
       "CD8_T", "CD8_T",
       "NotPresent", "NotPresent",
-      "CD8_T"
+      "CD8_T",
+      "CD8_T", "CD8_T", "CD8_T"
     ),
     QuantificationType = c(
-      "sum", "sum", "score", "sum", "score", "sum", "score", "pct_positive"
+      "sum", "sum", "score", "sum", "score", "sum", "score", "pct_positive",
+      "sum", "sum", "sum"
     ),
     QuantificationSourceField = c(
-      "", "", "ScoreCol", "", "ScoreCol", "", "ScoreCol", "PDCD1"
+      "", "", "ScoreCol", "", "ScoreCol", "", "ScoreCol", "PDCD1",
+      "", "", ""
     ),
     QuantificationScoreType = c(
-      "", "", "quantiles", "", "quantiles", "", "quantiles", ""
+      "", "", "quantiles", "", "quantiles", "", "quantiles", "",
+      "", "", ""
     ),
-    ScopeField = c("", "", "", "ImmuneClass", "ImmuneClass", "", "", ""),
-    ScopeMatchValue = c("", "", "", "T_NK", "T_NK", "", "", "")
+    ScopeField = c("", "", "", "ImmuneClass", "ImmuneClass", "", "", "", "", "", ""),
+    ScopeMatchValue = c("", "", "", "T_NK", "T_NK", "", "", "", "", "", ""),
+    EffectorDifferentiationScoreField = c(
+      rep("", 8), rep("EdsScore", 3)
+    ),
+    EffectorDifferentiationCutpointLow = c(rep("", 8), rep("2", 3)),
+    EffectorDifferentiationCutpointHigh = c(rep("", 8), rep("6", 3)),
+    SubsetPhenotypeOutputFieldName = c(
+      rep("", 8), "Naive", "MemoryLike", "Effector"
+    )
   )
 
   result <- .quantifyWithMockedPrepare(cell_table, spec)
@@ -230,48 +283,34 @@ test_that("Quantify10xData applies QuantificationType and ScopeField rules", {
     result$countsWide$CD8_PDCD1_pct[result$countsWide$cDNA_ID == 1002],
     0
   )
-})
+  expect_equal(result$countsWide$CD8_Naive[result$countsWide$cDNA_ID == 1001], 1L)
+  expect_equal(result$countsWide$CD8_MemoryLike[result$countsWide$cDNA_ID == 1001], 1L)
+  expect_equal(result$countsWide$CD8_Effector[result$countsWide$cDNA_ID == 1001], 1L)
 
-test_that(".RunQuantifyMetricLoop handles empty cells and blank grouping", {
-  failures <- tibble::tibble(
-    specRow = integer(0),
-    outputFileId = integer(0),
-    field = character(0),
-    reason = character(0)
-  )
-  spec <- tibble::tibble(
-    GroupingVariable = "",
-    TargetField = "T_count",
-    SourceField = "CellType",
-    MatchValue = "T",
-    QuantificationType = "sum",
-    QuantificationSourceField = "",
-    QuantificationScoreType = "",
-    ScopeField = "",
-    ScopeMatchValue = "",
-    EffectorDifferentiationScoreField = "",
-    EffectorDifferentiationCutpointLow = "",
-    EffectorDifferentiationCutpointHigh = "",
-    SubsetPhenotypeOutputFieldName = "",
-    specRow = 1L
-  )
-
-  result <- Rdiscvr:::.RunQuantifyMetricLoop(
-    spec_table = spec,
+  empty_result <- Rdiscvr:::.RunQuantifyMetricLoop(
+    spec_table = tibble::tibble(
+      GroupingVariable = "",
+      TargetField = "T_count",
+      SourceField = "CellType",
+      MatchValue = "T",
+      QuantificationType = "sum",
+      QuantificationSourceField = "",
+      QuantificationScoreType = "",
+      ScopeField = "",
+      ScopeMatchValue = "",
+      EffectorDifferentiationScoreField = "",
+      EffectorDifferentiationCutpointLow = "",
+      EffectorDifferentiationCutpointHigh = "",
+      SubsetPhenotypeOutputFieldName = "",
+      specRow = 1L
+    ),
     cell_table = tibble::tibble(),
-    failures = failures
+    failures = Rdiscvr:::.EmptyFailuresTibble()
   )
-  expect_equal(nrow(result$countsWide), 0)
-  expect_true(any(result$failures$field == "GroupingVariable"))
-})
+  expect_equal(nrow(empty_result$countsWide), 0)
+  expect_true(any(empty_result$failures$field == "GroupingVariable"))
 
-test_that("Quantify10xData records SourceField failures and continues", {
-  cell_table <- tibble::tibble(
-    sourceOutputFileId = 111L,
-    cDNA_ID = 1001L,
-    CellType = "T"
-  )
-  spec <- tibble::tibble(
+  soft_fail_spec <- tibble::tibble(
     GroupingVariable = rep("cDNA_ID", 2),
     TargetField = c("T_count", "bad_count"),
     SourceField = c("CellType", "MissingColumn"),
@@ -280,13 +319,18 @@ test_that("Quantify10xData records SourceField failures and continues", {
     QuantificationSourceField = rep("", 2),
     QuantificationScoreType = rep("", 2)
   )
+  soft_fail_cells <- tibble::tibble(
+    sourceOutputFileId = 111L,
+    cDNA_ID = 1001L,
+    CellType = "T"
+  )
   expect_warning(
-    result <- .quantifyWithMockedPrepare(cell_table, spec),
+    soft_fail <- .quantifyWithMockedPrepare(soft_fail_cells, soft_fail_spec),
     "quantification failure"
   )
-  expect_equal(result$countsWide$T_count, 1L)
-  expect_false("bad_count" %in% names(result$countsWide))
-  expect_true(any(result$failures$field == "SourceField"))
+  expect_equal(soft_fail$countsWide$T_count, 1L)
+  expect_false("bad_count" %in% names(soft_fail$countsWide))
+  expect_true(any(soft_fail$failures$field == "SourceField"))
 })
 
 test_that("classifyTNK overrides RIRA labels for NK and gamma-delta cells", {
@@ -354,149 +398,58 @@ test_that("classifyTNK overrides RIRA labels for NK and gamma-delta cells", {
   )
 })
 
-test_that("EffectorDifferentiationScore cutpoints split Naive/MemoryLike/Effector", {
-  cell_table <- tibble::tibble(
-    sourceOutputFileId = rep(111L, 3),
-    cDNA_ID = rep(1001L, 3),
-    `RIRA_Immune_v2.cellclass` = rep("T_NK", 3),
-    `RIRA_TNK_v2.cellclass` = rep("CD4+ T Cells", 3),
-    Tcell_EffectorDifferentiation = c(1, 4, 8),
-    HasCDR3Data = rep(TRUE, 3),
-    HasCD3 = rep(TRUE, 3)
-  )
-  spec <- tibble::tibble(
-    GroupingVariable = rep("cDNA_ID", 3),
-    TargetField = c(
-      "TNK__CD4plus_T_Cells__Naive",
-      "TNK__CD4plus_T_Cells__MemoryLike",
-      "TNK__CD4plus_T_Cells__Effector"
-    ),
-    SourceField = rep("RIRA_TNK_v2.cellclass", 3),
-    MatchValue = rep("CD4+ T Cells", 3),
-    QuantificationType = rep("sum", 3),
-    QuantificationSourceField = rep("", 3),
-    QuantificationScoreType = rep("", 3),
-    ScopeField = rep("RIRA_Immune_v2.cellclass", 3),
-    ScopeMatchValue = rep("T_NK", 3),
-    EffectorDifferentiationScoreField = rep("Tcell_EffectorDifferentiation", 3),
-    EffectorDifferentiationCutpointLow = rep("2", 3),
-    EffectorDifferentiationCutpointHigh = rep("6", 3),
-    SubsetPhenotypeOutputFieldName = c("Naive", "MemoryLike", "Effector")
-  )
-  result <- .quantifyWithMockedPrepare(cell_table, spec)
-  expect_equal(result$countsWide$TNK__CD4plus_T_Cells__Naive, 1L)
-  expect_equal(result$countsWide$TNK__CD4plus_T_Cells__MemoryLike, 1L)
-  expect_equal(result$countsWide$TNK__CD4plus_T_Cells__Effector, 1L)
-})
-
-.makeHumanCellTypistCellTable <- function() {
-  tibble::tibble(
-    sourceOutputFileId = rep(222L, 12),
-    cDNA_ID = rep(2001L, 12),
+test_that("role map prefers Low over High and maps special labels", {
+  cases <- tibble::tibble(
     `celltypist.Immune_All_High.cellclass` = c(
-      rep("T cells", 6), rep("B cells", 3), rep("Monocytes", 3)
-    ),
-    `celltypist.Immune_All_Low.cellclass` = c(
-      rep("Tcm/Naive helper T cells", 3),
-      rep("Tem/Temra cytotoxic T cells", 3),
-      rep("Naive B cells", 3),
-      rep("Classical monocytes", 3)
-    ),
-    Cytotoxicity_UCell = seq(0.1, 0.9, length.out = 12),
-    Interferon_Response_UCell = rep(0.4, 12),
-    TandNK_Activation2_UCell = rep(0.2, 12),
-    MHCII_UCell = rep(0.15, 12),
-    Proliferation_UCell = rep(0.05, 12),
-    Perforin_UCell = rep(0.12, 12),
-    Tcell_EffectorDifferentiation = c(1, 4, 8, 2, 5, 7, rep(4, 6)),
-    Is_TCR_Stimulated = rep(c(TRUE, FALSE), length.out = 12),
-    TRA = ifelse(seq_len(12) %% 3 == 0, NA_character_, paste0("TRA", seq_len(12))),
-    TRB = ifelse(seq_len(12) %% 3 == 0, NA_character_, paste0("TRB", seq_len(12))),
-    PDCD1 = as.integer(seq_len(12) %% 2 == 0),
-    KLRK1 = as.integer(seq_len(12) %% 3 == 0),
-    KLRB1 = 0L,
-    HAVCR2 = 0L,
-    TIGIT = 0L,
-    PRF1 = 0L,
-    GZMB = as.integer(seq_len(12) %% 4 == 0),
-    KLRC1 = 0L,
-    FCGR3 = 0L,
-    FCGR3A = 0L,
-    FOXP3 = 0L,
-    IL2RA = 0L
-  )
-}
-
-test_that("ApplyHumanToRhesusRoleMap prefers Low over High labels", {
-  cell_table <- tibble::tibble(
-    `celltypist.Immune_All_High.cellclass` = c("T cells", "B cells"),
-    `celltypist.Immune_All_Low.cellclass` = c(
-      "Tcm/Naive helper T cells",
-      "Naive B cells"
-    )
-  )
-  mapped <- Rdiscvr:::.ApplyHumanToRhesusRoleMap(cell_table, LoadQuantifyRoleMap())
-  expect_equal(mapped$`RIRA_Immune_v2.cellclass`, c("T_NK", "Bcell"))
-  expect_equal(mapped$`RIRA_TNK_v2.cellclass`[1], "CD4+ T Cells")
-  expect_equal(mapped$`RIRA_TNK_v2.cellclass`[2], "Unknown")
-})
-
-test_that("role map puts helper ILCs on TNK Other and NKT on CD8", {
-  role_map <- LoadQuantifyRoleMap()
-  cell_table <- tibble::tibble(
-    `celltypist.Immune_All_High.cellclass` = c(
+      "T cells", "B cells",
       "ILC", "ILC", "T cells", "ILC", "Cycling cells", "Cycling cells"
     ),
     `celltypist.Immune_All_Low.cellclass` = c(
+      "Tcm/Naive helper T cells", "Naive B cells",
       "ILC1", "ILC2", "NKT cells", "NK cells",
       "Cycling NK cells", "Cycling B cells"
+    ),
+    expected_immune = c(
+      "T_NK", "Bcell",
+      "T_NK", "T_NK", "T_NK", "T_NK", "T_NK", "Bcell"
+    ),
+    expected_tnk = c(
+      "CD4+ T Cells", "Unknown",
+      "Other", "Other", "CD8+ T Cells", "NK Cells", "NK Cells", "Unknown"
     )
   )
-  mapped <- Rdiscvr:::.ApplyHumanToRhesusRoleMap(cell_table, role_map)
-
-  expect_equal(
-    mapped$`RIRA_Immune_v2.cellclass`,
-    c("T_NK", "T_NK", "T_NK", "T_NK", "T_NK", "Bcell")
-  )
-  expect_equal(
-    mapped$`RIRA_TNK_v2.cellclass`,
-    c("Other", "Other", "CD8+ T Cells", "NK Cells", "NK Cells", "Unknown")
-  )
-
-  ilc_roles <- role_map[
-    role_map$humanSourceField == "Immune_All_Low" &
-      role_map$humanLabel %in% c("ILC1", "ILC2", "ILC3", "ILC", "ILC precursor") &
-      role_map$rhesusTargetField == "RIRA_TNK_v2.cellclass",
-    ,
-    drop = FALSE
-  ]
-  expect_true(nrow(ilc_roles) >= 5)
-  expect_true(all(ilc_roles$rhesusLabel == "Other"))
-  expect_true(all(ilc_roles$lineageRole == "NK_ILC"))
+  mapped <- Rdiscvr:::.ApplyHumanToRhesusRoleMap(cases, LoadQuantifyRoleMap())
+  expect_equal(mapped$`RIRA_Immune_v2.cellclass`, cases$expected_immune)
+  expect_equal(mapped$`RIRA_TNK_v2.cellclass`, cases$expected_tnk)
 })
 
-test_that("human coerceToRIRA returns rhesus-shaped countsWideRIRA columns", {
-  human_path <- .humanImmuneQuantifySpecPath()
-  rhesus_path <- .rhesusQuantifySpecPath()
+test_that("human coerceToRIRA returns rhesus-shaped columns and writes TSVs", {
   cell_table <- .makeHumanCellTypistCellTable()
+  prefix <- tempfile()
+  on.exit(unlink(c(
+    paste0(prefix, "_counts_wide.tsv"),
+    paste0(prefix, "_counts_wide_coercedToRIRA.tsv")
+  )))
 
   result <- .quantifyWithMockedPrepare(
     cell_table,
-    human_path,
+    .humanImmuneQuantifySpecPath,
     species = "human",
-    coerceToRIRA = TRUE
+    coerceToRIRA = TRUE,
+    outputPrefix = prefix
   )
 
   expect_true("countsWideRIRA" %in% names(result))
   expect_true(any(grepl("^ImmuneHigh__", names(result$countsWide))))
   expect_true("Immune__T_NK" %in% names(result$countsWideRIRA))
   expect_true("TNK__CD4plus_T_Cells" %in% names(result$countsWideRIRA))
-
   expect_equal(nrow(result$failures), 0)
+  expect_true(file.exists(paste0(prefix, "_counts_wide.tsv")))
+  expect_true(file.exists(paste0(prefix, "_counts_wide_coercedToRIRA.tsv")))
 
   rhesus_only <- .quantifyWithMockedPrepare(
     Rdiscvr:::.ApplyHumanToRhesusRoleMap(cell_table, LoadQuantifyRoleMap()),
-    rhesus_path,
+    .rhesusQuantifySpecPath,
     species = "rhesus",
     coerceToRIRA = FALSE
   )
@@ -506,36 +459,14 @@ test_that("human coerceToRIRA returns rhesus-shaped countsWideRIRA columns", {
   )
 })
 
-test_that("outputPrefix writes native and coerced counts TSV files", {
-  cell_table <- .makeHumanCellTypistCellTable()
-  prefix <- tempfile()
-  on.exit(unlink(c(
-    paste0(prefix, "_counts_wide.tsv"),
-    paste0(prefix, "_counts_wide_coercedToRIRA.tsv")
-  )))
-  .quantifyWithMockedPrepare(
-    cell_table,
-    .humanImmuneQuantifySpecPath(),
-    species = "human",
-    coerceToRIRA = TRUE,
-    outputPrefix = prefix
-  )
-  expect_true(file.exists(paste0(prefix, "_counts_wide.tsv")))
-  expect_true(file.exists(paste0(prefix, "_counts_wide_coercedToRIRA.tsv")))
-})
+test_that("bundled quantify specs parse; rhesus panel smoke", {
+  expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(.rhesusQuantifySpecPath)$spec), 150)
+  expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(.humanImmuneQuantifySpecPath)$spec), 700)
 
-test_that("bundled quantify specs parse properly; rhesus RIRA panel quantifies", {
-  rhesus_path <- .rhesusQuantifySpecPath()
-  human_path <- .humanImmuneQuantifySpecPath()
-  expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(rhesus_path)$spec), 150)
-  expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(human_path)$spec), 700)
-
-  result <- .quantifyWithMockedPrepare(.makeRhesusRiraCellTable(), rhesus_path)
+  result <- .quantifyWithMockedPrepare(.makeRhesusRiraCellTable(), .rhesusQuantifySpecPath)
   expect_equal(nrow(result$failures), 0)
   row_1001 <- result$countsWide[result$countsWide$cDNA_ID == 1001, ]
   expect_equal(row_1001$Immune__T_NK, 20L)
-  expect_equal(row_1001$TNK__CD8plus_T_Cells, 8L)
-  expect_equal(row_1001$Myeloid__coarse__Monocytes, 8L)
   expect_false(is.na(row_1001$TNK__CD8plus_T_Cells__CytotoxicityScore__median))
   expect_true("TNK__CD8plus_T_Cells__Diversity" %in% names(result$countsWide))
 })

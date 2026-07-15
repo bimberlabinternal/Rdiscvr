@@ -238,13 +238,13 @@ def build_spec_rows(
 ) -> list[str]:
     rows = [SPEC_HEADER]
 
-    # Block 1 — Immune (no scope): all sum rows for RIRA_Immune_v2.cellclass
+    # Block 1 - Immune (no scope): all sum rows for RIRA_Immune_v2.cellclass
     for cell_class in immune_classes:
         rows.append(
             spec_row(join_target("Immune", sanitize(cell_class)), IMMUNE_FIELD, cell_class, "sum")
         )
 
-    # Block 2 — TNK (scoped T_NK): sums
+    # Block 2 - TNK (scoped T_NK): sums
     for cell_class in t_and_nk_classes:
         rows.append(
             spec_row(
@@ -257,7 +257,7 @@ def build_spec_rows(
             )
         )
 
-    # Block 2a — TNK score modules (scoped T_NK)
+    # Block 2a - TNK score modules (scoped T_NK)
     for score_suffix, score_field in T_AND_NK_SCORE_MODULES:
         for cell_class in t_and_nk_classes:
             rows.append(
@@ -273,7 +273,7 @@ def build_spec_rows(
                 )
             )
 
-    # Block 2b — CD4/CD8 EDS phenotypes (scoped T_NK)
+    # Block 2b - CD4/CD8 EDS phenotypes (scoped T_NK)
     for cell_class in EDS_T_CELL_CLASSES:
         for phenotype in EDS_PHENOTYPES:
             rows.append(
@@ -291,7 +291,7 @@ def build_spec_rows(
                 )
             )
 
-    # Block 2c — CD4/CD8 EDS score quantiles (scoped T_NK)
+    # Block 2c - CD4/CD8 EDS score quantiles (scoped T_NK)
     for cell_class in EDS_T_CELL_CLASSES:
         rows.append(
             spec_row(
@@ -306,7 +306,7 @@ def build_spec_rows(
             )
         )
 
-    # Block 2d — CD4/CD8 activation sums (scoped by TNK class)
+    # Block 2d - CD4/CD8 activation sums (scoped by TNK class)
     for cell_class in ACTIVATION_T_CELL_CLASSES:
         rows.append(
             spec_row(
@@ -319,7 +319,7 @@ def build_spec_rows(
             )
         )
 
-    # Block 2e — pct_positive genes by TNK class (scoped T_NK)
+    # Block 2e - pct_positive genes by TNK class (scoped T_NK)
     for gene in PCT_POSITIVE_GENES:
         for cell_class in pct_positive_classes_for_gene(gene):
             rows.append(
@@ -334,7 +334,7 @@ def build_spec_rows(
                 )
             )
 
-    # Block 2f — TCR diversity for CD4+ and CD8+ (scoped T_NK)
+    # Block 2f - TCR diversity for CD4+ and CD8+ (scoped T_NK)
     for cell_class in DIVERSITY_T_CELL_CLASSES:
         rows.append(
             spec_row(
@@ -347,7 +347,7 @@ def build_spec_rows(
             )
         )
 
-    # Block 1a — Immune parent scores (T_NK full module set; Myeloid/B IFN+MHCII)
+    # Block 1a - Immune parent scores (T_NK full module set; Myeloid/B IFN+MHCII)
     immune_parent_modules = {
         "T_NK": T_AND_NK_SCORE_MODULES,
         "Myeloid": [
@@ -375,7 +375,7 @@ def build_spec_rows(
                 )
             )
 
-    # Block 3 — Myeloid (scoped Myeloid): fine sums, coarse sums, then IFN+MHCII on coarse
+    # Block 3 - Myeloid (scoped Myeloid): fine sums, coarse sums, then IFN+MHCII on coarse
     for cell_class in myeloid_fine:
         rows.append(
             spec_row(

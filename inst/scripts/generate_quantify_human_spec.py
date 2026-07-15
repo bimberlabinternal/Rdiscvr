@@ -543,13 +543,13 @@ def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str
     cd8_labels = [c for c in t_cell_labels if c in CD8_LIKE]
     diversity_labels = cd4_labels + cd8_labels
 
-    # Block 1 — Immune High sums
+    # Block 1 - Immune High sums
     for cell_class in high_classes:
         rows.append(
             spec_row(join_target("ImmuneHigh", sanitize(cell_class)), HIGH_FIELD, cell_class, "sum")
         )
 
-    # Block 2 — Immune Low sums
+    # Block 2 - Immune Low sums
     for cell_class in low_classes:
         scope_match = LOW_HIGH_SCOPE.get(cell_class, "")
         scope_field = HIGH_FIELD if scope_match else ""
@@ -564,7 +564,7 @@ def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str
             )
         )
 
-    # Block 3 — High parent scores (T, ILC, APC parents)
+    # Block 3 - High parent scores (T, ILC, APC parents)
     for cell_class in high_classes:
         if cell_class == "T cells":
             append_score_rows(rows, "ImmuneHigh", HIGH_FIELD, cell_class, T_SCORE_MODULES)
@@ -573,7 +573,7 @@ def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str
         elif cell_class in HIGH_ANTIGEN_PRESENTING_PARENTS:
             append_score_rows(rows, "ImmuneHigh", HIGH_FIELD, cell_class, ANTIGEN_PRESENTING_SCORE_MODULES)
 
-    # Block 4 — Low T-cell score modules
+    # Block 4 - Low T-cell score modules
     for cell_class in t_cell_labels:
         append_score_rows(
             rows,
@@ -585,7 +585,7 @@ def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str
             scope_match="T cells",
         )
 
-    # Block 5 — Low ILC/NK score modules
+    # Block 5 - Low ILC/NK score modules
     for cell_class in ilc_labels:
         append_score_rows(
             rows,
@@ -597,7 +597,7 @@ def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str
             scope_match="ILC",
         )
 
-    # Block 6 — Low APC score modules
+    # Block 6 - Low APC score modules
     for cell_class in low_classes:
         parent = LOW_HIGH_SCOPE.get(cell_class, "")
         if parent in LOW_ANTIGEN_PRESENTING_PARENTS:
@@ -611,7 +611,7 @@ def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str
                 scope_match=parent,
             )
 
-    # Block 7 — EDS phenotypes + score on CD4/CD8-like Low labels
+    # Block 7 - EDS phenotypes + score on CD4/CD8-like Low labels
     for cell_class in cd4_labels + cd8_labels:
         for phenotype in EDS_PHENOTYPES:
             rows.append(
@@ -641,7 +641,7 @@ def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str
             )
         )
 
-    # Block 8 — pct_positive genes with gene×role filters
+    # Block 8 - pct_positive genes with gene×role filters
     for gene in PCT_POSITIVE_GENES:
         for cell_class in pct_positive_classes_for_gene(gene):
             if cell_class not in low_classes:
@@ -661,7 +661,7 @@ def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str
                 )
             )
 
-    # Block 9 — TCR diversity on all CD4/CD8-like Low labels
+    # Block 9 - TCR diversity on all CD4/CD8-like Low labels
     for cell_class in diversity_labels:
         rows.append(
             spec_row(
@@ -674,7 +674,7 @@ def build_spec_rows(high_classes: list[str], low_classes: list[str]) -> list[str
             )
         )
 
-    # Block 10 — activation sums for Low T labels + High T parent
+    # Block 10 - activation sums for Low T labels + High T parent
     rows.append(
         spec_row(
             join_target("ImmuneHigh", sanitize("T cells"), "Activated"),
