@@ -459,18 +459,29 @@ test_that("human coerceToRIRA returns rhesus-shaped columns and writes TSVs", {
   )
 })
 
-.regenerateAndCompareSpec <- function(script_name, packaged_path, exact = TRUE) {
-  script <- system.file("scripts", script_name, package = "Rdiscvr")
-  skip_if_not(nzchar(script) && file.exists(script))
+.hasPythonYaml <- function() {
+  if (Sys.which("python3") == "") {
+    return(FALSE)
+  }
+  identical(
+    system(paste("python3 -c", shQuote("import yaml")), ignore.stdout = TRUE, ignore.stderr = TRUE),
+    0L
+  )
+}
+
+.regenerateAndCompareYamlSpec <- function(yaml_name, packaged_path, exact = TRUE) {
+  builder <- system.file("scripts", "build_quantify_spec.py", package = "Rdiscvr")
+  yaml_path <- system.file("scripts", yaml_name, package = "Rdiscvr")
+  skip_if_not(nzchar(builder) && file.exists(builder))
+  skip_if_not(nzchar(yaml_path) && file.exists(yaml_path))
   out <- tempfile(fileext = ".tsv")
   on.exit(unlink(out), add = TRUE)
-  # system()+shQuote: workspace paths may contain & (OneDrive), which
-  # system2 arg handling can mishandle on some platforms
+  # system()+shQuote is being used to handle special chars in workspace paths
   status <- system(paste(
     "python3",
-    shQuote(script),
-    "--classes-only",
-    "--out",
+    shQuote(builder),
+    shQuote(yaml_path),
+    "-o",
     shQuote(out)
   ))
   expect_equal(status, 0L)
@@ -483,20 +494,39 @@ test_that("human coerceToRIRA returns rhesus-shaped columns and writes TSVs", {
   }
 }
 
-test_that("bundled quantify specs match --classes-only generator output", {
-  skip_if(Sys.which("python3") == "")
-  .regenerateAndCompareSpec(
-    "generate_quantify_rhesus_spec.py", .rhesusQuantifySpecPath, exact = TRUE
+.regenerateAndCompareRoleMap <- function(packaged_path) {
+  script <- system.file(
+    "scripts", "generate_quantify_human_to_rhesus_role_map.py", package = "Rdiscvr"
   )
-  .regenerateAndCompareSpec(
-    "generate_quantify_human_spec.py", .humanImmuneQuantifySpecPath, exact = FALSE
+  skip_if_not(nzchar(script) && file.exists(script))
+  out <- tempfile(fileext = ".tsv")
+  on.exit(unlink(out), add = TRUE)
+  status <- system(paste("python3", shQuote(script), "-o", shQuote(out)))
+  expect_equal(status, 0L)
+  generated <- readLines(out, warn = FALSE)
+  packaged <- readLines(packaged_path, warn = FALSE)
+  expect_identical(sort(generated), sort(packaged))
+}
+
+test_that("bundled quantify specs match YAML builder output", {
+  skip_if_not(.hasPythonYaml())
+  .regenerateAndCompareYamlSpec(
+    "quantify_rhesus.yml", .rhesusQuantifySpecPath, exact = FALSE
+  )
+  .regenerateAndCompareYamlSpec(
+    "quantify_human_immune.yml", .humanImmuneQuantifySpecPath, exact = FALSE
   )
 })
 
-test_that("bundled quantify specs parse; rhesus panel smoke", {
-  expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(.rhesusQuantifySpecPath)$spec), 150)
-  expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(.humanImmuneQuantifySpecPath)$spec), 700)
+test_that("bundled role map matches YAML builder output", {
+  skip_if_not(.hasPythonYaml())
+  role_map_path <- system.file(
+    "extdata", "quantify_human_to_rhesus_role_map.tsv", package = "Rdiscvr"
+  )
+  .regenerateAndCompareRoleMap(role_map_path)
+})
 
+test_that("bundled quantify specs parse; rhesus panel smoke", {
   result <- .quantifyWithMockedPrepare(.makeRhesusRiraCellTable(), .rhesusQuantifySpecPath)
   expect_equal(nrow(result$failures), 0)
   row_1001 <- result$countsWide[result$countsWide$cDNA_ID == 1001, ]

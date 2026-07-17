@@ -77,10 +77,11 @@ utils::globalVariables(
 #' continues after failures; see \code{failures} and \code{failureLogFile}.
 #'
 #' Bundled-spec \code{TargetField} names use \code{__} between prefix segments.
-#' Regenerate the rhesus RIRA spec with \code{inst/scripts/generate_quantify_rhesus_spec.py},
-#' the human immune spec with \code{inst/scripts/generate_quantify_human_spec.py},
-#' and the human-to-RIRA role map with
-#' \code{inst/scripts/generate_quantify_human_to_rhesus_role_map.py}.
+#' Regenerate the quantify spec tables from the corresponding YAML files using
+#' \code{inst/scripts/build_quantify_spec.py} (\code{quantify_rhesus.yml},
+#' \code{quantify_human_immune.yml}), and the human-to-RIRA role map with
+#' \code{inst/scripts/generate_quantify_human_to_rhesus_role_map.py}
+#' (loads \code{quantify_human_immune.yml} + \code{quantify_human_to_rhesus_role_map.yml}).
 #' @export
 #' @importFrom dplyr %>% group_by summarize mutate filter distinct left_join bind_rows count pull across
 #' @importFrom tibble as_tibble tibble

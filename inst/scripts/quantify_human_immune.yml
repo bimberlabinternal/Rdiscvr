@@ -1,0 +1,480 @@
+# =============================================================================
+# Human Immune_All quantify spec (CellTypist High / Low)
+# =============================================================================
+#
+# Job: author the biology of human quantification. This file is the editable
+# source of truth for which CellTypist labels are counted, scored, binned by
+# effector differentiation, and tested for gene detection. The Python builder
+# expands the rules below into the flat TSV that Quantify10xData() reads.
+#
+# Build:
+#   python3 inst/scripts/build_quantify_spec.py quantify_human_immune.yml \
+#     -o inst/extdata/quantify_human_immune_spec.tsv
+#
+# What to edit here (immunologist-facing):
+#   roles.*              — which Low labels act as CD4-like, CD8-like, NK, …
+#   modules.*            — which UCell modules to summarize per lineage context
+#   eds / activation / pct_positive — cutpoints, TCR-stim flag, gene panels
+#   rules                — which metric blocks to emit (add/remove cautiously)
+#   fields.*.classes     — keep aligned with the CellTypist model; prefer
+#                          regenerating from pkl via --models-dir when possible
+#   fields.low.parent    — Low → High parent links (required for scoped Low metrics)
+#
+# Related: quantify_human_to_rhesus_role_map.yml coerces these labels onto RIRA
+# fields when Quantify10xData(coerceToRIRA = TRUE). Class lists and Low→High
+# parents are loaded from this file; do not duplicate them in the role-map YAML.
+# =============================================================================
+
+grouping: cDNA_ID          # one wide-table row per cDNA (sample) after quantification
+delimiter: "__"            # joins TargetField segments (e.g. ImmuneHigh__T_cells__CytotoxicityScore)
+pipeline_meta: [Unassigned, Ambiguous, Unknown]  # post-classifier labels appended to class lists
+
+# -----------------------------------------------------------------------------
+# fields — classifier columns that hold per-cell labels
+#
+# high: coarse Immune_All_High lineages (T cells, ILC, Macrophages, …).
+# low:  fine Immune_All_Low subtypes; parent maps each Low label to its High
+#       parent so scoped metrics (e.g. Low T subtypes within High "T cells")
+#       stay biologically coherent. Edit parent when CellTypist renames a
+#       subtype; leave class lists alone unless the model itself changed.
+# -----------------------------------------------------------------------------
+fields:
+  high:
+    column: celltypist.Immune_All_High.cellclass
+    prefix: ImmuneHigh
+    pkl: Immune_All_High.pkl
+    classes:
+      - B cells
+      - B-cell lineage
+      - Cycling cells
+      - DC
+      - DC precursor
+      - Double-negative thymocytes
+      - Double-positive thymocytes
+      - ETP
+      - Early MK
+      - Endothelial cells
+      - Epithelial cells
+      - Erythrocytes
+      - Erythroid
+      - Fibroblasts
+      - Granulocytes
+      - HSC/MPP
+      - ILC
+      - ILC precursor
+      - MNP
+      - Macrophages
+      - Mast cells
+      - Megakaryocyte precursor
+      - Megakaryocytes/platelets
+      - Mono-mac
+      - Monocyte precursor
+      - Monocytes
+      - Myelocytes
+      - Plasma cells
+      - Promyelocytes
+      - T cells
+      - pDC
+      - pDC precursor
+  low:
+    column: celltypist.Immune_All_Low.cellclass
+    prefix: ImmuneLow
+    pkl: Immune_All_Low.pkl
+    parent_field: high   # scopes Low metrics against the High column above
+    classes:
+      - Age-associated B cells
+      - Alveolar macrophages
+      - B cells
+      - CD16+ NK cells
+      - CD16- NK cells
+      - CD8a/a
+      - CD8a/b(entry)
+      - CMP
+      - CRTAM+ gamma-delta T cells
+      - Classical monocytes
+      - Cycling B cells
+      - Cycling DCs
+      - Cycling NK cells
+      - Cycling T cells
+      - Cycling gamma-delta T cells
+      - Cycling monocytes
+      - DC
+      - DC precursor
+      - DC1
+      - DC2
+      - DC3
+      - Double-negative thymocytes
+      - Double-positive thymocytes
+      - ELP
+      - ETP
+      - Early MK
+      - Early erythroid
+      - Early lymphoid/T lymphoid
+      - Endothelial cells
+      - Epithelial cells
+      - Erythrocytes
+      - Erythrophagocytic macrophages
+      - Fibroblasts
+      - Follicular B cells
+      - Follicular helper T cells
+      - GMP
+      - Germinal center B cells
+      - Granulocytes
+      - HSC/MPP
+      - Hofbauer cells
+      - ILC
+      - ILC precursor
+      - ILC1
+      - ILC2
+      - ILC3
+      - Intermediate macrophages
+      - Intestinal macrophages
+      - Kidney-resident macrophages
+      - Kupffer cells
+      - Large pre-B cells
+      - Late erythroid
+      - MAIT cells
+      - MEMP
+      - MNP
+      - Macrophages
+      - Mast cells
+      - Megakaryocyte precursor
+      - Megakaryocyte-erythroid-mast cell progenitor
+      - Megakaryocytes/platelets
+      - Memory B cells
+      - Memory CD4+ cytotoxic T cells
+      - Mid erythroid
+      - Migratory DCs
+      - Mono-mac
+      - Monocyte precursor
+      - Monocytes
+      - Myelocytes
+      - NK cells
+      - NKT cells
+      - Naive B cells
+      - Neutrophil-myeloid progenitor
+      - Neutrophils
+      - Non-classical monocytes
+      - Plasma cells
+      - Plasmablasts
+      - Pre-pro-B cells
+      - Pro-B cells
+      - Proliferative germinal center B cells
+      - Promyelocytes
+      - Regulatory T cells
+      - Small pre-B cells
+      - T(agonist)
+      - Tcm/Naive cytotoxic T cells
+      - Tcm/Naive helper T cells
+      - Tem/Effector helper T cells
+      - Tem/Effector helper T cells PD1+
+      - Tem/Temra cytotoxic T cells
+      - Tem/Trm cytotoxic T cells
+      - Transitional B cells
+      - Transitional DC
+      - Transitional NK
+      - Treg(diff)
+      - Trm cytotoxic T cells
+      - Type 1 helper T cells
+      - Type 17 helper T cells
+      - gamma-delta T cells
+      - pDC
+      - pDC precursor
+    # Low label → High parent. Critical for scope: by_parent / by_parent_in rules
+    # and for coerceToRIRA (role-map builder inherits this map). A Low label with
+    # the wrong parent will be counted under the wrong High compartment.
+    parent:
+      Age-associated B cells: B cells
+      Alveolar macrophages: Macrophages
+      B cells: B cells
+      CD16+ NK cells: ILC
+      CD16- NK cells: ILC
+      CD8a/a: T cells
+      CD8a/b(entry): T cells
+      CMP: HSC/MPP
+      CRTAM+ gamma-delta T cells: T cells
+      Classical monocytes: Monocytes
+      Cycling B cells: Cycling cells
+      Cycling DCs: Cycling cells
+      Cycling NK cells: Cycling cells
+      Cycling T cells: Cycling cells
+      Cycling gamma-delta T cells: Cycling cells
+      Cycling monocytes: Cycling cells
+      DC: DC
+      DC precursor: DC precursor
+      DC1: DC
+      DC2: DC
+      DC3: DC
+      Double-negative thymocytes: Double-negative thymocytes
+      Double-positive thymocytes: Double-positive thymocytes
+      ELP: HSC/MPP
+      ETP: ETP
+      Early MK: Early MK
+      Early erythroid: Erythroid
+      Early lymphoid/T lymphoid: HSC/MPP
+      Endothelial cells: Endothelial cells
+      Epithelial cells: Epithelial cells
+      Erythrocytes: Erythrocytes
+      Erythrophagocytic macrophages: Macrophages
+      Fibroblasts: Fibroblasts
+      Follicular B cells: B cells
+      Follicular helper T cells: T cells
+      GMP: HSC/MPP
+      Germinal center B cells: B cells
+      Granulocytes: Granulocytes
+      HSC/MPP: HSC/MPP
+      Hofbauer cells: Macrophages
+      ILC: ILC
+      ILC precursor: ILC precursor
+      ILC1: ILC
+      ILC2: ILC
+      ILC3: ILC
+      Intermediate macrophages: Macrophages
+      Intestinal macrophages: Macrophages
+      Kidney-resident macrophages: Macrophages
+      Kupffer cells: Macrophages
+      Large pre-B cells: B-cell lineage
+      Late erythroid: Erythroid
+      MAIT cells: T cells
+      MEMP: HSC/MPP
+      MNP: MNP
+      Macrophages: Macrophages
+      Mast cells: Mast cells
+      Megakaryocyte precursor: Megakaryocyte precursor
+      Megakaryocyte-erythroid-mast cell progenitor: HSC/MPP
+      Megakaryocytes/platelets: Megakaryocytes/platelets
+      Memory B cells: B cells
+      Memory CD4+ cytotoxic T cells: T cells
+      Mid erythroid: Erythroid
+      Migratory DCs: DC
+      Mono-mac: Mono-mac
+      Monocyte precursor: Monocyte precursor
+      Monocytes: Monocytes
+      Myelocytes: Myelocytes
+      NK cells: ILC
+      NKT cells: T cells
+      Naive B cells: B cells
+      Neutrophil-myeloid progenitor: HSC/MPP
+      Neutrophils: Granulocytes
+      Non-classical monocytes: Monocytes
+      Plasma cells: Plasma cells
+      Plasmablasts: Plasma cells
+      Pre-pro-B cells: B-cell lineage
+      Pro-B cells: B-cell lineage
+      Proliferative germinal center B cells: B cells
+      Promyelocytes: Promyelocytes
+      Regulatory T cells: T cells
+      Small pre-B cells: B-cell lineage
+      T(agonist): T cells
+      Tcm/Naive cytotoxic T cells: T cells
+      Tcm/Naive helper T cells: T cells
+      Tem/Effector helper T cells: T cells
+      Tem/Effector helper T cells PD1+: T cells
+      Tem/Temra cytotoxic T cells: T cells
+      Tem/Trm cytotoxic T cells: T cells
+      Transitional B cells: B cells
+      Transitional DC: DC
+      Transitional NK: ILC
+      Treg(diff): T cells
+      Trm cytotoxic T cells: T cells
+      Type 1 helper T cells: T cells
+      Type 17 helper T cells: T cells
+      gamma-delta T cells: T cells
+      pDC: pDC
+      pDC precursor: pDC precursor
+
+# -----------------------------------------------------------------------------
+# roles — named buckets of Low (or High) labels that rules select by name
+#
+# Lineage roles (cd4_like, cd8_like, nk, gamma_delta, nkt) answer: "which
+# subtypes share a biological job for EDS, diversity, and gene detection?"
+# Edit these lists when a new Low label should join (or leave) a job; rules
+# that say select: {role: [cd4_like, …]} expand automatically.
+#
+# Utility roles are not lineages: apc_parents is a High-class allowlist for
+# APC module scoring; pct_effector_order sets column order for pct_positive
+# only (biology is unchanged by reordering).
+# -----------------------------------------------------------------------------
+roles:
+  # Helper / regulatory / follicular CD4-axis T subtypes (EDS, diversity, FOXP3/IL2RA)
+  cd4_like:
+    - Follicular helper T cells
+    - Memory CD4+ cytotoxic T cells
+    - Regulatory T cells
+    - T(agonist)
+    - Tcm/Naive helper T cells
+    - Tem/Effector helper T cells
+    - Tem/Effector helper T cells PD1+
+    - Treg(diff)
+    - Type 1 helper T cells
+    - Type 17 helper T cells
+  # Cytotoxic / tissue-resident CD8-axis T subtypes (EDS, diversity, default genes)
+  cd8_like:
+    - CD8a/a
+    - CD8a/b(entry)
+    - MAIT cells
+    - Tcm/Naive cytotoxic T cells
+    - Tem/Temra cytotoxic T cells
+    - Tem/Trm cytotoxic T cells
+    - Trm cytotoxic T cells
+  # NK and transitional NK (default genes + FCGR3/FCGR3A)
+  nk:
+    - NK cells
+    - CD16+ NK cells
+    - CD16- NK cells
+    - Cycling NK cells
+    - Transitional NK
+  # Gamma-delta T (default genes; not in EDS/diversity select unless added there)
+  gamma_delta:
+    - gamma-delta T cells
+    - CRTAM+ gamma-delta T cells
+    - Cycling gamma-delta T cells
+  # NKT (default gene panel only in this file; not EDS/diversity)
+  nkt:
+    - NKT cells
+  # High parents treated as antigen-presenting / myeloid-B for APC UCell modules
+  apc_parents:
+    - B cells
+    - DC
+    - Granulocytes
+    - MNP
+    - Macrophages
+    - Mast cells
+    - Mono-mac
+    - Monocytes
+    - Myelocytes
+    - Plasma cells
+    - Promyelocytes
+    - pDC
+    - B-cell lineage
+  # Column order for PctPositive outputs (does not change which cells are counted)
+  pct_effector_order:
+    - Tcm/Naive cytotoxic T cells
+    - Tem/Temra cytotoxic T cells
+    - Tem/Trm cytotoxic T cells
+    - Trm cytotoxic T cells
+    - CD8a/a
+    - CD8a/b(entry)
+    - MAIT cells
+    - Tcm/Naive helper T cells
+    - Tem/Effector helper T cells
+    - Tem/Effector helper T cells PD1+
+    - Memory CD4+ cytotoxic T cells
+    - Regulatory T cells
+    - Follicular helper T cells
+    - Type 1 helper T cells
+    - Type 17 helper T cells
+    - Treg(diff)
+    - T(agonist)
+    - gamma-delta T cells
+    - CRTAM+ gamma-delta T cells
+    - Cycling gamma-delta T cells
+    - NK cells
+    - CD16+ NK cells
+    - CD16- NK cells
+    - Cycling NK cells
+    - Transitional NK
+    - NKT cells
+
+# -----------------------------------------------------------------------------
+# modules — UCell palettes keyed by lineage context
+# Each entry is [TargetField suffix, metadata column]. Quantify10xData fills
+# missing *_UCell columns before scoring. Pair a module set with a rule via
+# modules: t_cell (or modules_when for High-class-dependent palettes).
+# -----------------------------------------------------------------------------
+modules:
+  t_cell:    # CD4/CD8 T High or Low-under-T-cells
+    - [CytotoxicityScore, Cytotoxicity_UCell]
+    - [InterferonResponseScore, Interferon_Response_UCell]
+    - [CytokineScore, TandNK_Activation2_UCell]
+    - [MHCIIScore, MHCII_UCell]
+    - [ProliferationScore, Proliferation_UCell]
+    - [PerforinScore, Perforin_UCell]
+  nk_ilc:    # ILC High or Low-under-ILC (no TandNK_Activation2 cytokine module)
+    - [CytotoxicityScore, Cytotoxicity_UCell]
+    - [InterferonResponseScore, Interferon_Response_UCell]
+    - [MHCIIScore, MHCII_UCell]
+    - [ProliferationScore, Proliferation_UCell]
+    - [PerforinScore, Perforin_UCell]
+  apc:       # B / myeloid / DC High parents (IFN, MHCII, proliferation)
+    - [InterferonResponseScore, Interferon_Response_UCell]
+    - [MHCIIScore, MHCII_UCell]
+    - [ProliferationScore, Proliferation_UCell]
+
+# -----------------------------------------------------------------------------
+# tunables — cutpoints and gene panels shared by eds / activation / pct_positive
+# -----------------------------------------------------------------------------
+eds:
+  # Score bins on Tcell_EffectorDifferentiation: Naive < low ≤ MemoryLike < high ≤ Effector
+  metadata_field: Tcell_EffectorDifferentiation
+  cutpoint_low: 2
+  cutpoint_high: 6
+  phenotypes: [Naive, MemoryLike, Effector]
+activation:
+  # Counts cells flagged TCR-stimulated (RIRA::PredictTcellActivation when absent)
+  source_field: Is_TCR_Stimulated
+  match_value: "TRUE"
+pct_positive:
+  order_by: pct_effector_order
+  default_roles: [cd4_like, cd8_like, gamma_delta, nk, nkt]  # genes: default → these roles
+  genes:
+    # gene: default | [role, …]  — detection % among matched cells (counts > 0)
+    PDCD1: default
+    KLRK1: default
+    KLRB1: default
+    HAVCR2: default
+    TIGIT: default
+    PRF1: default
+    GZMB: default
+    KLRC1: default
+    FCGR3: [nk]
+    FCGR3A: [nk]
+    FOXP3: [cd4_like]
+    IL2RA: [cd4_like]
+
+# -----------------------------------------------------------------------------
+# rules — the quantification program (each archetype expands to many TSV rows)
+#
+# Archetypes:
+#   sum          — cell counts per selected class
+#   score        — p05 / median / p95 of a UCell (or other) score
+#   eds          — Naive/MemoryLike/Effector bins + EDSScore quantiles
+#   pct_positive — % cells with gene detected (uses pct_positive.genes above)
+#   diversity    — TCR clone Hill number q=2 (rarefaction; CD4/CD8-like here)
+#   activation   — count of Is_TCR_Stimulated matches within scope
+#
+# Prefer editing roles/modules/tunables over rewriting rules. Changing a rule's
+# select or scope changes which biology enters the wide table.
+# -----------------------------------------------------------------------------
+rules:
+  # Block 1: High lineage cell counts (all Immune_All_High classes)
+  - {archetype: sum,   field: high, select: all}
+  # Block 2: Low subtype counts, scoped to each subtype's High parent
+  - {archetype: sum,   field: low,  select: all, scope: by_parent}
+  # Block 3: High-class UCell quantiles; palette depends on lineage job
+  - {archetype: score, field: high, select: all,
+     modules_when: [{when: {class: T cells}, modules: t_cell},
+                    {when: {class: ILC},     modules: nk_ilc},
+                    {when: {class_in: apc_parents}, modules: apc}]}
+  # Block 4: Low T subtypes — T-cell UCell panel within High T cells
+  - {archetype: score, field: low, select: {parent: T cells}, modules: t_cell,
+     scope: {field: high, value: T cells}}
+  # Block 5: Low ILC subtypes — NK/ILC UCell panel within High ILC
+  - {archetype: score, field: low, select: {parent: ILC}, modules: nk_ilc,
+     scope: {field: high, value: ILC}}
+  # Block 6: Low APC subtypes — APC UCell panel, scoped by High parent
+  - {archetype: score, field: low, select: {parent_in: apc_parents}, modules: apc,
+     scope: by_parent}
+  # Block 7: EDS phenotype bins + score for CD4-like / CD8-like Low T
+  - {archetype: eds,   field: low, select: {role: [cd4_like, cd8_like]},
+     scope: {field: high, value: T cells}}
+  # Block 8: Gene detection % for Low T/ILC subtypes (see pct_positive.genes)
+  - {archetype: pct_positive, field: low, scope: {by_parent_in: [T cells, ILC]}}
+  # Block 9: TCR diversity (q=2) for CD4-like / CD8-like Low T
+  - {archetype: diversity, field: low, select: {role: [cd4_like, cd8_like]},
+     scope: {field: high, value: T cells}}
+  # Block 10a: TCR-stimulated counts at High T cells
+  - {archetype: activation, field: high, select: {class: T cells},
+     scope: {field: high, value: T cells}}
+  # Block 10b: TCR-stimulated counts per Low T subtype (scope = that subtype)
+  - {archetype: activation, field: low,  select: {parent: T cells}, scope: by_self}

@@ -63,14 +63,17 @@ result <- Quantify10xData(
 ```
 
 Each ID is downloaded as a full Seurat object. Missing `*_UCell` scores are
-filled via `RIRA::CalculateUCellScores`, then any remaining gaps via
-`RIRA::GetGeneSet` plus `UCell::AddModuleScore_UCell` (e.g. `Proliferation_UCell`
-from the registered `Proliferation` set). Absent `Is_TCR_Stimulated` is predicted
-via `RIRA::PredictTcellActivation`. For rhesus, `classifyTNK` (default `TRUE`)
-applies a TCR-aware gamma-delta and NK overrides on `RIRA_TNK_v2.cellclass`
-within the `T_NK` compartment and soft-skips when those RIRA fields are absent.
-Processing continues after validation or download failures; they accumulate in
-`failures` and `failureLogFile`.
+filled first with `RIRA::CalculateUCellScores` for the requested module list,
+then any remaining gaps via `RIRA::GetGeneSet` plus
+`UCell::AddModuleScore_UCell` (gene-set name = column prefix, e.g.
+`Proliferation_UCell` from the registered `Proliferation` set). Absent
+`Is_TCR_Stimulated` is predicted via `RIRA::PredictTcellActivation`. For rhesus,
+`classifyTNK` (default `TRUE`) runs TCR-aware TNK classification when RIRA
+immune and TNK metadata columns are present, then applies gamma-delta and NK
+overrides on `RIRA_TNK_v2.cellclass` within the `T_NK` compartment.
+Soft-skips when RIRA fields are absent; set `FALSE` to quantify from downloaded
+RIRA labels only. Processing continues after validation or download failures;
+they accumulate in `failures` and `failureLogFile`.
 
 Everything from here on uses a synthetic cell table so you can explore the
 specs, metric types, and coerce behavior without LabKey.
@@ -142,9 +145,10 @@ rules can treat some cells as lacking a recovered chain.
 
 ## Specifications
 
-The bundled human and rhesus specs live under `inst/extdata/`. Each row is one
-metric: a grouping grain, a cell filter, and a `QuantificationType`. There are
-four types:
+The bundled human and rhesus specs live under `inst/extdata/` (built from YAML
+in `inst/scripts/`; see [Regenerating bundled specs](#regenerating-bundled-specs)).
+Each row is one metric: a grouping grain, a cell filter, and a
+`QuantificationType`. There are four types:
 
 - **`sum`** counts the cells that match.
 - **`score`** reports quantiles of a numeric `QuantificationSourceField`
@@ -152,8 +156,9 @@ four types:
 - **`pct_positive`** gives the percent of matched cells with a gene detected.
 - **`diversity`** computes a TCR clone Hill number (q = 2) via rarefaction.
 
-The columns that drive matching are `GroupingVariable`, `TargetField`,
-`SourceField`, `MatchValue`, and `QuantificationType`. Rows for `score` and
+The columns that drive matching are `GroupingVariable` (pipe-separated metadata
+column names), `TargetField`, `SourceField`, `MatchValue`, and
+`QuantificationType`. Rows for `score` and
 `pct_positive` also set `QuantificationSourceField` (and, for scores,
 `QuantificationScoreType = quantiles`). Optional `ScopeField` and
 `ScopeMatchValue` restrict the population before the primary filter. Optional
@@ -194,6 +199,32 @@ rownames(spec_examples) <- NULL
 spec_examples
 ```
 
+## Regenerating bundled specs
+
+Biology (class lists, metric archetypes, and coerce rules) lives in YAML under
+`inst/scripts/`; the Python builders expand that into the flat TSV tables
+`Quantify10xData()` reads at runtime. Bundled-spec `TargetField` names use `__`
+between prefix segments.
+
+Regenerate the human and rhesus quantify specs with
+`inst/scripts/build_quantify_spec.py` and the corresponding YAML files
+`quantify_human_immune.yml` and `quantify_rhesus.yml`:
+
+```{bash regen-specs, eval = FALSE}
+python3 inst/scripts/build_quantify_spec.py inst/scripts/quantify_human_immune.yml \
+  -o inst/extdata/quantify_human_immune_spec.tsv
+python3 inst/scripts/build_quantify_spec.py inst/scripts/quantify_rhesus.yml \
+  -o inst/extdata/quantify_rhesus_spec.tsv
+```
+
+Regenerate the human-to-RIRA role map with
+`inst/scripts/generate_quantify_human_to_rhesus_role_map.py`, which loads
+`quantify_human_immune.yml` and `quantify_human_to_rhesus_role_map.yml`:
+
+```{bash regen-role-map, eval = FALSE}
+python3 inst/scripts/generate_quantify_human_to_rhesus_role_map.py
+```
+
 ## Output
 
 We now run the native human metric loop over the fixture. The full result is
@@ -220,12 +251,12 @@ native$countsWide[, slice_columns, drop = FALSE]
 ```
 
 A real `Quantify10xData()` call differs mainly in how the cell table is built:
-it downloads each Seurat object from LabKey, fills missing `*_UCell` scores via
-`RIRA::CalculateUCellScores` then `RIRA::GetGeneSet` /
+it downloads each Seurat object from LabKey, fills missing `*_UCell` scores with
+`RIRA::CalculateUCellScores` (requested module list) then `RIRA::GetGeneSet` /
 `UCell::AddModuleScore_UCell` for remaining gaps, predicts absent
-`Is_TCR_Stimulated` via `RIRA::PredictTcellActivation`, and, for rhesus,
-optionally reclassifies TNK labels before extraction. The metric loop itself is
-the same path exercised above.
+`Is_TCR_Stimulated` via `RIRA::PredictTcellActivation`, and, for rhesus with
+`classifyTNK = TRUE`, reclassifies TNK labels before extraction. The metric loop
+itself is the same path exercised above.
 
 ## coerceToRIRA
 

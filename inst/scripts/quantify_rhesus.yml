@@ -1,0 +1,211 @@
+# =============================================================================
+# Rhesus RIRA quantify spec
+# =============================================================================
+#
+# Job: author the biology of rhesus quantification. This file is the editable
+# source of truth for which RIRA Immune / TNK / Myeloid labels are counted,
+# scored, binned by effector differentiation, and tested for gene detection.
+# The Python builder expands the rules below into the flat TSV that
+# Quantify10xData() reads (also used as the coerceToRIRA target for human).
+#
+# Build:
+#   python3 inst/scripts/build_quantify_spec.py quantify_rhesus.yml \
+#     -o inst/extdata/quantify_rhesus_spec.tsv
+#   # optional: refresh class lists from RIRA pkls (in-memory; does not rewrite YAML)
+#   python3 ... --models-dir /path/to/RIRA/inst/models
+#
+# What to edit here (immunologist-facing):
+#   roles.*              — which TNK labels act as CD4, CD8, NK, GD for EDS/genes
+#   modules.*            — which UCell modules to summarize per lineage context
+#   eds / activation / pct_positive — cutpoints, TCR-stim flag, gene panels
+#   rules                — which metric blocks to emit (add/remove cautiously)
+#   fields.*.classes     — keep aligned with RIRA models; myeloid_coarse.classes
+#                          is overwritten at build from myeloid_fine collapse
+#
+# Note: Quantify10xData(classifyTNK = TRUE) may rewrite Gamma/Delta and NK in
+# RIRA_TNK_v2.cellclass from TCR evidence before these rules run.
+# =============================================================================
+
+grouping: cDNA_ID          # one wide-table row per cDNA (sample) after quantification
+delimiter: "__"            # joins TargetField segments (e.g. TNK__CD4_T_Cells__CytotoxicityScore)
+pipeline_meta: []          # rhesus class lists already include Unassigned/Ambiguous/Unknown where needed
+
+# -----------------------------------------------------------------------------
+# fields — RIRA classifier columns that hold per-cell labels
+#
+# immune:         coarse compartment (T_NK, Myeloid, Bcell, …)
+# tnk:            T/NK subtypes within T_NK (CD4, CD8, GD, NK, …)
+# myeloid_fine:   fine myeloid labels; source of truth for coarse collapse
+# myeloid_coarse: authored for documentation; builder overwrites .classes from
+#                 myeloid_fine (monocyte/DC collapse in RIRA Classify_Myeloid)
+# -----------------------------------------------------------------------------
+fields:
+  immune:
+    column: RIRA_Immune_v2.cellclass
+    prefix: Immune
+    pkl: RIRA_Immune_v2.pkl
+    classes:
+      - Bcell
+      - Epithelial
+      - Erythrocyte
+      - Myeloid
+      - Stromal
+      - T_NK
+      - Non-Immune
+      - Unknown
+  tnk:
+    column: RIRA_TNK_v2.cellclass
+    prefix: TNK
+    pkl: RIRA_TNK_v2.pkl
+    classes:
+      - CD4+ T Cells
+      - CD8+ T Cells
+      - Gamma/Delta Cells
+      - NK Cells
+      - Other
+      - Unassigned
+      - Ambiguous
+      - Unknown
+  myeloid_fine:
+    column: RIRA_Myeloid_v3.cellclass
+    prefix: Myeloid__fine
+    pkl: RIRA_FineScope_Myeloid_v3.pkl
+    classes:
+      - Alv. mac.
+      - CD14+ Monocytes
+      - CD16+ Monocytes
+      - DC
+      - Inflammatory Monocytes
+      - MacrophageM1
+      - Macrophages
+      - Mature DC
+      - Myelocytes
+      - Promyelocytes
+      - pDC
+      - Unassigned
+      - Ambiguous
+      - Unknown
+  myeloid_coarse:
+    column: RIRA_Myeloid_v3.coarseclass
+    prefix: Myeloid__coarse
+    classes:
+      - Alv. mac.
+      - Ambiguous
+      - DC
+      - MacrophageM1
+      - Macrophages
+      - Monocytes
+      - Myelocytes
+      - pDC
+      - Promyelocytes
+      - Unassigned
+      - Unknown
+
+# -----------------------------------------------------------------------------
+# roles — named buckets of TNK labels that rules select by name
+#
+# Lineage roles (cd4, cd8, nk, gd) answer: "which TNK classes share a job for
+# EDS, diversity, activation, and gene detection?" Edit these lists when a
+# RIRA TNK label should join or leave a job.
+#
+# pct_effector_order sets PctPositive column order only (biology unchanged).
+# -----------------------------------------------------------------------------
+roles:
+  cd4:                   # helper/regulatory axis — EDS, diversity, FOXP3/IL2RA
+    - CD4+ T Cells
+  cd8:                   # cytotoxic axis — EDS, diversity, default genes
+    - CD8+ T Cells
+  nk:                    # NK — default genes + FCGR3/FCGR3A
+    - NK Cells
+  gd:                    # gamma-delta — default genes
+    - Gamma/Delta Cells
+  pct_effector_order:    # column order for PctPositive outputs
+    - CD4+ T Cells
+    - CD8+ T Cells
+    - NK Cells
+    - Gamma/Delta Cells
+
+# -----------------------------------------------------------------------------
+# modules — UCell palettes keyed by lineage context
+# Each entry is [TargetField suffix, metadata column].
+# -----------------------------------------------------------------------------
+modules:
+  tnk:                   # T_NK compartment and TNK subtypes
+    - [CytotoxicityScore, Cytotoxicity_UCell]
+    - [InterferonResponseScore, Interferon_Response_UCell]
+    - [CytokineScore, TandNK_Activation2_UCell]
+    - [MHCIIScore, MHCII_UCell]
+    - [ProliferationScore, Proliferation_UCell]
+    - [PerforinScore, Perforin_UCell]
+  ifn_mhcii:             # Myeloid Immune / coarse myeloid
+    - [InterferonResponseScore, Interferon_Response_UCell]
+    - [MHCIIScore, MHCII_UCell]
+  ifn_mhcii_prolif:      # Bcell Immune
+    - [InterferonResponseScore, Interferon_Response_UCell]
+    - [MHCIIScore, MHCII_UCell]
+    - [ProliferationScore, Proliferation_UCell]
+
+# -----------------------------------------------------------------------------
+# tunables — cutpoints and gene panels shared by eds / activation / pct_positive
+# -----------------------------------------------------------------------------
+eds:
+  # Score bins on Tcell_EffectorDifferentiation: Naive < low ≤ MemoryLike < high ≤ Effector
+  metadata_field: Tcell_EffectorDifferentiation
+  cutpoint_low: 2
+  cutpoint_high: 6
+  phenotypes: [Naive, MemoryLike, Effector]
+activation:
+  # Counts cells flagged TCR-stimulated (RIRA::PredictTcellActivation when absent)
+  source_field: Is_TCR_Stimulated
+  match_value: "TRUE"
+pct_positive:
+  order_by: pct_effector_order
+  default_roles: [cd4, cd8, nk, gd]  # genes: default → these roles
+  genes:
+    # gene: default | [role, …]  — detection % among matched cells (counts > 0)
+    PDCD1: default
+    KLRK1: default
+    KLRB1: default
+    HAVCR2: default
+    TIGIT: default
+    PRF1: default
+    GZMB: default
+    KLRC1: default
+    FCGR3: [nk]
+    FCGR3A: [nk]
+    FOXP3: [cd4]
+    IL2RA: [cd4]
+
+# -----------------------------------------------------------------------------
+# rules — the quantification program (each archetype expands to many TSV rows)
+#
+# Archetypes: sum | score | eds | pct_positive | diversity | activation
+# Prefer editing roles/modules/tunables over rewriting rules.
+# -----------------------------------------------------------------------------
+rules:
+  # Block 1: coarse Immune compartment counts
+  - {archetype: sum,   field: immune, select: all}
+  # Block 2: TNK subtype counts within Immune == T_NK
+  - {archetype: sum,   field: tnk, select: all, scope: {field: immune, value: T_NK}}
+  # Block 2a: TNK UCell quantiles within T_NK
+  - {archetype: score, field: tnk, select: all, modules: tnk,
+     scope: {field: immune, value: T_NK}}
+  # Block 2b/2c: EDS phenotype bins + score for CD4 and CD8
+  - {archetype: eds,   field: tnk, select: {role: [cd4, cd8]},
+     scope: {field: immune, value: T_NK}}
+  # Block 2d: TCR-stimulated counts per CD4/CD8 (scope = that TNK class)
+  - {archetype: activation, field: tnk, select: {role: [cd4, cd8]}, scope: by_self}
+  # Block 2e: gene detection % for TNK subtypes within T_NK
+  - {archetype: pct_positive, field: tnk, scope: {field: immune, value: T_NK}}
+  # Block 2f: TCR diversity (q=2) for CD4 and CD8 within T_NK
+  - {archetype: diversity, field: tnk, select: {role: [cd4, cd8]},
+     scope: {field: immune, value: T_NK}}
+  # Block 1a–c: Immune-level UCell panels by compartment
+  - {archetype: score, field: immune, select: {class: T_NK},   modules: tnk}
+  - {archetype: score, field: immune, select: {class: Myeloid}, modules: ifn_mhcii}
+  - {archetype: score, field: immune, select: {class: Bcell},   modules: ifn_mhcii_prolif}
+  # Block 3: Myeloid fine/coarse counts + coarse IFN/MHCII scores (within Myeloid)
+  - {archetype: sum,   field: myeloid_fine,   select: all, scope: {field: immune, value: Myeloid}}
+  - {archetype: sum,   field: myeloid_coarse, select: all, scope: {field: immune, value: Myeloid}}
+  - {archetype: score, field: myeloid_coarse, select: all, modules: ifn_mhcii,
+     scope: {field: immune, value: Myeloid}}
