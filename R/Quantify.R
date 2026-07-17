@@ -65,9 +65,12 @@ utils::globalVariables(
 #' differentiation subset columns further restrict matched cells by a numeric
 #' score bin.
 #'
-#' Per dataset, missing standard UCell score columns (names ending in \code{_UCell})
-#' are computed with \code{RIRA::CalculateUCellScores}; \code{Proliferation_UCell}
-#' is added separately when needed. \code{Is_TCR_Stimulated} is predicted with
+#' Per dataset, missing UCell score columns (names ending in \code{_UCell})
+#' are filled first with \code{RIRA::CalculateUCellScores} for the requested
+#' module list, then any remaining gaps via \code{RIRA::GetGeneSet} plus
+#' \code{UCell::AddModuleScore_UCell} (gene-set name = column prefix, e.g.
+#' \code{Proliferation_UCell} from the registered \code{Proliferation} set).
+#' \code{Is_TCR_Stimulated} is predicted with
 #' \code{RIRA::PredictTcellActivation} when absent.
 #'
 #' All spec rows must share the same \code{GroupingVariable}. Processing
@@ -494,7 +497,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   register_if_absent <- function(name, genes) {
     #already-registered names raise an error; ignore these so sourcing this file stays idempotent
     tryCatch(
-      RIRA:::.RegisterGeneSet(name, genes),
+      RIRA::RegisterGeneSet(name, genes),
       error = function(error_condition) invisible(NULL)
     )
   }
@@ -632,14 +635,14 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   ]
   ucell_fields <- unique(trimws(as.character(score_rows$QuantificationSourceField)))
   ucell_fields <- ucell_fields[grepl("_UCell$", ucell_fields, perl = TRUE)]
-  standard_ucells <- setdiff(ucell_fields, "Proliferation_UCell")
 
-  #RIRA::CalculateUCellScores covers standard *_UCell columns; Proliferation_UCell is handled below
-  needs_standard_ucells <- standard_ucells[
-    vapply(standard_ucells, .UCellColumnNeedsComputation, logical(1), seurat_obj = seurat_obj)
+  needs_ucells <- ucell_fields[
+    vapply(ucell_fields, .UCellColumnNeedsComputation, logical(1), seurat_obj = seurat_obj)
   ]
 
-  if (length(needs_standard_ucells)) {
+  #RIRA::CalculateUCellScores covers a good chunk of the module list(Cytotoxicity,
+  #Interferon_Response, MHCII, Perforin, TandNK_Activation2, ...); skip when present
+  if (length(needs_ucells)) {
     seurat_obj <- tryCatch(
       RIRA::CalculateUCellScores(seurat_obj, plotCor = FALSE),
       error = function(error_condition) {
@@ -652,38 +655,47 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
     )
   }
 
-  #Proliferation_UCell is not in CalculateUCellScores yet; compute adhoc when needed.
-  #TODO: drop this once RIRA registers Proliferation in CalculateUCellScores
-  if ("Proliferation_UCell" %in% ucell_fields &&
-      .UCellColumnNeedsComputation(seurat_obj, "Proliferation_UCell")) {
-    proliferation_genes <- tryCatch(
-      RIRA::GetGeneSet("Proliferation"),
-      error = function(error_condition) {
+  #fill any missing *_UCell from registered RIRA gene sets (e.g. Proliferation)
+  still_needed <- ucell_fields[
+    vapply(ucell_fields, .UCellColumnNeedsComputation, logical(1), seurat_obj = seurat_obj)
+  ]
+  if (length(still_needed)) {
+    features_to_add <- list()
+    for (ucell_field in still_needed) {
+      gene_set_name <- sub("_UCell$", "", ucell_field)
+      genes <- suppressWarnings(RIRA::GetGeneSet(gene_set_name))
+      if (is.null(genes) || !length(genes) || !any(nzchar(genes))) {
         append_failure(
           "RIRA::GetGeneSet",
           paste0(
-            "GetGeneSet(Proliferation) failed: ",
-            conditionMessage(error_condition),
-            "; using MKI67/TOP2A fallback"
+            "no registered gene set for missing UCell column: ",
+            ucell_field,
+            " (tried GetGeneSet(\"",
+            gene_set_name,
+            "\"))"
           )
         )
-        c("MKI67", "TOP2A")
+        next
       }
-    )
-    seurat_obj <- tryCatch(
-      UCell::AddModuleScore_UCell(
-        seurat_obj,
-        features = list(Proliferation = proliferation_genes),
-        missing_genes = "skip"
-      ),
-      error = function(error_condition) {
-        append_failure(
-          "UCell::AddModuleScore_UCell",
-          conditionMessage(error_condition)
-        )
-        seurat_obj
-      }
-    )
+      features_to_add[[gene_set_name]] <- as.character(genes)
+    }
+
+    if (length(features_to_add)) {
+      seurat_obj <- tryCatch(
+        UCell::AddModuleScore_UCell(
+          seurat_obj,
+          features = features_to_add,
+          missing_genes = "skip"
+        ),
+        error = function(error_condition) {
+          append_failure(
+            "UCell::AddModuleScore_UCell",
+            conditionMessage(error_condition)
+          )
+          seurat_obj
+        }
+      )
+    }
   }
 
   #predict TCR stimulation when Is_TCR_Stimulated is absent

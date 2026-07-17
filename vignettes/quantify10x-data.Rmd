@@ -62,10 +62,11 @@ result <- Quantify10xData(
 # result$datasetSummary   - per-outputFileId ingest counts (nCellsIngested)
 ```
 
-Each ID is downloaded as a full Seurat object. Missing standard `*_UCell`
-scores are computed via `RIRA::CalculateUCellScores` (with `Proliferation_UCell`
-added adhoc when needed), and absent `Is_TCR_Stimulated` is predicted via
-`RIRA::PredictTcellActivation`. For rhesus, `classifyTNK` (default `TRUE`)
+Each ID is downloaded as a full Seurat object. Missing `*_UCell` scores are
+filled via `RIRA::CalculateUCellScores`, then any remaining gaps via
+`RIRA::GetGeneSet` plus `UCell::AddModuleScore_UCell` (e.g. `Proliferation_UCell`
+from the registered `Proliferation` set). Absent `Is_TCR_Stimulated` is predicted
+via `RIRA::PredictTcellActivation`. For rhesus, `classifyTNK` (default `TRUE`)
 applies a TCR-aware gamma-delta and NK overrides on `RIRA_TNK_v2.cellclass`
 within the `T_NK` compartment and soft-skips when those RIRA fields are absent.
 Processing continues after validation or download failures; they accumulate in
@@ -219,11 +220,12 @@ native$countsWide[, slice_columns, drop = FALSE]
 ```
 
 A real `Quantify10xData()` call differs mainly in how the cell table is built:
-it downloads each Seurat object from LabKey, computes missing `*_UCell` scores
-via `RIRA::CalculateUCellScores` (with `Proliferation_UCell` added adhoc when
-needed) and predicts absent `Is_TCR_Stimulated` via `RIRA::PredictTcellActivation`,
-and, for rhesus, optionally reclassifies TNK labels before extraction. The metric
-loop itself is the same path exercised above.
+it downloads each Seurat object from LabKey, fills missing `*_UCell` scores via
+`RIRA::CalculateUCellScores` then `RIRA::GetGeneSet` /
+`UCell::AddModuleScore_UCell` for remaining gaps, predicts absent
+`Is_TCR_Stimulated` via `RIRA::PredictTcellActivation`, and, for rhesus,
+optionally reclassifies TNK labels before extraction. The metric loop itself is
+the same path exercised above.
 
 ## coerceToRIRA
 

@@ -82,9 +82,12 @@ matching before the \code{SourceField} filter. Optional effector-
 differentiation subset columns further restrict matched cells by a numeric
 score bin.
 
-Per dataset, missing standard UCell score columns (names ending in \code{_UCell})
-are computed with \code{RIRA::CalculateUCellScores}; \code{Proliferation_UCell}
-is added separately when needed. \code{Is_TCR_Stimulated} is predicted with
+Per dataset, missing UCell score columns (names ending in \code{_UCell})
+are filled first with \code{RIRA::CalculateUCellScores} for the standard
+module list, then any remaining gaps via \code{RIRA::GetGeneSet} plus
+\code{UCell::AddModuleScore_UCell} (gene-set name = column prefix, e.g.
+\code{Proliferation_UCell} from the registered \code{Proliferation} set).
+\code{Is_TCR_Stimulated} is predicted with
 \code{RIRA::PredictTcellActivation} when absent.
 
 All spec rows must share the same \code{GroupingVariable}. Processing
