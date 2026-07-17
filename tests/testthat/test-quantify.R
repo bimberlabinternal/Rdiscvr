@@ -459,6 +459,40 @@ test_that("human coerceToRIRA returns rhesus-shaped columns and writes TSVs", {
   )
 })
 
+.regenerateAndCompareSpec <- function(script_name, packaged_path, exact = TRUE) {
+  script <- system.file("scripts", script_name, package = "Rdiscvr")
+  skip_if_not(nzchar(script) && file.exists(script))
+  out <- tempfile(fileext = ".tsv")
+  on.exit(unlink(out), add = TRUE)
+  # system()+shQuote: workspace paths may contain & (OneDrive), which
+  # system2 arg handling can mishandle on some platforms
+  status <- system(paste(
+    "python3",
+    shQuote(script),
+    "--classes-only",
+    "--out",
+    shQuote(out)
+  ))
+  expect_equal(status, 0L)
+  packaged <- readLines(packaged_path, warn = FALSE)
+  generated <- readLines(out, warn = FALSE)
+  if (exact) {
+    expect_identical(generated, packaged)
+  } else {
+    expect_identical(sort(generated), sort(packaged))
+  }
+}
+
+test_that("bundled quantify specs match --classes-only generator output", {
+  skip_if(Sys.which("python3") == "")
+  .regenerateAndCompareSpec(
+    "generate_quantify_rhesus_spec.py", .rhesusQuantifySpecPath, exact = TRUE
+  )
+  .regenerateAndCompareSpec(
+    "generate_quantify_human_spec.py", .humanImmuneQuantifySpecPath, exact = FALSE
+  )
+})
+
 test_that("bundled quantify specs parse; rhesus panel smoke", {
   expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(.rhesusQuantifySpecPath)$spec), 150)
   expect_gt(nrow(Rdiscvr:::.ParseQuantifySpec(.humanImmuneQuantifySpecPath)$spec), 700)
