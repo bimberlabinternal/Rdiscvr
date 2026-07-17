@@ -198,8 +198,7 @@ Quantify10xData <- function(
 
   #rbind per-dataset tables into one cell-level table for the metric loop
   if (length(dataset_tables)) {
-    cell_table <- tibble::as_tibble(do.call(rbind, dataset_tables))
-    rownames(cell_table) <- NULL
+    cell_table <- dplyr::bind_rows(dataset_tables)
   } else {
     cell_table <- tibble::tibble()
   }
@@ -1218,6 +1217,16 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   cells[keep, , drop = FALSE]
 }
 
+#TRUE for cells with non-empty TRA and TRB (shared rarefaction + diversity definition)
+.TcrPositiveMask <- function(cell_table) {
+  if (!nrow(cell_table) || !all(c("TRA", "TRB") %in% names(cell_table))) {
+    return(rep(FALSE, nrow(cell_table)))
+  }
+  tra <- as.character(cell_table$TRA)
+  trb <- as.character(cell_table$TRB)
+  !is.na(tra) & nzchar(tra) & !is.na(trb) & nzchar(trb)
+}
+
 #minimum TCR+ cell count per group across diversity spec rows for shared rarefaction
 .ComputeSharedRarefactionLevel <- function(spec_table, cell_table, grouping_columns) {
   diversity_rows <- spec_table[
@@ -1236,10 +1245,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
   for (diversity_row_idx in seq_len(nrow(diversity_rows))) {
     spec_row <- diversity_rows[diversity_row_idx, , drop = FALSE]
     filtered_cells <- .FilterCellsBySpecRow(cell_table, spec_row)
-    tra <- as.character(filtered_cells$TRA)
-    trb <- as.character(filtered_cells$TRB)
-    tcr_plus <- !is.na(tra) & nzchar(tra) & !is.na(trb) & nzchar(trb)
-    filtered_tcr <- filtered_cells[tcr_plus, , drop = FALSE]
+    filtered_tcr <- filtered_cells[.TcrPositiveMask(filtered_cells), , drop = FALSE]
 
     if (nrow(filtered_tcr)) {
       group_counts <- filtered_tcr %>%
@@ -1269,10 +1275,7 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
     return(all_groups)
   }
 
-  tra <- as.character(filtered_cells$TRA)
-  trb <- as.character(filtered_cells$TRB)
-  tcr_plus <- !is.na(tra) & nzchar(tra) & !is.na(trb) & nzchar(trb)
-  tcr_cells <- filtered_cells[tcr_plus, , drop = FALSE]
+  tcr_cells <- filtered_cells[.TcrPositiveMask(filtered_cells), , drop = FALSE]
 
   if (!nrow(tcr_cells)) {
     return(all_groups)
@@ -1419,39 +1422,27 @@ LoadQuantifyRoleMap <- function(mapFile = NULL) {
     score_values <- suppressWarnings(as.numeric(filtered_cells[[score_field]]))
     filtered_cells[[score_field]] <- score_values
 
-    score_sym <- rlang::sym(score_field)
     quantile_metrics <- filtered_cells %>%
       dplyr::group_by(dplyr::across(dplyr::all_of(grouping_columns))) %>%
-      dplyr::summarize(
-        !!p05_col := {
-          score_vector <- !!score_sym
-          score_vector <- score_vector[!is.na(score_vector)]
-          if (!length(score_vector)) {
-            NA_real_
-          } else {
-            as.numeric(stats::quantile(score_vector, probs = 0.05, na.rm = TRUE, names = FALSE))
-          }
-        },
-        !!median_col := {
-          score_vector <- !!score_sym
-          score_vector <- score_vector[!is.na(score_vector)]
-          if (!length(score_vector)) {
-            NA_real_
-          } else {
-            as.numeric(stats::quantile(score_vector, probs = 0.5, na.rm = TRUE, names = FALSE))
-          }
-        },
-        !!p95_col := {
-          score_vector <- !!score_sym
-          score_vector <- score_vector[!is.na(score_vector)]
-          if (!length(score_vector)) {
-            NA_real_
-          } else {
-            as.numeric(stats::quantile(score_vector, probs = 0.95, na.rm = TRUE, names = FALSE))
-          }
-        },
-        .groups = "drop"
-      )
+      dplyr::group_modify(function(.x, .y) {
+        score_vector <- .x[[score_field]][!is.na(.x[[score_field]])]
+        q <- if (!length(score_vector)) {
+          c(NA_real_, NA_real_, NA_real_)
+        } else {
+          as.numeric(stats::quantile(
+            score_vector,
+            probs = c(0.05, 0.5, 0.95),
+            na.rm = TRUE,
+            names = FALSE
+          ))
+        }
+        tibble::tibble(
+          !!p05_col := q[[1]],
+          !!median_col := q[[2]],
+          !!p95_col := q[[3]]
+        )
+      }) %>%
+      dplyr::ungroup()
 
     dplyr::left_join(all_groups, quantile_metrics, by = grouping_columns)
   }
