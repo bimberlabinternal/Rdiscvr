@@ -1,5 +1,11 @@
 #' @import utils
 
+utils::globalVariables(
+  names = c('cell', 'donor_id', 'CellBarcodeWithoutPrefix'),
+  package = 'Rdiscvr',
+  add = TRUE
+)
+
 #' @title DownloadOutputFile
 #' @description Downloads an output file tracked in LabKey to the local filesystem.
 #' @param outputFileId The rowid of the sequence outputfiles on the webserver

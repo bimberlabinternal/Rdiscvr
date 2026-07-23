@@ -1,0 +1,206 @@
+# =============================================================================
+# Human CellTypist → RIRA coerce map
+# =============================================================================
+#
+# Job: decide how human Immune_All High/Low labels land on RIRA metadata fields
+# so Quantify10xData(coerceToRIRA = TRUE) can run the rhesus quantify spec on
+# human datasets and produce countsWideRIRA alongside the native CellTypist
+# table. This file holds coerce biology only.
+#
+# Class lists and Low→High parents are NOT duplicated here: they are loaded
+# from quantify_human_immune.yml at build time. Edit parents/classes there;
+# edit coerce destinations here.
+#
+# Build:
+#   python3 inst/scripts/generate_quantify_human_to_rhesus_role_map.py
+#   # writes inst/extdata/quantify_human_to_rhesus_role_map.tsv
+#
+# Runtime resolution (per cell): Low map first, then High; unmapped → Unknown.
+# lineageRole in the TSV is documentation-only; quantification reads rhesusLabel.
+#
+# What to edit here (immunologist-facing):
+#   high_immune_map     — High lineage → [RIRA Immune label, lineageRole]
+#   cd4_like / cd8_like / gamma_delta_like / nk_like / helper_ilc_like
+#                       — which Low labels share a TNK job under coerce
+#   tnk_role_map        — role set → [RIRA TNK label, lineageRole]
+#   low_cycling_map     — cycling Low must not inherit High "Cycling cells"→T
+#   low_myeloid_*       — Low myeloid → coarse/fine RIRA myeloid labels
+#   *_parents           — High parents that route Low labels into B / myeloid / ILC
+# =============================================================================
+
+sources:
+  high: Immune_All_High
+  low: Immune_All_Low
+
+targets:
+  immune: RIRA_Immune_v2.cellclass
+  tnk: RIRA_TNK_v2.cellclass
+  myeloid_coarse: RIRA_Myeloid_v3.coarseclass
+  myeloid_fine: RIRA_Myeloid_v3.cellclass
+
+# -----------------------------------------------------------------------------
+# high_immune_map — High class → [RIRA Immune compartment, lineageRole]
+#
+# T_NK is a mixed lymphoid bin (T + NK + helper ILC), not "T cells only".
+# Cycling cells High stays T_NK/T as a coarse fallback when Low is absent;
+# Low cycling subtypes are overridden in low_cycling_map below.
+# -----------------------------------------------------------------------------
+high_immune_map:
+  B cells: [Bcell, B]
+  B-cell lineage: [Bcell, B]
+  Plasma cells: [Bcell, B]
+  T cells: [T_NK, T]
+  Cycling cells: [T_NK, T]
+  ILC: [T_NK, NK_ILC]
+  ILC precursor: [T_NK, NK_ILC]
+  Double-negative thymocytes: [T_NK, T]
+  Double-positive thymocytes: [T_NK, T]
+  ETP: [T_NK, T]
+  Macrophages: [Myeloid, Myeloid_APC]
+  Monocytes: [Myeloid, Myeloid_APC]
+  DC: [Myeloid, Myeloid_APC]
+  DC precursor: [Myeloid, Myeloid_APC]
+  MNP: [Myeloid, Myeloid_APC]
+  Mono-mac: [Myeloid, Myeloid_APC]
+  Monocyte precursor: [Myeloid, Myeloid_APC]
+  Myelocytes: [Myeloid, Myeloid_APC]
+  Promyelocytes: [Myeloid, Myeloid_APC]
+  Megakaryocytes/platelets: [Myeloid, Myeloid_APC]
+  Megakaryocyte precursor: [Myeloid, Myeloid_APC]
+  Early MK: [Myeloid, Myeloid_APC]
+  Mast cells: [Myeloid, Myeloid_APC]
+  Granulocytes: [Myeloid, Myeloid_APC]
+  pDC: [Myeloid, Myeloid_APC]
+  pDC precursor: [Myeloid, Myeloid_APC]
+  Epithelial cells: [Epithelial, Epithelial]
+  Erythrocytes: [Erythrocyte, Erythrocyte]
+  Erythroid: [Erythrocyte, Erythrocyte]
+  Endothelial cells: [Stromal, Stromal]
+  Fibroblasts: [Stromal, Stromal]
+  HSC/MPP: [Non-Immune, HSC]
+
+# -----------------------------------------------------------------------------
+# TNK role sets — Low labels that share a coerce job under Immune T_NK
+#
+# Each set expands via tnk_role_map into RIRA_TNK_v2.cellclass + lineageRole.
+# Keep these lists aligned with roles in quantify_human_immune.yml when the
+# same biology is meant (cd4_like here ≈ cd4_like there), but they are not
+# auto-synced: a label can be counted in human EDS without being coerced to
+# the matching RIRA TNK class unless it appears here.
+# -----------------------------------------------------------------------------
+cd4_like:
+  - Tcm/Naive helper T cells
+  - Tem/Effector helper T cells
+  - Tem/Effector helper T cells PD1+
+  - Memory CD4+ cytotoxic T cells
+  - Regulatory T cells
+  - Follicular helper T cells
+  - Type 1 helper T cells
+  - Type 17 helper T cells
+  - Treg(diff)
+  - T(agonist)
+
+cd8_like:
+  - Tcm/Naive cytotoxic T cells
+  - Tem/Temra cytotoxic T cells
+  - Tem/Trm cytotoxic T cells
+  - Trm cytotoxic T cells
+  - CD8a/a
+  - CD8a/b(entry)
+  - MAIT cells
+  - NKT cells
+
+gamma_delta_like:
+  - gamma-delta T cells
+  - CRTAM+ gamma-delta T cells
+  - Cycling gamma-delta T cells
+
+nk_like:
+  - NK cells
+  - CD16+ NK cells
+  - CD16- NK cells
+  - Cycling NK cells
+  - Transitional NK
+
+# Helper ILCs land in T_NK but RIRA TNK "Other" (no dedicated helper-ILC class)
+helper_ilc_like:
+  - ILC
+  - ILC precursor
+  - ILC1
+  - ILC2
+  - ILC3
+
+# role set → [RIRA TNK label written onto cells, lineageRole for the TSV]
+tnk_role_map:
+  cd4_like: [CD4+ T Cells, CD4_like]
+  cd8_like: [CD8+ T Cells, CD8_like]
+  gamma_delta_like: [Gamma/Delta Cells, GD]
+  nk_like: [NK Cells, NK_ILC]
+  helper_ilc_like: [Other, NK_ILC]
+
+# -----------------------------------------------------------------------------
+# low_cycling_map — cycling Low labels map by subtype, not via High Cycling→T
+# Values: [immune_label, lineageRole, optional tnk, optional myeloid_coarse]
+# Use YAML null (written as null) when tnk / myeloid_coarse do not apply.
+# -----------------------------------------------------------------------------
+low_cycling_map:
+  Cycling B cells: [Bcell, B, null, null]
+  Cycling T cells: [T_NK, T, Other, null]
+  Cycling gamma-delta T cells: [T_NK, GD, Gamma/Delta Cells, null]
+  Cycling NK cells: [T_NK, NK_ILC, NK Cells, null]
+  Cycling DCs: [Myeloid, Myeloid_APC, null, DC]
+  Cycling monocytes: [Myeloid, Myeloid_APC, null, Monocytes]
+
+# -----------------------------------------------------------------------------
+# Myeloid coerce — Low label → RIRA myeloid coarse / fine when parent is myeloid
+# -----------------------------------------------------------------------------
+low_myeloid_coarse:
+  Classical monocytes: Monocytes
+  Non-classical monocytes: Monocytes
+  Cycling monocytes: Monocytes
+  Monocytes: Monocytes
+  DC: DC
+  DC1: DC
+  DC2: DC
+  DC3: DC
+  Migratory DCs: DC
+  Transitional DC: DC
+  Cycling DCs: DC
+  Macrophages: Macrophages
+  Alveolar macrophages: Alv. mac.
+  Erythrophagocytic macrophages: Macrophages
+  Intermediate macrophages: Macrophages
+  Intestinal macrophages: Macrophages
+  Kidney-resident macrophages: Macrophages
+  Kupffer cells: Macrophages
+  Hofbauer cells: Macrophages
+  pDC: pDC
+  Myelocytes: Myelocytes
+  Promyelocytes: Promyelocytes
+  Neutrophils: Macrophages
+
+low_myeloid_fine:
+  Classical monocytes: CD14+ Monocytes
+  Non-classical monocytes: CD16+ Monocytes
+  Inflammatory Monocytes: Inflammatory Monocytes
+
+# -----------------------------------------------------------------------------
+# Parent allowlists — route Low labels by High parent (from human YAML parent map)
+# into B / myeloid / ILC coerce branches. Edit when a High parent should change
+# which Low subtypes enter that branch.
+# -----------------------------------------------------------------------------
+ilc_parents: [ILC, ILC precursor]
+
+myeloid_parents:
+  - Macrophages
+  - Monocytes
+  - DC
+  - MNP
+  - Mono-mac
+  - Myelocytes
+  - Promyelocytes
+  - pDC
+  - Mast cells
+  - Granulocytes
+
+b_parents: [B cells, B-cell lineage, Plasma cells]

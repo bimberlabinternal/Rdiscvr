@@ -7,3 +7,4 @@
 ^Rdiscvr.*\.zip$
 ^\.github$
 .dockerignore
+^vignettes/quantify10x-data\.Rmd$
