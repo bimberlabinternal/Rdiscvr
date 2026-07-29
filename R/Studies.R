@@ -739,9 +739,9 @@ ApplyIMPAC_TB_Human_Metadata <- function(seuratObj, reApplyMetadata = TRUE, erro
     schemaName="lists",
     queryName="IMPACTB",
     colNameOpt="rname",
-    colSelect = 'PatientID,Group,GroupName,Cohort,PET_Status,Progressor',
+    colSelect = 'PatientID,GroupName,Cohort,PET_Status,Progressor',
   )
-  names(metadata) <- c('SubjectId', 'Group', 'GroupName', 'Cohort', 'PET_Status', 'Progressor')
+  names(metadata) <- c('SubjectId', 'GroupName', 'Cohort', 'PET_Status', 'Progressor')
 
   if (errorIfUnknownIdsFound && (any(is.na(seuratObj$SubjectId)) || !all(seuratObj$SubjectId %in% metadata$SubjectId))) {
     if (any(is.na(seuratObj$SubjectId))) {
