@@ -1707,6 +1707,18 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       traceback()
     })
 
+    if (!is.null(allDataWithPVal) && any(colnames(allDataWithPVal) != colnames(dataWithPVal))) {
+      logger::log_warn(paste0('allDataWithPVal and dataWithPVal colnames do not match!'))
+      cd <- setdiff(colnames(allDataWithPVal), colnames(dataWithPVal))
+      if (length(cd) > 0){
+        logger::log_warn(paste0('Unique to allDataWithPVal', paste0(cd, collapse = ',')))
+      }
+
+      cd <- setdiff(colnames(dataWithPVal), colnames(allDataWithPVal))
+      if (length(cd) > 0) {
+        logger::log_warn(paste0('Unique to dataWithPVal', paste0(cd, collapse = ',')))
+      }
+    }
     allDataWithPVal <- rbind(allDataWithPVal, dataWithPVal)
   }
 
