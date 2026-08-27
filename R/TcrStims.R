@@ -663,6 +663,12 @@ GroupOverlappingClones <- function(dat, groupingFields, maxRatioToCombine = 0.5,
     dat <- rbind(dat, lowFreq)
   } else {
     print('No multi-CDR3 clonotypes present')
+    # Ensure returned columns are consistent:
+    dat <- dat %>%
+      select(all_of(c(groupingFields, 'TotalCellsForSample', 'TotalCellsForSampleAndState', 'IsActive', 'Clonotype', 'TotalCellsForClone', 'TotalCellsForCloneAndState',
+                      'NoStimTotalCellsActive', 'NoStimTotalCells', 'NoStimFractionOfCloneInSample', 'OrigClonotype', 'V_Gene', 'J_Gene', 'cdr3WithSegments', 'cdr3WithProductive',
+                      'FractionOfCloneWithStateInSample', 'FractionOfCloneWithState', 'FractionOfSampleWithState', 'NoStimFractionActive', 'MaxFractionInSubject'
+      )))
   }
 
   if (joinedClones) {
@@ -1711,12 +1717,12 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       logger::log_warn(paste0('allDataWithPVal and dataWithPVal colnames do not match!'))
       cd <- setdiff(colnames(allDataWithPVal), colnames(dataWithPVal))
       if (length(cd) > 0){
-        logger::log_warn(paste0('Unique to allDataWithPVal', paste0(cd, collapse = ',')))
+        logger::log_warn(paste0('Unique to allDataWithPVal: ', paste0(cd, collapse = ',')))
       }
 
       cd <- setdiff(colnames(dataWithPVal), colnames(allDataWithPVal))
       if (length(cd) > 0) {
-        logger::log_warn(paste0('Unique to dataWithPVal', paste0(cd, collapse = ',')))
+        logger::log_warn(paste0('Unique to dataWithPVal: ', paste0(cd, collapse = ',')))
       }
     }
     allDataWithPVal <- rbind(allDataWithPVal, dataWithPVal)
