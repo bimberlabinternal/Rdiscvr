@@ -1102,7 +1102,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="tcrdb",
     queryName="clone_responses",
-    colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency,clonename,cognatecdr3s",
+    colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,cDNA_ID/sortId/sampleId/population,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency,clonename,cognatecdr3s",
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
       c('clonotype', "NOT_IN", "No TCR;GD T;AB T"),
@@ -1112,7 +1112,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     colNameOpt="rname"
   )
 
-  names(responseData) <- c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency', 'CloneName', 'cognatecdr3s')
+  names(responseData) <- c('SubjectId', 'Stim', 'Population', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency', 'CloneName', 'cognatecdr3s')
 
   if (nrow(responseData) == 0) {
     print('No matching clones found in DB, skipping')
@@ -1132,7 +1132,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
   ))
 }
 
-# responseData should be a data.frame with the columns: c('SubjectId', 'Stim', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency')
+# responseData should be a data.frame with the columns: c('SubjectId', 'Stim', 'Populaton', 'Chain', 'Clonotype', 'totalclonesize', 'fractioncloneactivated', 'activationfrequency')
 .ApplyKnownClonotypicData <- function(seuratObj, responseData, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, minFractionCloneActivated = 0, fieldPrefix = NULL, doNotPruneUsingCognateChain = FALSE) {
   numAntigensFieldName <- .getNumAntigensFieldName(fieldPrefix)
   antigensFieldName <- .getAntigensFieldName(fieldPrefix)
@@ -1194,6 +1194,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       Chain = paste0(sort(unique(Chain)), collapse = ','),
       CloneName = paste0(sort(unique(CloneName)), collapse = ','),
       Antigens = paste0(sort(unique(Stim)), collapse = ','),
+      AntigenSourcePopulations = paste0(sort(unique(Population)), collapse = ','),
       HasNoStim = sum(IsNoStim)>0,
       MaxTotalCloneSize = max(totalclonesize),
       MaxFractionCloneActivated = max(fractioncloneactivated),
@@ -1292,6 +1293,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       group_by(CellBarcode) %>%
       summarize(
         Antigens = paste0(sort(unique(Antigens)), collapse = ','),
+        AntigenSourcePopulations = paste0(sort(unique(AntigenSourcePopulations)), collapse = ','),
         CloneName = paste0(sort(unique(CloneName)), collapse = ','),
         ChainsUsedForClonotypeMatch = paste0(sort(unique(ChainsUsedForClonotypeMatch)), collapse = ','),
         ClonotypesUsedForClonotypeMatch = paste0(unique(sort(ClonotypesUsedForClonotypeMatch)), collapse = ';'),
@@ -1304,6 +1306,16 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
       as.data.frame()
 
     toAppend$Antigens <- unlist(sapply(toAppend$Antigens, function(x){
+      if (is.na(x)) {
+        return(NA)
+      }
+
+      x <- sort(unique(unlist(strsplit(x, split = ','))))
+
+      return(paste0(x, collapse = ','))
+    }))
+
+    toAppend$AntigenSourcePopulations <- unlist(sapply(toAppend$AntigenSourcePopulations, function(x){
       if (is.na(x)) {
         return(NA)
       }
