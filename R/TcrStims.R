@@ -1238,6 +1238,11 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
         }
       }
 
+      if (grepl(chain, pattern = ',')) {
+        print(paste0('Ambiguous chain: ', chain, '. Clonotype: ', clonotype, ', skipping'))
+        next
+      }
+
       cognateChain <- .GetCognateChain(chain)
       if (! cognateChain %in% colnames(seuratObj@meta.data)) {
         stop(paste0('Missing column: ', cognateChain))
@@ -1744,6 +1749,15 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
 }
 
 .AddCognateChains <- function(chain, seuratObj, allDataWithPVal, minFraction = 0.05) {
+  if (grepl(chain, pattern = ',')) {
+    print(paste0('Ambiguous chain: ', chain, '. Clonotype: ', clonotype, ', skipping'))
+    if (! 'cognateCdr3s' %in% names(allDataWithPVal)) {
+      allDataWithPVal$cognateCdr3s <- NA
+    }
+
+    return(allDataWithPVal)
+  }
+
   cognateChain <- .GetCognateChain(chain)
 
   chainData <- data.frame(SourceChain = allDataWithPVal$Clonotype, ToJoin = allDataWithPVal$Clonotype) %>%
