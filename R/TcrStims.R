@@ -1102,7 +1102,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="tcrdb",
     queryName="clone_responses",
-    colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,cDNA_ID/sortId/sampleId/population,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency,clonename,cognatecdr3s",
+    colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,cDNA_ID/sortId/population,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency,clonename,cognatecdr3s",
     colFilter=makeFilter(
       c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
       c('clonotype', "NOT_IN", "No TCR;GD T;AB T"),
