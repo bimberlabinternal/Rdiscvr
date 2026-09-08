@@ -160,7 +160,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
   metadata$IsMockChallenged <- !is.na(metadata$Challenge) & metadata$Challenge == 'Mock-challenged'
 
   #Round to week:
-  metadata$Timepoint <- metadata$PID
+  metadata$Timepoint <- as.character(metadata$PID)
   metadata$Timepoint[!is.na(metadata$Timepoint)] <- round(metadata$Timepoint[!is.na(metadata$Timepoint)]/7, 0)*7
   metadata$Timepoint[!is.na(metadata$Timepoint)] <- paste0('Day ', metadata$Timepoint[!is.na(metadata$Timepoint)])
 
@@ -239,7 +239,10 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
 
   cDNA$TimepointWithMock <- cDNA$Timepoint
   cDNA$TimepointWithMock <- forcats::fct_expand(cDNA$TimepointWithMock, 'Mock', after = 1)
-  cDNA$TimepointWithMock[cDNA$Challenge == 'Mock-challenged'] <- 'Mock'
+  if ('Mock-challenged' %in% cDNA$Challenge) {
+    cDNA$TimepointWithMock[cDNA$Challenge == 'Mock-challenged'] <- 'Mock'
+  }
+
   cDNA$TimepointWithMock <- forcats::fct_drop(cDNA$TimepointWithMock)
 
   cDNA$VaccineGroup <- cDNA$Vaccine

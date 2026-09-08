@@ -83,7 +83,7 @@ differentiation subset columns further restrict matched cells by a numeric
 score bin.
 
 Per dataset, missing UCell score columns (names ending in \code{_UCell})
-are filled first with \code{RIRA::CalculateUCellScores} for the standard
+are filled first with \code{RIRA::CalculateUCellScores} for the requested
 module list, then any remaining gaps via \code{RIRA::GetGeneSet} plus
 \code{UCell::AddModuleScore_UCell} (gene-set name = column prefix, e.g.
 \code{Proliferation_UCell} from the registered \code{Proliferation} set).
@@ -94,8 +94,9 @@ All spec rows must share the same \code{GroupingVariable}. Processing
 continues after failures; see \code{failures} and \code{failureLogFile}.
 
 Bundled-spec \code{TargetField} names use \code{__} between prefix segments.
-Regenerate the rhesus RIRA spec with \code{inst/scripts/generate_quantify_rhesus_spec.py},
-the human immune spec with \code{inst/scripts/generate_quantify_human_spec.py},
-and the human-to-RIRA role map with
-\code{inst/scripts/generate_quantify_human_to_rhesus_role_map.py}.
+Regenerate the quantify spec tables from the corresponding YAML files using
+\code{inst/scripts/build_quantify_spec.py} (\code{quantify_rhesus.yml},
+\code{quantify_human_immune.yml}), and the human-to-RIRA role map with
+\code{inst/scripts/generate_quantify_human_to_rhesus_role_map.py}
+(loads \code{quantify_human_immune.yml} + \code{quantify_human_to_rhesus_role_map.yml}).
 }
