@@ -568,9 +568,10 @@ ApplyEC_Metadata <- function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMe
     )
 
   metadata$Genotype <- case_when(
-    !is.na(metadata$B08) & !is.na(metadata$B17) ~ 'B08-B17',
-    !is.na(metadata$B08) ~ 'B08',
-    !is.na(metadata$B17) ~ 'B17',
+    is.na(metadata$B08) & is.na(metadata$B17) ~ NA,
+    metadata$B08 == 'POS' & metadata$B17 == 'POS' ~ 'B08-B17',
+    metadata$B08 == 'POS' & metadata$B17 != 'POS' ~ 'B08',
+    metadata$B08 != 'POS' & metadata$B17 == 'POS' ~ 'B17',
     .default = 'OTHER'
   )
 
