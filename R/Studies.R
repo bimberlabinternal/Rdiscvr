@@ -161,7 +161,7 @@ ApplyTBMetadata <-function(seuratObj, errorIfUnknownIdsFound = TRUE, reApplyMeta
 
   #Round to week:
   metadata$Timepoint <- as.character(metadata$PID)
-  metadata$Timepoint[!is.na(metadata$Timepoint)] <- round(metadata$Timepoint[!is.na(metadata$Timepoint)]/7, 0)*7
+  metadata$Timepoint[is.finite(as.numeric(metadata$Timepoint))] <- round(as.numeric(metadata$Timepoint[is.finite(as.numeric(metadata$Timepoint))])/7, 0)*7
   metadata$Timepoint[!is.na(metadata$Timepoint)] <- paste0('Day ', metadata$Timepoint[!is.na(metadata$Timepoint)])
 
   metadata$ChallengeSide[is.na(metadata$ChallengeSide)] <- 'Unknown'
