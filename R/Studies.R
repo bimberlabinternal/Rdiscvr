@@ -806,3 +806,36 @@ ApplyIMPAC_TB_Human_Metadata <- function(seuratObj, reApplyMetadata = TRUE, erro
 
   return(seuratObj)
 }
+
+#' @title AppendSivStudyInfo
+#' @description Applies standard metadata related to the SIV/Vaccination data
+#'
+#' @param seuratObj A Seurat object.
+#' @param reApplyMetadata If true, QueryAndApplyCdnaMetadata will be re-run
+#' @return A modified Seurat object.
+#' @export
+AppendSivStudyInfo <- function(seuratObj, reApplyMetadata = TRUE) {
+  if (reApplyMetadata) {
+    seuratObj <- .ApplyMetadata(seuratObj)
+  }
+  seuratObj <- .AppendDemographics(seuratObj)
+  seuratObj <- .AppendStudyInfo(seuratObj)
+
+  seuratObj$SampleDate <- as.Date(seuratObj$SampleDate)
+  seuratObj$InfectionDate <- as.Date(seuratObj$InfectionDate)
+  seuratObj$ART_Initiation_Date <- as.Date(seuratObj$ART_Initiation_Date)
+
+  seuratObj$DaysPostInfection <- dplyr::case_when(
+    is.na(seuratObj$InfectionDate) | is.na(seuratObj$SampleDate) ~ NA,
+    .default = seuratObj$SampleDate - seuratObj$InfectionDate
+  )
+  seuratObj$WeeksPostInfection <- seuratObj$DaysPostInfection / 7
+
+  seuratObj$DaysPostART <- dplyr::case_when(
+    is.na(seuratObj$ART_Initiation_Date) | is.na(seuratObj$SampleDate) ~ NA,
+    .default = seuratObj$SampleDate - seuratObj$ART_Initiation_Date
+  )
+  seuratObj$WeeksPostART <- seuratObj$DaysPostART / 7
+
+  return(seuratObj)
+}

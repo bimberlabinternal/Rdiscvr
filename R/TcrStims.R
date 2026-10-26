@@ -439,7 +439,7 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, xFacetField2 = NA, plotTitle 
   }
   names(cols) <- levels(dat$Clonotype)
 
-  if (!is.na(patternField)) {
+  if (!is.na(patternField) && !is.null(patternField)) {
     dat$PatternField <- dat[[patternField]]
     if (is.logical(dat$PatternField)) {
       dat$PatternField <- ifelse(dat$PatternField, yes = 'Yes', no = 'No')
@@ -540,7 +540,10 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, xFacetField2 = NA, plotTitle 
 
   if (xFacetField != '.' || yFacetField != '.') {
     wrap_by <- function(xFacetField, yFacetField, xFacetField2) {
-      if (xFacetField2 == '.') {
+      if (xFacetField1 == '.' && xFacetField2 == '.') {
+        return(facet_grid(vars(!!sym(yFacetField)), '.', scales = 'free', space = 'free_x'))
+      }
+      else if (xFacetField2 == '.') {
         return(facet_grid(vars(!!sym(yFacetField)), vars(!!sym(xFacetField)), scales = 'free', space = 'free_x'))
       }
       else {

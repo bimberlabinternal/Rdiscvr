@@ -56,26 +56,32 @@ import(Seurat)
 import(dplyr)
 import(ggplot2)
 import(utils)
-importFrom(Seurat,DefaultAssay)
-importFrom(Seurat,GetAssayData)
-importFrom(dplyr,"%>%")
-importFrom(dplyr,across)
-importFrom(dplyr,arrange)
-importFrom(dplyr,bind_rows)
-importFrom(dplyr,coalesce)
-importFrom(dplyr,count)
-importFrom(dplyr,distinct)
-importFrom(dplyr,filter)
-importFrom(dplyr,group_by)
-importFrom(dplyr,group_by_at)
-importFrom(dplyr,left_join)
-importFrom(dplyr,mutate)
-importFrom(dplyr,pull)
-importFrom(dplyr,summarise)
-importFrom(dplyr,summarise_at)
-importFrom(dplyr,summarize)
+importFrom(Seurat,
+  DefaultAssay,
+  GetAssayData
+)
+importFrom(dplyr,
+  "%>%",
+  across,
+  arrange,
+  bind_rows,
+  coalesce,
+  count,
+  distinct,
+  filter,
+  group_by,
+  group_by_at,
+  left_join,
+  mutate,
+  pull,
+  summarise,
+  summarise_at,
+  summarize
+)
 importFrom(magrittr,"%>%")
 importFrom(naturalsort,naturalsort)
 importFrom(stats,quantile)
-importFrom(tibble,as_tibble)
-importFrom(tibble,tibble)
+importFrom(tibble,
+  as_tibble,
+  tibble
+)
