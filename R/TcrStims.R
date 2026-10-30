@@ -540,7 +540,7 @@ GenerateTcrPlot <- function(dat, xFacetField = NA, xFacetField2 = NA, plotTitle 
 
   if (xFacetField != '.' || yFacetField != '.') {
     wrap_by <- function(xFacetField, yFacetField, xFacetField2) {
-      if (xFacetField1 == '.' && xFacetField2 == '.') {
+      if (xFacetField == '.' && xFacetField2 == '.') {
         return(facet_grid(vars(!!sym(yFacetField)), '.', scales = 'free', space = 'free_x'))
       }
       else if (xFacetField2 == '.') {
