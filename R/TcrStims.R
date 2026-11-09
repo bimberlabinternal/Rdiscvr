@@ -1409,20 +1409,19 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
     print(DimPlot(seuratObj, group.by = numAntigensFieldName))
   }
 
-  seuratObj$AgSpecificAgExposed <- sapply(seq_len(ncol(seuratObj)), function(x){
-    antigens <- as.character(seuratObj[[antigensFieldName]][x])
-    if (is.na(antigens) || antigens == '') {
+  seuratObj$AgSpecificAgExposed <- unname(mapply(function(stim, ags){
+    if (is.na(ags) || is.na(stim)) {
       return(FALSE)
     }
 
-    stim <- as.character(seuratObj$Stim[x])
-    if (stim == 'NoStim' | grepl(stim, pattern = 'Mock') | grepl(stim, pattern = 'Negative')) {
+    if (stim == 'NoStim' || grepl(stim, pattern = 'Mock') || grepl(stim, pattern = 'Negative')) {
       return(FALSE)
     }
 
-    ags <- unlist(strsplit(antigens, split = ','))
-    return(stim %in% ags)
-  })
+    antigens <- unlist(strsplit(ags, split = ','))
+
+    return(stim %in% antigens)
+  }, as.character(seuratObj$Stim), as.character(seuratObj$Antigens)))
 
   return(seuratObj)
 }
