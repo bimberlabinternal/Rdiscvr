@@ -1432,14 +1432,14 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 #'
 #' @param seuratObj The seurat object. This expects
 #' @param chain The chain to summarize
-#' @param method Either 'Cluster-Based' or 'sPLS'
+#' @param method Either 'Cluster-Based', 'TAR-seq', or 'TAR-seq_Plus_UCell'
 #' @param storeStimLevelData If true, activation levels will be stord in tcrtb.stims
 #' @param maxRatioToCombine Passed to GroupOverlappingClones
 #' @param minEDS If provided, only cells with EDS>minEDS will be included
 #' @export
 #' @import Rlabkey
 #' @import dplyr
-IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', storeStimLevelData = TRUE, maxRatioToCombine = 1.0, minEDS = 2) {
+IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'TAR-seq', storeStimLevelData = TRUE, maxRatioToCombine = 1.0, minEDS = 2) {
   allDataWithPVal <- .IdentifyActiveClonotypes(seuratObj, chain = chain, method = method, maxRatioToCombine = maxRatioToCombine, minEDS = minEDS)
   if (!all(is.null(allDataWithPVal)) && nrow(allDataWithPVal) > 0) {
     allDataWithPVal$chain <- chain
@@ -1647,7 +1647,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   ))
 }
 
-.IdentifyActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'sPLS', maxRatioToCombine = 1.0, minOddsRatio = 0.5, minEDS = 2) {
+.IdentifyActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 'TAR-seq', maxRatioToCombine = 1.0, minOddsRatio = 0.5, minEDS = 2) {
   if (method == 'Cluster-Based') {
     activatedCluster <- .IdentifyActivatedCluster(dat)
     if (all(is.null(activatedCluster))) {
@@ -1658,7 +1658,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     print(paste0('Activated cluster: ', activatedCluster$resolution, ', ', activatedCluster$cluster))
     seuratObj$IsActive <- seuratObj@meta.data[[activatedCluster$resolution]] == activatedCluster$cluster
     print(paste0('Active cluster: ', activatedCluster$cluster, '. Total cells: ', sum(seuratObj$IsActive)))
-  } else if (method == 'sPLS') {
+  } else if (method == 'TAR-seq') {
     # This is create by RIRA::PredictTcellActivation()
     if (! 'Is_TCR_Stimulated' %in% names(seuratObj@meta.data)) {
       stop('Missing field: Is_TCR_Stimulated. This should be created by RIRA::PredictTcellActivation()')
@@ -1669,6 +1669,27 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     }
 
     seuratObj$IsActive <- seuratObj$Is_TCR_Stimulated
+    print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
+  } else if (method == 'TAR-seq_Plus_UCell') {
+    # This is create by RIRA::PredictTcellActivation()
+    if (! 'Is_TCR_Stimulated' %in% names(seuratObj@meta.data)) {
+      stop('Missing field: Is_TCR_Stimulated. This should be created by RIRA::PredictTcellActivation()')
+    }
+
+    if (any(!is.na(seuratObj@meta.data[[chain]]) & is.na(seuratObj$Is_TCR_Stimulated))) {
+      stop('There were NA values for Is_TCR_Stimulated that contained TCR data')
+    }
+
+    if (! 'TandNK_Activation2_UCell' %in% names(seuratObj@meta.data)) {
+      stop('Missing field: TandNK_Activation2_UCell. This should be created by RIRA::PredictTcellActivation()')
+    }
+
+    if (any(!is.na(seuratObj@meta.data[[chain]]) & is.na(seuratObj$TandNK_Activation2_UCell))) {
+      stop('There were NA values for TandNK_Activation2_UCell that contained TCR data')
+    }
+
+    seuratObj$TCR_Stimulation_Probability <- seuratObj$GeneralizedTCR_sPLSDA_prob_Th1.Tc1.like + seuratObj$GeneralizedTCR_sPLSDA_prob_Th2.Th17.like
+    seuratObj$IsActive <- seuratObj$TCR_Stimulation_Probability > 0.3 | seuratObj$Is_TCR_Stimulated | seuratObj$TandNK_Activation2_UCell > 0.5
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   } else {
     stop(paste0('Unknown method: ', method))

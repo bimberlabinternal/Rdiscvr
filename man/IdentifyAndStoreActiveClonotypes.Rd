@@ -7,7 +7,7 @@
 IdentifyAndStoreActiveClonotypes(
   seuratObj,
   chain = "TRB",
-  method = "sPLS",
+  method = "TAR-seq",
   storeStimLevelData = TRUE,
   maxRatioToCombine = 1,
   minEDS = 2
@@ -18,7 +18,7 @@ IdentifyAndStoreActiveClonotypes(
 
 \item{chain}{The chain to summarize}
 
-\item{method}{Either 'Cluster-Based' or 'sPLS'}
+\item{method}{Either 'Cluster-Based', 'TAR-seq', or 'TAR-seq_Plus_UCell'}
 
 \item{storeStimLevelData}{If true, activation levels will be stord in tcrtb.stims}
 
