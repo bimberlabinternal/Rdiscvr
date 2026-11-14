@@ -1688,7 +1688,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       stop('There were NA values for TandNK_Activation2_UCell that contained TCR data')
     }
 
-    seuratObj$TCR_Stimulation_Probability <- seuratObj$`GeneralizedTCR_sPLSDA_prob_Th1-Tc1-like` + seuratObj$`GeneralizedTCR_sPLSDA_prob_Th2-Th17-like`
+    seuratObj$TCR_Stimulation_Probability <- seuratObj$GeneralizedTCR_sPLSDA_prob_Th1.Tc1.like + seuratObj$GeneralizedTCR_sPLSDA_prob_Th2.Th17.like
     seuratObj$IsActive <- seuratObj$TCR_Stimulation_Probability > 0.3 | seuratObj$Is_TCR_Stimulated | seuratObj$TandNK_Activation2_UCell > 0.5
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   } else {
