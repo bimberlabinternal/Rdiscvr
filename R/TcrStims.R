@@ -1674,7 +1674,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     seuratObj <- .SetIsActiveForTarSeq(seuratObj)
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'TAR-seq_MT_Plus_UCell') {
-    if ( ! 'Metallothionein.Core_UCell' %in% names(seuratObj)) {
+    if ( ! 'Metallothionein.Core_UCell' %in% names(seuratObj@meta.data)) {
       stop('Missing field: Metallothionein.Core_UCell')
     }
 
@@ -1682,7 +1682,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     seuratObj$IsActive <- seuratObj$IsActive | seuratObj$Metallothionein.Core_UCell >= 0.5
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'Metallothionein') {
-    if ( ! 'Metallothionein.Core_UCell' %in% names(seuratObj)) {
+    if ( ! 'Metallothionein.Core_UCell' %in% names(seuratObj@meta.data)) {
       stop('Missing field: Metallothionein.Core_UCell')
     }
 
