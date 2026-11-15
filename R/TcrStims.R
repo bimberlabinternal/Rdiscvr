@@ -1671,14 +1671,14 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     seuratObj$IsActive <- seuratObj$Is_TCR_Stimulated
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'TAR-seq_Plus_UCell') {
-    seuratObj <- .SetIsActiveForTarSeq(seuratObj)
+    seuratObj <- .SetIsActiveForTarSeq(seuratObj, chain = chain)
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'TAR-seq_MT_Plus_UCell') {
     if ( ! 'Metallothionein.Core_UCell' %in% names(seuratObj@meta.data)) {
       stop('Missing field: Metallothionein.Core_UCell')
     }
 
-    seuratObj <- .SetIsActiveForTarSeq(seuratObj)
+    seuratObj <- .SetIsActiveForTarSeq(seuratObj, chain = chain)
     seuratObj$IsActive <- seuratObj$IsActive | seuratObj$Metallothionein.Core_UCell >= 0.5
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'Metallothionein') {
@@ -2078,7 +2078,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
   }
 }
 
-.SetIsActiveForTarSeq <- function(seuratObj) {
+.SetIsActiveForTarSeq <- function(seuratObj, chain) {
   # This is create by RIRA::PredictTcellActivation()
   if (! 'Is_TCR_Stimulated' %in% names(seuratObj@meta.data)) {
     stop('Missing field: Is_TCR_Stimulated. This should be created by RIRA::PredictTcellActivation()')
