@@ -2001,7 +2001,8 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     colSelect="rowid,clonotype,cdna_id,container",
     colFilter=makeFilter(
       c("cdna_id", "IN", paste0(unique(allCDNA), collapse = ';')),
-      c('chain', 'EQUALS', chain)
+      c('chain', 'EQUALS', chain),
+      c('comments', 'EQUALS', methodName)
     ),
     containerFilter=NULL,
     colNameOpt="rname"
