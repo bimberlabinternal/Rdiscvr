@@ -1432,7 +1432,7 @@ ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, ant
 #'
 #' @param seuratObj The seurat object. This expects
 #' @param chain The chain to summarize
-#' @param method Either 'Cluster-Based', 'TAR-seq', or 'TAR-seq_Plus_UCell'
+#' @param method Either 'Cluster-Based', 'TAR-seq', 'TAR-seq_Plus_UCell' or 'TAR-seq_MT_Plus_UCell'. 'Metallothionein' is an experimental option.
 #' @param storeStimLevelData If true, activation levels will be stord in tcrtb.stims
 #' @param maxRatioToCombine Passed to GroupOverlappingClones
 #' @param minEDS If provided, only cells with EDS>minEDS will be included
@@ -1671,29 +1671,22 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     seuratObj$IsActive <- seuratObj$Is_TCR_Stimulated
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   } else if (method == 'TAR-seq_Plus_UCell') {
-    # This is create by RIRA::PredictTcellActivation()
-    if (! 'Is_TCR_Stimulated' %in% names(seuratObj@meta.data)) {
-      stop('Missing field: Is_TCR_Stimulated. This should be created by RIRA::PredictTcellActivation()')
+    seuratObj <- .SetIsActiveForTarSeq(seuratObj)
+    print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
+  } else if (method == 'TAR-seq_MT_Plus_UCell') {
+    if ( ! 'Metallothionein.Core_UCell' %in% names(seuratObj)) {
+      stop('Missing field: Metallothionein.Core_UCell')
     }
 
-    if (any(!is.na(seuratObj@meta.data[[chain]]) & is.na(seuratObj$Is_TCR_Stimulated))) {
-      stop('There were NA values for Is_TCR_Stimulated that contained TCR data')
+    seuratObj <- .SetIsActiveForTarSeq(seuratObj)
+    seuratObj$IsActive <- seuratObj$IsActive | seuratObj$Metallothionein.Core_UCell >= 0.5
+    print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
+  } else if (method == 'Metallothionein') {
+    if ( ! 'Metallothionein.Core_UCell' %in% names(seuratObj)) {
+      stop('Missing field: Metallothionein.Core_UCell')
     }
 
-    if (! 'TandNK_Activation2_UCell' %in% names(seuratObj@meta.data)) {
-      stop('Missing field: TandNK_Activation2_UCell. This should be created by RIRA::PredictTcellActivation()')
-    }
-
-    if (any(!is.na(seuratObj@meta.data[[chain]]) & is.na(seuratObj$TandNK_Activation2_UCell))) {
-      stop('There were NA values for TandNK_Activation2_UCell that contained TCR data')
-    }
-
-    # NOTE: different seurat versions seem to change hyphens:
-    th1Field <- ifelse('GeneralizedTCR_sPLSDA_prob_Th1.Tc1.like' %in% names(seuratObj@meta.data),  yes = 'GeneralizedTCR_sPLSDA_prob_Th1.Tc1.like', no = 'GeneralizedTCR_sPLSDA_prob_Th1-Tc1-like')
-    th17Field <- ifelse('GeneralizedTCR_sPLSDA_prob_Th2.Th17.like' %in% names(seuratObj@meta.data),  yes = 'GeneralizedTCR_sPLSDA_prob_Th2.Th17.like', no = 'GeneralizedTCR_sPLSDA_prob_Th2-Th17-like')
-    seuratObj$TCR_Stimulation_Probability <- seuratObj[[th1Field]] + seuratObj[[th17Field]]
-
-    seuratObj$IsActive <- seuratObj$TCR_Stimulation_Probability > 0.3 | seuratObj$Is_TCR_Stimulated | seuratObj$TandNK_Activation2_UCell > 0.5
+    seuratObj$IsActive <- seuratObj$Metallothionein.Core_UCell >= 0.5
     print(paste0('Total active cells: ', sum(seuratObj$IsActive)))
   } else {
     stop(paste0('Unknown method: ', method))
@@ -2083,4 +2076,32 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       toDelete = toDelete
     )
   }
+}
+
+.SetIsActiveForTarSeq <- function(seuratObj) {
+  # This is create by RIRA::PredictTcellActivation()
+  if (! 'Is_TCR_Stimulated' %in% names(seuratObj@meta.data)) {
+    stop('Missing field: Is_TCR_Stimulated. This should be created by RIRA::PredictTcellActivation()')
+  }
+
+  if (any(!is.na(seuratObj@meta.data[[chain]]) & is.na(seuratObj$Is_TCR_Stimulated))) {
+    stop('There were NA values for Is_TCR_Stimulated that contained TCR data')
+  }
+
+  if (! 'TandNK_Activation2_UCell' %in% names(seuratObj@meta.data)) {
+    stop('Missing field: TandNK_Activation2_UCell. This should be created by RIRA::PredictTcellActivation()')
+  }
+
+  if (any(!is.na(seuratObj@meta.data[[chain]]) & is.na(seuratObj$TandNK_Activation2_UCell))) {
+    stop('There were NA values for TandNK_Activation2_UCell that contained TCR data')
+  }
+
+  # NOTE: different seurat versions seem to change hyphens:
+  th1Field <- ifelse('GeneralizedTCR_sPLSDA_prob_Th1.Tc1.like' %in% names(seuratObj@meta.data),  yes = 'GeneralizedTCR_sPLSDA_prob_Th1.Tc1.like', no = 'GeneralizedTCR_sPLSDA_prob_Th1-Tc1-like')
+  th17Field <- ifelse('GeneralizedTCR_sPLSDA_prob_Th2.Th17.like' %in% names(seuratObj@meta.data),  yes = 'GeneralizedTCR_sPLSDA_prob_Th2.Th17.like', no = 'GeneralizedTCR_sPLSDA_prob_Th2-Th17-like')
+  seuratObj$TCR_Stimulation_Probability <- seuratObj[[th1Field]] + seuratObj[[th17Field]]
+
+  seuratObj$IsActive <- seuratObj$TCR_Stimulation_Probability > 0.3 | seuratObj$Is_TCR_Stimulated | seuratObj$TandNK_Activation2_UCell > 0.5
+
+  return(seuratObj)
 }
