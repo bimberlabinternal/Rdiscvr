@@ -971,7 +971,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
   return(dataWithPVal)
 }
 
-.GenerateTcrQcPlots <- function(dat) {
+.GenerateTcrQcPlots <- function(dat, method = NULL, chain = NULL) {
   subjectId <- paste0(dat %>% select(SubjectId) %>% unique() %>% as.character(), collapse = ',')
   toPlot <- dat %>%
     filter(IsActive) %>%
@@ -993,7 +993,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
         y = '% Activated',
         x = ''
       ) +
-      ggtitle('Filter Summary')
+      ggtitle(paste0('Filter Summary: ', ifelse(is.null(chain), yes = '', no = chain), ' ', ifelse(is.null(method), yes = '', no = method)))
   }
 
   toPlot <- dat %>%
@@ -1724,11 +1724,11 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     dat <- ApplyCloneFilters(dat, minCellsPerClone = 2, minFractionOfCloneActive = 0.025, minFoldChangeAboveNoStim = NA)
     dat$IsFiltered <- ifelse(is.na(dat$Filter), yes = 'No', no = 'Yes')
 
-    filterPlots <- .GenerateTcrQcPlots(dat)
+    filterPlots <- .GenerateTcrQcPlots(dat, method = method, chain = chain)
     print(filterPlots)
 
     subjectId <- paste0(sort(unique(dat$SubjectId)), collapse = ',')
-    P1 <- GenerateTcrPlot(dat, xFacetField = 'Tissue', xFacetField2 = 'SampleDate', dropInactive = FALSE, patternField = 'IsFiltered', plotTitle = paste0(subjectId, ": EDS > ", minEDS, ", Unfiltered"), groupLowFreq = TRUE)
+    P1 <- GenerateTcrPlot(dat, xFacetField = 'Tissue', xFacetField2 = 'SampleDate', dropInactive = FALSE, patternField = 'IsFiltered', plotTitle = paste0(subjectId, ": ", chain, ", EDS > ", minEDS, ", Unfiltered, ", method), groupLowFreq = TRUE)
 
     P1 <- P1 + patchwork::plot_annotation(title = paste0(subjectId, ': Unfiltered Clonotypes and ICS'))
     print(P1)
@@ -1749,7 +1749,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     dataWithPVal$Status <- ifelse(dataWithPVal$FailedEnrichment, yes = 'Failed Odds Ratio', no = NA)
 
     tryCatch({
-      passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'Tissue', xFacetField2 = 'SampleDate', dropInactive = TRUE, patternField = 'FailedEnrichment', plotTitle = paste0(subjectId, ": ", chain, ", EDS > ", minEDS, ", Passing Enrichment"), groupLowFreq = FALSE)
+      passingClones <- GenerateTcrPlot(dataWithPVal, xFacetField = 'Tissue', xFacetField2 = 'SampleDate', dropInactive = TRUE, patternField = 'FailedEnrichment', plotTitle = paste0(subjectId, ": ", chain, ", EDS > ", minEDS, ", Passing Enrichment, ", method), groupLowFreq = FALSE)
       if (!all(is.null(passingClones))){
         passingClones <- passingClones +
           geom_hline(yintercept = 0.005, linetype = 'dotted', colour = 'red', linewidth = 1) +
