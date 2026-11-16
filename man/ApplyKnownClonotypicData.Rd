@@ -6,6 +6,7 @@
 \usage{
 ApplyKnownClonotypicData(
   seuratObj,
+  methods = NULL,
   antigenInclusionList = NULL,
   antigenExclusionList = NULL,
   minActivationFrequency = 0,
@@ -16,6 +17,8 @@ ApplyKnownClonotypicData(
 }
 \arguments{
 \item{seuratObj}{The seurat object}
+
+\item{methods}{An option param that is used to filter the clone_responses table}
 
 \item{antigenInclusionList}{If provided, only antigens from this list will be considered}
 

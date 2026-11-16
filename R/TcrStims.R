@@ -1088,6 +1088,7 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 #' @description This will query the clone_responses table and append a column tagging each cell for matching antigens (based on clonotype)
 #'
 #' @param seuratObj The seurat object
+#' @param methods An option param that is used to filter the clone_responses table
 #' @param antigenInclusionList If provided, only antigens from this list will be considered
 #' @param antigenExclusionList If provided, antigens on this list will be omitted
 #' @param minActivationFrequency If provided, only responses with activationFrequency (of the parent population) will be included
@@ -1095,23 +1096,31 @@ AppendClonotypeEnrichmentPVals <- function(dat, showProgress = FALSE) {
 #' @param fieldPrefix If provided, this will be appended to the beginning of the output field names
 #' @param doNotPruneUsingCognateChain By default, matching is performed using the primary chain (as defined in the DB). If this is provided, this additional step is skipped
 #' @export
-ApplyKnownClonotypicData <- function(seuratObj, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, minFractionCloneActivated = 0, fieldPrefix = NULL, doNotPruneUsingCognateChain = FALSE) {
+ApplyKnownClonotypicData <- function(seuratObj, methods = NULL, antigenInclusionList = NULL, antigenExclusionList = NULL, minActivationFrequency = 0, minFractionCloneActivated = 0, fieldPrefix = NULL, doNotPruneUsingCognateChain = FALSE) {
   numAntigensFieldName <- .getNumAntigensFieldName(fieldPrefix)
   antigensFieldName <- .getAntigensFieldName(fieldPrefix)
 
   subjectIds <- sort(unique(seuratObj$SubjectId))
+  theFilters <- list(
+    c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
+    c('clonotype', "NOT_IN", "No TCR;GD T;AB T"),
+    c('cDNA_ID/status', 'DOES_NOT_CONTAIN', 'Failed'),
+    c('status', "MISSING", "")
+  )
+
+  if (!is.null(methods)) {
+    theFilters <- append(theFilters, list(c('method', 'IN', paste0(methods, collapse = ';'))))
+  }
+
+  colFilter <- do.call(makeFilter, theFilters)
+
   responseData <- labkey.selectRows(
     baseUrl=.getBaseUrl(),
     folderPath=.getLabKeyDefaultFolder(),
     schemaName="tcrdb",
     queryName="clone_responses",
     colSelect="cDNA_ID/sortId/sampleId/subjectId,cDNA_ID/sortId/sampleId/stim,cDNA_ID/sortId/population,chain,clonotype,totalclonesize,fractioncloneactivated,activationfrequency,clonename,cognatecdr3s",
-    colFilter=makeFilter(
-      c("cDNA_ID/sortId/sampleId/subjectId", "IN", paste0(subjectIds, collapse = ';')),
-      c('clonotype', "NOT_IN", "No TCR;GD T;AB T"),
-      c('cDNA_ID/status', 'DOES_NOT_CONTAIN', 'Failed'),
-      c('status', "MISSING", "")
-    ),
+    colFilter=colFilter,
     colNameOpt="rname"
   )
 
@@ -1858,7 +1867,8 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
         colSelect="rowid,container",
         colFilter=makeFilter(
           c("cdna_id", "IN", paste0(unique(allCDNA_IDs), collapse = ';')),
-          c('chain', 'EQUALS', chain)
+          c('chain', 'EQUALS', chain),
+          c('method', 'EQUALS', methodName)
         ),
         containerFilter=NULL,
         colNameOpt="rname"
@@ -1989,7 +1999,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
       totalCellsForSample = 'TotalCellsForSample',
       oddsRatio = 'coefficients',
       enrichmentFDR = 'FDR',
-      comments = 'MethodString'
+      method = 'MethodString'
     ) %>%
     mutate(chain = chain)
 
@@ -2002,7 +2012,7 @@ IdentifyAndStoreActiveClonotypes <- function(seuratObj, chain = 'TRB', method = 
     colFilter=makeFilter(
       c("cdna_id", "IN", paste0(unique(allCDNA), collapse = ';')),
       c('chain', 'EQUALS', chain),
-      c('comments', 'EQUALS', methodName)
+      c('method', 'EQUALS', methodName)
     ),
     containerFilter=NULL,
     colNameOpt="rname"

@@ -18,7 +18,7 @@ IdentifyAndStoreActiveClonotypes(
 
 \item{chain}{The chain to summarize}
 
-\item{method}{Either 'Cluster-Based', 'TAR-seq', or 'TAR-seq_Plus_UCell'}
+\item{method}{Either 'Cluster-Based', 'TAR-seq', 'TAR-seq_Plus_UCell' or 'TAR-seq_MT_Plus_UCell'. 'Metallothionein' is an experimental option.}
 
 \item{storeStimLevelData}{If true, activation levels will be stord in tcrtb.stims}
 
