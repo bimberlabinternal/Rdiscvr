@@ -248,3 +248,39 @@ ggplot_add.dimplot_arrows <- function(object, plot, ...){
       vjust = -0.75, hjust = -0.25, angle = 90
     )
 }
+
+
+#' @title MakeLabeledUMAP
+#'
+#' @description This generates a DimPlot where the cluster labels have white backgrounds and use ggrepel
+#' @param seuratObj The Seurat object
+#' @param groupField The name of the field that will group and label the Seurat object
+#' @param labelSize The size for the labels
+#' @param plotTitle The title for this plot
+#' @return A plot object
+#' @export
+MakeLabeledUMAP <- function(seuratObj, groupField, labelSize = 5, plotTitle = 'Unsupervised Clustering') {
+  UMAP <- Seurat::DimPlot(seuratObj, group.by = groupField, label = FALSE) +
+    Rdiscvr::ConvertAxesToArrows() +
+    Seurat::NoLegend() +
+    ggtitle(plotTitle)
+
+  labeled_states <- unique(seuratObj@meta.data[[groupField]])
+  xy <- names(UMAP$data)[1:2]
+
+  lab_df <- UMAP$data |>
+    dplyr::filter(!!sym(groupField) %in% labeled_states) |>
+    dplyr::group_by(!!sym(groupField)) |>
+    dplyr::summarise(x = median(.data[[xy[1]]]),
+              y = median(.data[[xy[2]]]), .groups = "drop")
+
+  UMAP <- UMAP +
+    ggrepel::geom_label_repel(
+      data = lab_df, aes(x = x, y = y, label = !!sym(groupField)),
+      inherit.aes = FALSE, size = labelSize,
+      fill = scales::alpha("white", 0.85), label.size = 0,
+      box.padding = 0.6, min.segment.length = 0, seed = 1
+    )
+
+  return(UMAP)
+}
